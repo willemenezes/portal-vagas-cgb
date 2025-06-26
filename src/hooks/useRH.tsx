@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 export interface RHUser {
     id: string;
@@ -150,15 +151,15 @@ export const useResetRHUserPassword = () => {
             });
 
             if (error) {
-                console.error('Erro ao invocar a Edge Function:', error);
+                if (error instanceof FunctionsHttpError) {
+                    const errorJson = await error.context.json();
+                    if (errorJson.error) {
+                        throw new Error(errorJson.error);
+                    }
+                }
                 throw new Error(error.message);
             }
-            
-            if (data.error) {
-                console.error('Erro retornado pela Edge Function:', data.error);
-                throw new Error(data.error);
-            }
-            
+
             return data;
         },
         onSuccess: (data) => {

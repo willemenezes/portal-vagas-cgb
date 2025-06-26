@@ -442,7 +442,7 @@ const RHManagementPanel = () => {
         }
 
         resetRHUserPassword.mutate(
-            { userId: userToResetPassword.id, newPassword },
+            { userId: userToResetPassword.user_id, newPassword },
             {
                 onSuccess: (data) => {
                     setResetPasswordCredentials({
