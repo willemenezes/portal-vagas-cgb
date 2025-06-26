@@ -1,0 +1,63 @@
+{
+    "name": "CGB Energia - Portal de Carreiras",
+    "short_name": "CGB Carreiras",
+    "description": "Portal de carreiras da CGB Energia. Descubra oportunidades em energias renováveis e sustentabilidade.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#8B1538",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "lang": "pt-BR",
+    "icons": [
+        {
+            "src": "/CGB_ENERGIA_LOGO.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/CGB_ENERGIA_LOGO.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/CGB_ENERGIA_LOGO.png",
+            "type": "image/png",
+            "sizes": "256x256",
+            "purpose": "any"
+        }
+    ],
+    "categories": [
+        "business",
+        "productivity"
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Vagas Abertas",
+            "short_name": "Vagas",
+            "description": "Ver todas as vagas disponíveis",
+            "url": "/?utm_source=homescreen#vagas",
+            "icons": [
+                {
+                    "src": "/CGB_ENERGIA_LOGO.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Enviar Currículo",
+            "short_name": "Currículo",
+            "description": "Cadastrar seu currículo no banco de talentos",
+            "url": "/cadastrar-curriculo?utm_source=homescreen",
+            "icons": [
+                {
+                    "src": "/CGB_ENERGIA_LOGO.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}

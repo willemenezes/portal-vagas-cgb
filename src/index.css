@@ -1,0 +1,488 @@
+/* Modern Typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+}
+
+/* 
+  Correção Definitiva para Bug de Modal/Diálogo (Radix UI)
+  Força a interação com o body e o conteúdo do diálogo quando um modal Radix está aberto,
+  contornando o bug de `pointer-events: none`.
+*/
+body:has([data-radix-dialog-content]) {
+  pointer-events: auto !important;
+}
+
+[data-radix-dialog-content] {
+  pointer-events: auto !important;
+}
+
+[data-radix-dialog-content] * {
+  pointer-events: auto !important;
+}
+
+.text-modern-heading {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.text-modern-body {
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgb(71 85 105);
+}
+
+.text-modern-caption {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: rgb(100 116 139);
+}
+
+/* Modern Glass Effects */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 32px rgba(31, 38, 135, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.06),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Modern Shadows */
+.shadow-modern-xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow-modern-sm {
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-modern-md {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-modern-lg {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-modern-xl {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Gradients */
+.gradient-modern-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-modern-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-modern-neutral {
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+}
+
+.gradient-modern-subtle {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Modern Animations */
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-up-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gentle-bounce {
+
+  0%,
+  20%,
+  53%,
+  80%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  40%,
+  43% {
+    transform: translate3d(0, -8px, 0);
+  }
+
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+.animate-slide-up-fade {
+  animation: slide-up-fade 0.6s ease-out;
+}
+
+.animate-scale-up-fade {
+  animation: scale-up-fade 0.4s ease-out;
+}
+
+.animate-gentle-bounce {
+  animation: gentle-bounce 1s ease-in-out;
+}
+
+/* Modern Hover Effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.hover-glow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.hover-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hover-glow:hover::before {
+  opacity: 1;
+}
+
+/* Modern Focus States */
+.focus-modern {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200;
+}
+
+/* Modern Button Styles */
+.btn-modern {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium transition-all duration-200 rounded-xl;
+  @apply hover:scale-105 active:scale-95;
+}
+
+.btn-modern-primary {
+  @apply btn-modern bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg;
+  @apply hover:from-blue-700 hover:to-purple-700 hover:shadow-xl;
+}
+
+.btn-modern-secondary {
+  @apply btn-modern bg-white text-gray-700 border border-gray-200 shadow-sm;
+  @apply hover:bg-gray-50 hover:border-gray-300 hover:shadow-md;
+}
+
+.btn-modern-ghost {
+  @apply btn-modern text-gray-600;
+  @apply hover:bg-gray-100 hover:text-gray-900;
+}
+
+/* Modern Form Elements */
+.input-modern {
+  @apply w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-white;
+  @apply focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200;
+  @apply placeholder:text-gray-400;
+}
+
+.select-modern {
+  @apply input-modern appearance-none bg-white;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+/* Modern Card Styles */
+.card-modern {
+  @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+  @apply hover:shadow-lg hover:border-gray-200 transition-all duration-300;
+}
+
+.card-modern-featured {
+  @apply card-modern border-blue-200 bg-gradient-to-br from-blue-50/50 to-white;
+  @apply hover:border-blue-300;
+}
+
+/* Modern Spacing System */
+.space-modern-xs {
+  @apply space-y-2;
+}
+
+.space-modern-sm {
+  @apply space-y-4;
+}
+
+.space-modern-md {
+  @apply space-y-6;
+}
+
+.space-modern-lg {
+  @apply space-y-8;
+}
+
+.space-modern-xl {
+  @apply space-y-12;
+}
+
+/* Modern Layout */
+.container-modern {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.section-modern {
+  @apply py-16 lg:py-24;
+}
+
+/* Modern Responsive Grid */
+.grid-modern-auto {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+}
+
+.grid-modern-2 {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-8;
+}
+
+.grid-modern-3 {
+  @apply grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6;
+}
+
+/* Modern Badges */
+.badge-modern {
+  @apply inline-flex items-center px-3 py-1 text-xs font-medium rounded-full;
+}
+
+.badge-modern-primary {
+  @apply badge-modern bg-blue-100 text-blue-800;
+}
+
+.badge-modern-secondary {
+  @apply badge-modern bg-gray-100 text-gray-800;
+}
+
+.badge-modern-success {
+  @apply badge-modern bg-green-100 text-green-800;
+}
+
+.badge-modern-warning {
+  @apply badge-modern bg-yellow-100 text-yellow-800;
+}
+
+/* Modern Status Indicators */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-online {
+  @apply status-dot bg-green-400;
+}
+
+.status-offline {
+  @apply status-dot bg-gray-400;
+}
+
+.status-busy {
+  @apply status-dot bg-red-400;
+}
+
+/* Modern Loading States */
+.loading-pulse {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.loading-skeleton {
+  @apply loading-pulse h-4 mb-2;
+}
+
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Modern Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .glass-effect {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .glass-card {
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(51, 65, 85, 0.8);
+  }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  * {
+    color: black !important;
+    background: white !important;
+  }
+}
