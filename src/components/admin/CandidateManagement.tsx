@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Download, FileText, User, Mail, MapPin, Briefcase, Users, Trash2 } from 'lucide-react';
+import { Loader2, Search, Download, FileText, User, Mail, MapPin, Briefcase, Users, Trash2, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
@@ -73,6 +73,38 @@ const CandidateManagement = () => {
         return vehicleValue === filters.vehicle;
       });
   }, [candidates, searchTerm, filters, talentBankJobId, rhProfile]);
+
+  const handleExportCSV = () => {
+    const csvRows = [];
+    const headers = ['Nome', 'Email', 'Telefone', 'Vaga Aplicada', 'Status', 'Localização', 'Possui CNH', 'Tipo de Veículo', 'Link do Currículo'];
+    csvRows.push(headers.join(','));
+
+    for (const candidate of filteredCandidates) {
+      const row = [
+        `"${candidate.name || ''}"`,
+        `"${candidate.email || ''}"`,
+        `"${candidate.phone || ''}"`,
+        `"${candidate.job?.title || candidate.desiredJob || 'N/A'}"`,
+        `"${candidate.status || 'N/A'}"`,
+        `"${candidate.city || ''}, ${candidate.state || ''}"`,
+        `"${(candidate.cnh && candidate.cnh.toLowerCase() !== 'não possuo') ? 'Sim' : 'Não'}"`,
+        `"${candidate.vehicle || 'N/A'}"`,
+        `"${candidate.resume_file_url || ''}"`
+      ];
+      csvRows.push(row.join(','));
+    }
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'relatorio_candidatos.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const jobsForFilter = useMemo(() => jobs.filter(job => job.id !== talentBankJobId), [jobs, talentBankJobId]);
 
@@ -141,6 +173,12 @@ const CandidateManagement = () => {
             <Select value={filters.state} onValueChange={value => setFilters(prev => ({ ...prev, state: value }))}><SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.state === 'all' ? 'Todos os Estados' : filters.state}</span></SelectTrigger><SelectContent><SelectItem value="all">Todos os Estados</SelectItem>{uniqueStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}</SelectContent></Select>
             <Select value={filters.cnh} onValueChange={value => setFilters(prev => ({ ...prev, cnh: value }))}><SelectTrigger><span>Possui CNH?</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="sim">Sim</SelectItem><SelectItem value="não">Não</SelectItem></SelectContent></Select>
             <Select value={filters.vehicle} onValueChange={value => setFilters(prev => ({ ...prev, vehicle: value }))}><SelectTrigger><span>Tipo de Veículo</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="carro">Carro</SelectItem><SelectItem value="moto">Moto</SelectItem><SelectItem value="nao">Não possuo</SelectItem></SelectContent></Select>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleExportCSV} className="bg-cgb-primary hover:bg-cgb-primary-dark text-white">
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exportar para CSV
+            </Button>
           </div>
           <div className="border rounded-lg overflow-hidden">
             <Table>

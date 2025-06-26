@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, FileText, UserCheck, Briefcase, MapPin } from 'lucide-react';
+import { Loader2, Search, FileText, UserCheck, Briefcase, MapPin, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,35 @@ const HiredManagement = () => {
             });
     }, [candidates, searchTerm, filters]);
 
+    const handleExportCSV = () => {
+        const csvRows = [];
+        const headers = ['Nome', 'Email', 'Telefone', 'Vaga Contratada', 'Data da Aprovação', 'Link do Currículo'];
+        csvRows.push(headers.join(','));
+
+        for (const candidate of hiredCandidates) {
+            const row = [
+                `"${candidate.name || ''}"`,
+                `"${candidate.email || ''}"`,
+                `"${candidate.phone || ''}"`,
+                `"${candidate.job?.title || 'N/A'}"`,
+                `"${format(new Date(candidate.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}"`,
+                `"${candidate.resume_file_url || ''}"`
+            ];
+            csvRows.push(row.join(','));
+        }
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'relatorio_contratados.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const uniqueStates = useMemo(() => {
         const approvedCandidates = candidates.filter(c => c.status === 'Aprovado');
         return [...new Set(approvedCandidates.map(c => c.state).filter(Boolean))];
@@ -50,7 +79,7 @@ const HiredManagement = () => {
                     <UserCheck className="w-6 h-6 text-green-600" />
                     Candidatos Contratados ({hiredCandidates.length})
                 </CardTitle>
-                <div className="flex flex-col md:flex-row gap-4 pt-4">
+                <div className="flex flex-col md:flex-row gap-4 pt-4 items-center">
                     <div className="relative w-full md:flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
@@ -84,6 +113,13 @@ const HiredManagement = () => {
                             ))}
                         </SelectContent>
                     </Select>
+                    <Button
+                        onClick={handleExportCSV}
+                        className="bg-cgb-primary hover:bg-cgb-primary-dark text-white w-full md:w-auto"
+                    >
+                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                        Exportar CSV
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent>

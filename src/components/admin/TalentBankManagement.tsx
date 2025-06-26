@@ -3,7 +3,7 @@ import { useResumes, Resume, useDeleteResume } from '@/hooks/useResumes';
 import { useAllJobs } from '@/hooks/useJobs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2 } from 'lucide-react';
+import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,37 @@ const TalentBankManagement = () => {
     const { toast } = useToast();
 
     const [resumeToDelete, setResumeToDelete] = useState<Resume | null>(null);
+
+    const handleExportCSV = () => {
+        const csvRows = [];
+        const headers = ['Nome', 'Email', 'Telefone', 'Cargo Desejado', 'Estado', 'Cidade', 'Data de Envio', 'Link do Currículo'];
+        csvRows.push(headers.join(','));
+
+        for (const resume of filteredResumes) {
+            const row = [
+                `"${resume.name || ''}"`,
+                `"${resume.email || ''}"`,
+                `"${resume.phone || ''}"`,
+                `"${resume.position || 'N/A'}"`,
+                `"${resume.state || ''}"`,
+                `"${resume.city || ''}"`,
+                `"${new Date(resume.submitted_date).toLocaleDateString('pt-BR')}"`,
+                `"${resume.resume_file_url || ''}"`
+            ];
+            csvRows.push(row.join(','));
+        }
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'relatorio_banco_de_talentos.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const talentBankJobId = useMemo(() => {
         const talentJob = allJobs.find(job => job.title === "Banco de Talentos");
@@ -151,6 +182,13 @@ const TalentBankManagement = () => {
                                 {uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                             </SelectContent>
                         </Select>
+                        <Button
+                            onClick={handleExportCSV}
+                            className="bg-cgb-primary hover:bg-cgb-primary-dark text-white"
+                        >
+                            <FileSpreadsheet className="w-4 h-4 mr-2" />
+                            Exportar CSV
+                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
