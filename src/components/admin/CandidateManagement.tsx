@@ -8,12 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Download, FileText, User, Mail, MapPin, Briefcase, Users, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Loader2, Search, Download, FileText, User, Mail, MapPin, Briefcase, Users, Trash2, FileSpreadsheet, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
 import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
+import { DialogContent, DialogTitle } from '@radix-ui/react-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useAllRejectionNotes } from '@/hooks/useAllRejectionNotes';
 
 const CandidateManagement = () => {
   const { user } = useAuth();
@@ -24,23 +29,58 @@ const CandidateManagement = () => {
   const createNote = useCreateCandidateNote();
   const deleteCandidate = useDeleteCandidate();
   const { toast } = useToast();
+  const { data: rejectionNotes = [] } = useAllRejectionNotes();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: 'all', jobId: 'all', state: 'all', cnh: 'all', vehicle: 'all',
   });
   const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
+  const [candidateToReject, setCandidateToReject] = useState<Candidate | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const talentBankJobId = useMemo(() => jobs.find(job => job.title === "Banco de Talentos")?.id, [jobs]);
 
-  const handleStatusChange = (candidateId: string, newStatus: SelectionStatus) => {
-    updateStatus.mutate({ id: candidateId, status: newStatus }, {
-      onSuccess: () => {
-        toast({ title: "Status atualizado!", description: `O status do candidato foi alterado para ${newStatus}.` });
-        if (user) createNote.mutate({ candidate_id: candidateId, author_id: user.id, note: `Status alterado para "${newStatus}"`, activity_type: 'Mudança de Status' });
-      },
-      onError: (err: any) => toast({ title: "Erro!", description: `Não foi possível atualizar o status: ${err.message}`, variant: "destructive" }),
-    });
+  const handleStatusChange = (candidate: Candidate, newStatus: SelectionStatus) => {
+    if (newStatus === 'Reprovado') {
+      setCandidateToReject(candidate);
+      setRejectionReason(''); // Limpa o motivo anterior
+    } else {
+      updateStatus.mutate({ id: candidate.id, status: newStatus }, {
+        onSuccess: () => {
+          toast({ title: "Status atualizado!", description: `O status do candidato foi alterado para ${newStatus}.` });
+          if (user) createNote.mutate({ candidate_id: candidate.id, author_id: user.id, note: `Status alterado para "${newStatus}"`, activity_type: 'Mudança de Status' });
+        },
+        onError: (err: any) => toast({ title: "Erro!", description: `Não foi possível atualizar o status: ${err.message}`, variant: "destructive" }),
+      });
+    }
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!candidateToReject || !rejectionReason.trim()) {
+      toast({ title: "Campo obrigatório", description: "Por favor, preencha o motivo da reprovação.", variant: "destructive" });
+      return;
+    }
+
+    const { id: candidateId } = candidateToReject;
+
+    try {
+      await updateStatus.mutateAsync({ id: candidateId, status: 'Reprovado' });
+      if (user) {
+        await createNote.mutateAsync({
+          candidate_id: candidateId,
+          author_id: user.id,
+          note: `Motivo da reprovação: ${rejectionReason}`,
+          activity_type: 'Reprovação'
+        });
+      }
+      toast({ title: "Candidato reprovado", description: "O status e a nota foram salvos com sucesso." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: `Não foi possível completar a ação: ${error.message}`, variant: "destructive" });
+    } finally {
+      setCandidateToReject(null);
+      setRejectionReason("");
+    }
   };
 
   const filteredCandidates = useMemo(() => {
@@ -73,38 +113,6 @@ const CandidateManagement = () => {
         return vehicleValue === filters.vehicle;
       });
   }, [candidates, searchTerm, filters, talentBankJobId, rhProfile]);
-
-  const handleExportCSV = () => {
-    const csvRows = [];
-    const headers = ['Nome', 'Email', 'Telefone', 'Vaga Aplicada', 'Status', 'Localização', 'Possui CNH', 'Tipo de Veículo', 'Link do Currículo'];
-    csvRows.push(headers.join(','));
-
-    for (const candidate of filteredCandidates) {
-      const row = [
-        `"${candidate.name || ''}"`,
-        `"${candidate.email || ''}"`,
-        `"${candidate.phone || ''}"`,
-        `"${candidate.job?.title || candidate.desiredJob || 'N/A'}"`,
-        `"${candidate.status || 'N/A'}"`,
-        `"${candidate.city || ''}, ${candidate.state || ''}"`,
-        `"${(candidate.cnh && candidate.cnh.toLowerCase() !== 'não possuo') ? 'Sim' : 'Não'}"`,
-        `"${candidate.vehicle || 'N/A'}"`,
-        `"${candidate.resume_file_url || ''}"`
-      ];
-      csvRows.push(row.join(','));
-    }
-
-    const csvString = csvRows.join('\n');
-    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'relatorio_candidatos.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const jobsForFilter = useMemo(() => jobs.filter(job => job.id !== talentBankJobId), [jobs, talentBankJobId]);
 
@@ -174,12 +182,6 @@ const CandidateManagement = () => {
             <Select value={filters.cnh} onValueChange={value => setFilters(prev => ({ ...prev, cnh: value }))}><SelectTrigger><span>Possui CNH?</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="sim">Sim</SelectItem><SelectItem value="não">Não</SelectItem></SelectContent></Select>
             <Select value={filters.vehicle} onValueChange={value => setFilters(prev => ({ ...prev, vehicle: value }))}><SelectTrigger><span>Tipo de Veículo</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="carro">Carro</SelectItem><SelectItem value="moto">Moto</SelectItem><SelectItem value="nao">Não possuo</SelectItem></SelectContent></Select>
           </div>
-          <div className="flex justify-end">
-            <Button onClick={handleExportCSV} className="bg-cgb-primary hover:bg-cgb-primary-dark text-white">
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Exportar para CSV
-            </Button>
-          </div>
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader><TableRow><TableHead>Candidato</TableHead><TableHead>Vaga Aplicada</TableHead><TableHead>Localização</TableHead><TableHead>Currículo</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
@@ -196,10 +198,35 @@ const CandidateManagement = () => {
                         <TableCell>{`${candidate.city || candidate.job?.city || 'Cidade não informada'}, ${candidate.state || candidate.job?.state || ''}`}</TableCell>
                         <TableCell><Button variant="outline" size="sm" asChild disabled={!candidate.resume_file_url}><a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer"><FileText className="w-4 h-4 mr-2" />Ver</a></Button></TableCell>
                         <TableCell>
-                          <Select value={currentStatus} onValueChange={(value) => handleStatusChange(candidate.id, value as SelectionStatus)} disabled={updateStatus.isPending}>
-                            <SelectTrigger className={`${statusColor} border-none font-semibold rounded-md text-xs h-auto py-1 px-2`}><SelectValue /></SelectTrigger>
-                            <SelectContent>{SELECTION_STATUSES.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Select value={currentStatus} onValueChange={(value) => handleStatusChange(candidate, value as SelectionStatus)} disabled={updateStatus.isPending}>
+                              <SelectTrigger className={`${statusColor} border-none font-semibold rounded-md text-xs h-auto py-1 px-2`}><SelectValue /></SelectTrigger>
+                              <SelectContent>{SELECTION_STATUSES.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
+                            </Select>
+                            {currentStatus === 'Reprovado' && (
+                              (() => {
+                                const note = rejectionNotes.find(n => n.candidate_id === candidate.id);
+                                if (!note) return null;
+                                return (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                                        <MessageSquare className="h-4 w-4 text-gray-500" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80">
+                                      <div className="space-y-2">
+                                        <h4 className="font-medium leading-none">Motivo da Reprovação</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {note.note}
+                                        </p>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                );
+                              })()
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" onClick={() => setCandidateToDelete(candidate)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
@@ -227,6 +254,35 @@ const CandidateManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!candidateToReject} onOpenChange={() => setCandidateToReject(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Motivo da Reprovação</DialogTitle>
+            <DialogDescription>
+              Descreva o motivo pelo qual o candidato "{candidateToReject?.name}" está sendo reprovado. A observação será salva no histórico.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Ex: Perfil técnico não alinhado com os requisitos da vaga..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCandidateToReject(null)}>Cancelar</Button>
+            <Button
+              onClick={handleConfirmRejection}
+              disabled={!rejectionReason.trim() || updateStatus.isPending || createNote.isPending}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {(updateStatus.isPending || createNote.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Reprovação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

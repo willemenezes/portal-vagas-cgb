@@ -7,12 +7,14 @@ export interface Job {
   department: string;
   city: string;
   state: string;
-  type: 'CLT' | 'Estágio' | 'Aprendiz' | 'Terceirizado';
+  type: 'CLT' | 'Estágio' | 'Aprendiz' | 'Terceirizado' | 'PJ' | 'Temporário';
   description: string;
   requirements: string[];
   benefits: string[];
   workload: string;
-  status: 'draft' | 'active' | 'closed';
+  status: 'draft' | 'active' | 'closed' | 'inactive';
+  approval_status?: 'rascunho' | 'aprovacao_pendente' | 'ativo' | 'rejeitado' | 'fechado' | 'draft' | 'pending_approval' | 'active' | 'rejected' | 'closed';
+  rejection_reason?: string | null;
   created_at: string;
   updated_at: string;
   applicants?: number;
@@ -177,6 +179,48 @@ export const useJobById = (id: string) => {
   });
 };
 
+export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
+  return useQuery<Job[], Error>({
+    queryKey: ['pendingJobs', rhProfile?.user_id],
+    queryFn: async () => {
+      // Se o usuário é um gerente, mas não tem regiões atribuídas, não retorna nada.
+      const isManagerWithNoRegions = 
+        rhProfile?.role === 'manager' &&
+        (!rhProfile.assigned_states || rhProfile.assigned_states.length === 0) &&
+        (!rhProfile.assigned_cities || rhProfile.assigned_cities.length === 0);
+
+      if (isManagerWithNoRegions) {
+        return [];
+      }
+
+      let query = supabase
+        .from('jobs')
+        .select('*')
+        .eq('approval_status', 'pending_approval');
+
+      // Aplica filtro de região para gerentes (agora mais seguro)
+      if (rhProfile && rhProfile.role === 'manager') {
+        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+          query = query.in('state', rhProfile.assigned_states);
+        } else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+          query = query.in('city', rhProfile.assigned_cities);
+        }
+      }
+
+      query = query.order('created_at', { ascending: false });
+      
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao buscar vagas pendentes:', error);
+        throw error;
+      }
+      return data || [];
+    },
+    enabled: !!rhProfile,
+  });
+};
+
 export const useJobsRobust = () => {
   // ... (código)
 };
@@ -239,6 +283,7 @@ export const useUpdateJob = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingJobs'] });
     },
   });
 };

@@ -7,11 +7,11 @@ Deno.serve(async (req) => {
     }
 
     try {
-        const projectUrl = Deno.env.get('PROJECT_URL');
-        const serviceKey = Deno.env.get('SERVICE_KEY');
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-        if (!projectUrl || !serviceKey) {
-            console.error('Secrets não carregados: PROJECT_URL ou SERVICE_KEY estão faltando.');
+        if (!supabaseUrl || !serviceKey) {
+            console.error('Secrets não carregados: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY estão faltando.');
             return new Response(JSON.stringify({ error: 'Configuração do servidor incompleta: secrets faltando.' }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
             });
         }
 
-        const supabaseAdmin = createClient(projectUrl, serviceKey);
+        const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
         const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
             userId,

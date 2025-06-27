@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useRHProfile } from '@/hooks/useRH';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -16,12 +17,15 @@ export const ProtectedRoute = ({
     requireAdmin = false,
     redirectTo = '/login'
 }: ProtectedRouteProps) => {
-    const { user, loading, hasPermission } = useAuth();
+    const { user, loading } = useAuth();
+    const { data: rhProfile, isLoading: isLoadingProfile } = useRHProfile(user?.id);
     const navigate = useNavigate();
     const location = useLocation();
 
+    const isAdmin = rhProfile?.role === 'admin';
+
     useEffect(() => {
-        if (loading) return;
+        if (loading || isLoadingProfile) return;
 
         if (!requireAuth) return;
 
@@ -34,15 +38,15 @@ export const ProtectedRoute = ({
             return;
         }
 
-        if (requireAdmin && !hasPermission('admin')) {
+        if (requireAdmin && !isAdmin) {
             navigate('/', { replace: true });
             return;
         }
 
-    }, [user, loading, requireAuth, requireAdmin, navigate, redirectTo, location, hasPermission]);
+    }, [user, loading, isLoadingProfile, requireAuth, requireAdmin, navigate, redirectTo, location, isAdmin]);
 
     // Mostrar loading enquanto verifica autenticação
-    if (loading) {
+    if (loading || isLoadingProfile) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
                 <div className="text-center">
@@ -64,7 +68,7 @@ export const ProtectedRoute = ({
     }
 
     // Se requer admin e usuário não é admin, não renderizar
-    if (requireAdmin && !hasPermission('admin')) {
+    if (requireAdmin && !isAdmin) {
         return null;
     }
 

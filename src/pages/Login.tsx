@@ -12,7 +12,7 @@ import { Loader2, ArrowLeft, Eye, EyeOff, Shield, Zap, AlertTriangle } from "luc
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, loading, error: authError } = useAuth();
+  const { signIn, user, loading } = useAuth();
   const { toast } = useToast();
   const rateLimit = useRateLimit(5, 15 * 60 * 1000); // 5 tentativas, 15 minutos de bloqueio
 

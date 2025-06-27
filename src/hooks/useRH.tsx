@@ -10,12 +10,12 @@ export interface RHUser {
     email: string;
     assigned_states?: string[] | null;
     assigned_cities?: string[] | null;
-    is_admin: boolean;
+    role: 'admin' | 'recruiter' | 'manager' | 'juridico';
     created_at: string;
     updated_at: string;
 }
 
-export type NewRHUser = Omit<RHUser, 'id' | 'created_at' | 'updated_at'> & {
+export type NewRHUser = Omit<RHUser, 'id' | 'created_at' | 'updated_at' | 'is_admin'> & {
     user_id?: string;
     password?: string;
 };
@@ -72,16 +72,20 @@ export const useCreateRHUser = () => {
 
     return useMutation({
         mutationFn: async (newUser: NewRHUser & { password?: string }) => {
-            const { email, password, full_name, is_admin, assigned_states, assigned_cities } = newUser;
+            const { email, password, full_name, role, assigned_states, assigned_cities } = newUser;
 
             const { data, error } = await supabase.functions.invoke('create-user-direct', {
-                body: { email, password, fullName: full_name, isAdmin: is_admin, assignedStates: assigned_states, assignedCities: assigned_cities },
+                body: { email, password, fullName: full_name, role, assignedStates: assigned_states, assignedCities: assigned_cities },
             });
 
             if (error) throw error;
             if (data.error) throw new Error(data.error);
 
-            return { ...data, password: data.generatedPassword || password };
+            return {
+                email: data.user.email,
+                fullName: data.user.full_name,
+                password: data.generatedPassword
+            };
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['rh_users'] });

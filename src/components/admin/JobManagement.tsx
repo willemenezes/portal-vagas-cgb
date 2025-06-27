@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare
 } from "lucide-react";
 import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,14 @@ import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+// Mapeamento de status para aparência do Badge (chaves em inglês, texto em português)
+const approvalStatusConfig = {
+  draft: { text: "Rascunho", variant: "secondary" as const },
+  pending_approval: { text: "Pendente", variant: "warning" as const },
+  active: { text: "Ativa", variant: "success" as const },
+  rejected: { text: "Rejeitada", variant: "destructive" as const },
+  closed: { text: "Fechada", variant: "outline" as const },
+};
 
 const JobManagement = () => {
   // Hooks de autenticação e perfil
@@ -191,7 +199,9 @@ const JobManagement = () => {
     }
     setFormData({
       id: undefined, title: "", department: "", city: defaultCity, state: defaultState, type: "CLT",
-      description: "", requirements: [], benefits: [], workload: "40h semanais", status: "draft",
+      description: "", requirements: [], benefits: [], workload: "40h semanais",
+      status: "draft",
+      approval_status: "draft", // Alterado para o valor em inglês
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -200,15 +210,23 @@ const JobManagement = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (submissionStatus: 'rascunho' | 'aprovacao_pendente') => {
     if (!formData) return;
     try {
       if (!user) throw new Error("Você precisa estar logado para salvar.");
+
+      const statusMap = {
+        rascunho: 'draft',
+        aprovacao_pendente: 'pending_approval'
+      };
+      const statusToSend = statusMap[submissionStatus];
 
       const jobToSave = {
         ...formData,
         requirements: requirementsText.split('\n').filter(r => r.trim() !== ''),
         benefits: benefitsText.split('\n').filter(b => b.trim() !== ''),
+        approval_status: statusToSend, // Define o status em inglês para o DB
+        status: 'draft', // Manter como rascunho até ser ativo
       };
 
       let jobDataClean: any = { ...jobToSave };
@@ -302,55 +320,80 @@ const JobManagement = () => {
         {isLoading ? (
           <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Vaga</TableHead>
-                <TableHead>Departamento</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Candidatos</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {jobs.map((job) => (
-                <TableRow key={job.id}>
-                  <TableCell>{job.title}</TableCell>
-                  <TableCell>{job.department}</TableCell>
-                  <TableCell>{job.city}, {job.state}</TableCell>
-                  <TableCell>{job.applicants || 0}</TableCell>
-                  <TableCell><Badge variant={job.status === 'active' ? 'default' : 'secondary'}>{job.status === 'active' ? 'Ativa' : 'Inativa'}</Badge></TableCell>
-                  <TableCell className="text-right">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => { /* Implementar visualização */ }}><Eye className="w-4 h-4" /></Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Ver Candidatos</p></TooltipContent>
-                      </Tooltip>
-                      {job.title !== 'Banco de Talentos' && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Editar Vaga</p></TooltipContent>
-                        </Tooltip>
-                      )}
-                      {job.title !== 'Banco de Talentos' && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id!)}><Trash2 className="w-4 h-4" /></Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Excluir Vaga</p></TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TooltipProvider>
-                  </TableCell>
+          <TooltipProvider>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vaga</TableHead>
+                  <TableHead>Departamento</TableHead>
+                  <TableHead>Local</TableHead>
+                  <TableHead>Candidatos</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {jobs.map((job) => {
+                  const statusKey = (job.approval_status || 'draft') as keyof typeof approvalStatusConfig;
+                  const statusInfo = approvalStatusConfig[statusKey] || { text: job.approval_status || job.status || 'N/D', variant: 'secondary' as const };
+                  return (
+                    <TableRow key={job.id}>
+                      <TableCell>{job.title}</TableCell>
+                      <TableCell>{job.department}</TableCell>
+                      <TableCell>{job.city}, {job.state}</TableCell>
+                      <TableCell>{job.applicants || 0}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+                          {statusKey === 'rejected' && job.rejection_reason && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                  <MessageSquare className="w-4 h-4 text-gray-500" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80">
+                                <div className="space-y-2">
+                                  <h4 className="font-medium leading-none">Motivo da Rejeição</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {job.rejection_reason}
+                                  </p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => { /* Implementar visualização */ }}><Eye className="w-4 h-4" /></Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Ver Candidatos</p></TooltipContent>
+                        </Tooltip>
+                        {job.title !== 'Banco de Talentos' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Editar Vaga</p></TooltipContent>
+                          </Tooltip>
+                        )}
+                        {job.title !== 'Banco de Talentos' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id!)}><Trash2 className="w-4 h-4" /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Excluir Vaga</p></TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TooltipProvider>
         )}
       </CardContent>
     </Card>
@@ -365,7 +408,7 @@ interface JobFormProps {
   onSelectChange: (name: string, value: any) => void;
   onRequirementsChange: (value: string) => void;
   onBenefitsChange: (value: string) => void;
-  onSave: () => Promise<void>;
+  onSave: (submissionStatus: 'rascunho' | 'aprovacao_pendente') => Promise<void>;
   onCancel: () => void;
   departments: string[];
   rhProfile: RHUser | null | undefined;
@@ -387,7 +430,7 @@ const JobForm = ({
   onFormChange, onSelectChange, onRequirementsChange, onBenefitsChange,
   onSave, onCancel, departments, rhProfile
 }: JobFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<'rascunho' | 'aprovacao_pendente' | false>(false);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loadingStates, setLoadingStates] = useState(true);
@@ -446,19 +489,18 @@ const JobForm = ({
     onSelectChange("city", ""); // Reseta a cidade quando o estado muda
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleSubmit = async (submissionStatus: 'rascunho' | 'aprovacao_pendente') => {
+    setIsSubmitting(submissionStatus);
     try {
-      await onSave();
+      await onSave(submissionStatus);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-1">
-      <fieldset disabled={isSubmitting}>
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-6 p-1">
+      <fieldset disabled={!!isSubmitting}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="title">Título da Vaga</Label>
@@ -547,14 +589,7 @@ const JobForm = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select name="status" value={job.status} onValueChange={(value) => onSelectChange("status", value)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Ativa</SelectItem>
-                <SelectItem value="inactive">Inativa</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* O campo de status antigo foi removido */}
           </div>
         </div>
         <div className="space-y-2">
@@ -576,9 +611,14 @@ const JobForm = ({
           <Input name="workload" value={job.workload} onChange={onFormChange} />
         </div>
         <div className="flex justify-end gap-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Salvar Vaga"}
+          <Button type="button" variant="outline" onClick={onCancel} disabled={!!isSubmitting}>Cancelar</Button>
+          <Button type="button" variant="secondary" onClick={() => handleSubmit('rascunho')} disabled={!!isSubmitting}>
+            {isSubmitting === 'rascunho' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Salvar Rascunho
+          </Button>
+          <Button type="button" onClick={() => handleSubmit('aprovacao_pendente')} disabled={!!isSubmitting}>
+            {isSubmitting === 'aprovacao_pendente' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Enviar para Aprovação
           </Button>
         </div>
       </fieldset>

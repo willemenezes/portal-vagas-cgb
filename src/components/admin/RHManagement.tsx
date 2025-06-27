@@ -86,11 +86,12 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
     onOpenChange: (open: boolean) => void,
     isLoading?: boolean
 }) => {
+    const { toast } = useToast();
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [role, setRole] = useState<'admin' | 'recruiter' | 'manager' | 'juridico'>('recruiter');
     const [selectedStates, setSelectedStates] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
@@ -104,13 +105,12 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
     useEffect(() => {
         setFullName(userToEdit?.full_name || '');
         setEmail(userToEdit?.email || '');
-        setIsAdmin(userToEdit?.is_admin || false);
+        setRole(userToEdit?.role || 'recruiter');
         setSelectedStates(userToEdit?.assigned_states || []);
         setSelectedCities(userToEdit?.assigned_cities || []);
         setPassword('');
         setConfirmPassword('');
     }, [userToEdit, isOpen]);
-
 
     useEffect(() => {
         const fetchStates = async () => {
@@ -125,10 +125,10 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                 setLoadingIbgeStates(false);
             }
         };
-        if (isOpen && !isAdmin) {
+        if (isOpen && (role === 'recruiter' || role === 'manager')) {
             fetchStates();
         }
-    }, [isOpen, isAdmin]);
+    }, [isOpen, role]);
 
     const handleStateChange = (state: string, checked: boolean) => {
         const newSelectedStates = checked ? [...selectedStates, state] : selectedStates.filter(s => s !== state);
@@ -156,36 +156,106 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
         }
     };
 
-
     const handleCityChange = (city: string, checked: boolean) => {
         setSelectedCities(checked ? [...selectedCities, city] : selectedCities.filter(c => c !== city));
     };
 
+    // Função para verificar se a senha atende a todos os critérios
+    const isPasswordValid = () => {
+        if (userToEdit) return true; // Para edição, não validamos senha
+
+        return password.length >= 8 &&
+            /(?=.*[a-z])/.test(password) &&
+            /(?=.*[A-Z])/.test(password) &&
+            /(?=.*\d)/.test(password) &&
+            /(?=.*[@$!%*?&])/.test(password) &&
+            password === confirmPassword;
+    };
+
     const handleSubmit = () => {
-        console.log('🔥 handleSubmit chamado no AddUserDialog');
+        const hasRegionalAccess = role === 'recruiter' | role === 'manager';
+        // A role 'juridico' não tem acesso regional
+        const isJuridico = role === 'juridico';
 
-        console.log('📋 Dados atuais do formulário:', {
-            fullName,
-            email,
-            password,
-            confirmPassword,
-            isAdmin,
-            selectedStates,
-            selectedCities,
-            userToEdit
-        });
+        // 1. Validação de Região Obrigatória
+        if (hasRegionalAccess && selectedStates.length === 0 && selectedCities.length === 0) {
+            toast({
+                title: "Seleção Obrigatória",
+                description: "Para este nível de acesso, você deve selecionar pelo menos um estado.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-        // Validações para novos usuários
+        // 2. Validações de Senha RIGOROSAS para novos usuários
         if (!userToEdit) {
-            console.log('🔍 Validando novo usuário...');
-            if (!password || password.length < 6) {
-                console.log('❌ Senha inválida');
-                alert('A senha deve ter pelo menos 6 caracteres.');
+            // Validação de senha vazia
+            if (!password) {
+                toast({
+                    title: "Senha Obrigatória",
+                    description: "A senha não pode estar em branco.",
+                    variant: "destructive"
+                });
                 return;
             }
+
+            // Validação de comprimento mínimo
+            if (password.length < 8) {
+                toast({
+                    title: "Senha Muito Curta",
+                    description: "A senha deve ter pelo menos 8 caracteres.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Validação de letra minúscula
+            if (!/(?=.*[a-z])/.test(password)) {
+                toast({
+                    title: "Senha Inválida",
+                    description: "A senha deve conter pelo menos uma letra minúscula.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Validação de letra maiúscula
+            if (!/(?=.*[A-Z])/.test(password)) {
+                toast({
+                    title: "Senha Inválida",
+                    description: "A senha deve conter pelo menos uma letra maiúscula.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Validação de número
+            if (!/(?=.*\d)/.test(password)) {
+                toast({
+                    title: "Senha Inválida",
+                    description: "A senha deve conter pelo menos um número.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Validação de caractere especial
+            if (!/(?=.*[@$!%*?&])/.test(password)) {
+                toast({
+                    title: "Senha Inválida",
+                    description: "A senha deve conter pelo menos um caractere especial (@$!%*?&).",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Validação de confirmação de senha
             if (password !== confirmPassword) {
-                console.log('❌ Senhas não coincidem');
-                alert('As senhas não coincidem.');
+                toast({
+                    title: "Senhas Não Coincidem",
+                    description: "As senhas digitadas não coincidem.",
+                    variant: "destructive"
+                });
                 return;
             }
         }
@@ -196,10 +266,9 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
             ...userToEdit,
             full_name: fullName,
             email,
-            is_admin: isAdmin,
-            assigned_states: isAdmin ? null : selectedStates,
-            assigned_cities: isAdmin ? null : selectedCities,
-            // Incluir senha apenas para novos usuários
+            role,
+            assigned_states: hasRegionalAccess ? selectedStates : null,
+            assigned_cities: hasRegionalAccess ? selectedCities : null,
             ...((!userToEdit && password) && { password }),
         };
 
@@ -207,9 +276,9 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
             const newUser: NewRHUser & { password?: string } = {
                 email,
                 full_name: fullName,
-                is_admin: isAdmin,
-                assigned_states: isAdmin ? null : selectedStates,
-                assigned_cities: isAdmin ? null : selectedCities,
+                role,
+                assigned_states: hasRegionalAccess ? selectedStates : null,
+                assigned_cities: hasRegionalAccess ? selectedCities : null,
                 password,
             };
             console.log('🚀 Chamando onSave com novo usuário:', newUser);
@@ -237,13 +306,12 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
             setEmail('');
             setPassword('');
             setConfirmPassword('');
-            setIsAdmin(false);
+            setRole('recruiter');
             setSelectedStates([]);
             setSelectedCities([]);
         }
         onOpenChange(open);
     }
-
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -254,7 +322,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{userToEdit ? 'Editar Membro da Equipe' : 'Adicionar Novo Membro à Equipe de RH'}</DialogTitle>
+                    <DialogTitle>{userToEdit ? 'Editar Membro' : 'Adicionar Novo Membro'}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -271,42 +339,76 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                         <>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="password" className="text-right">Senha</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    className="col-span-3"
-                                    placeholder="Mínimo 6 caracteres"
-                                />
+                                <div className="col-span-3">
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        className="mb-2"
+                                        placeholder="Digite uma senha segura"
+                                    />
+                                    {/* Indicadores de critérios de senha */}
+                                    <div className="text-xs space-y-1">
+                                        <div className={`flex items-center gap-2 ${password.length >= 8 ? 'text-green-600' : 'text-red-500'}`}>
+                                            <span>{password.length >= 8 ? '✓' : '✗'}</span>
+                                            <span>Pelo menos 8 caracteres</span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${/(?=.*[a-z])/.test(password) ? 'text-green-600' : 'text-red-500'}`}>
+                                            <span>{/(?=.*[a-z])/.test(password) ? '✓' : '✗'}</span>
+                                            <span>Pelo menos uma letra minúscula</span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${/(?=.*[A-Z])/.test(password) ? 'text-green-600' : 'text-red-500'}`}>
+                                            <span>{/(?=.*[A-Z])/.test(password) ? '✓' : '✗'}</span>
+                                            <span>Pelo menos uma letra maiúscula</span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${/(?=.*\d)/.test(password) ? 'text-green-600' : 'text-red-500'}`}>
+                                            <span>{/(?=.*\d)/.test(password) ? '✓' : '✗'}</span>
+                                            <span>Pelo menos um número</span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${/(?=.*[@$!%*?&])/.test(password) ? 'text-green-600' : 'text-red-500'}`}>
+                                            <span>{/(?=.*[@$!%*?&])/.test(password) ? '✓' : '✗'}</span>
+                                            <span>Pelo menos um caractere especial (@$!%*?&)</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="confirmPassword" className="text-right">Confirmar Senha</Label>
-                                <Input
-                                    id="confirmPassword"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={e => setConfirmPassword(e.target.value)}
-                                    className="col-span-3"
-                                    placeholder="Digite a senha novamente"
-                                />
+                                <div className="col-span-3">
+                                    <Input
+                                        id="confirmPassword"
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        placeholder="Digite a senha novamente"
+                                    />
+                                    {confirmPassword && (
+                                        <div className={`text-xs mt-1 flex items-center gap-2 ${password === confirmPassword ? 'text-green-600' : 'text-red-500'}`}>
+                                            <span>{password === confirmPassword ? '✓' : '✗'}</span>
+                                            <span>{password === confirmPassword ? 'Senhas coincidem' : 'Senhas não coincidem'}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </>
                     )}
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="role" className="text-right">Nível de Acesso</Label>
-                        <Select onValueChange={(value) => setIsAdmin(value === 'admin')} defaultValue={isAdmin ? 'admin' : 'recruiter'}>
+                        <Select onValueChange={(value: 'admin' | 'recruiter' | 'manager' | 'juridico') => setRole(value)} value={role}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Selecione o nível" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="admin">Admin (Acesso Total)</SelectItem>
-                                <SelectItem value="recruiter">Recrutador (Acesso Restrito)</SelectItem>
+                                <SelectItem value="recruiter">Recrutador (Acesso por Região)</SelectItem>
+                                <SelectItem value="manager">Gerência (Aprovações por Região)</SelectItem>
+                                <SelectItem value="juridico">Jurídico (Validação de Candidatos)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    {!isAdmin && (
+                    {(role === 'recruiter' || role === 'manager') && (
                         <div className="grid grid-cols-4 items-start gap-4">
                             <Label className="text-right pt-2">Regiões de Acesso</Label>
                             <div className="col-span-3 border rounded-md p-4 max-h-60 overflow-y-auto">
@@ -345,7 +447,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                 <div className="flex gap-2 pt-4">
                     <Button
                         type="button"
-                        disabled={isLoading}
+                        disabled={isLoading || !isPasswordValid()}
                         className="flex-1"
                         onClick={handleSubmit}
                     >
@@ -358,6 +460,11 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                             'Salvar'
                         )}
                     </Button>
+                    {!userToEdit && !isPasswordValid() && (
+                        <div className="text-xs text-red-500 mt-1">
+                            Complete todos os critérios de senha para continuar
+                        </div>
+                    )}
                     {isLoading && (
                         <Button
                             type="button"
@@ -422,11 +529,56 @@ const RHManagementPanel = () => {
     const handleResetPassword = () => {
         if (!userToResetPassword) return;
 
-        // Validações
-        if (!newPassword || newPassword.length < 6) {
+        // Validações RIGOROSAS de senha para reset
+        if (!newPassword) {
             toast({
-                title: "Erro",
-                description: "A nova senha deve ter pelo menos 6 caracteres.",
+                title: "Senha Obrigatória",
+                description: "A senha não pode estar em branco.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            toast({
+                title: "Senha Muito Curta",
+                description: "A senha deve ter pelo menos 8 caracteres.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!/(?=.*[a-z])/.test(newPassword)) {
+            toast({
+                title: "Senha Inválida",
+                description: "A senha deve conter pelo menos uma letra minúscula.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!/(?=.*[A-Z])/.test(newPassword)) {
+            toast({
+                title: "Senha Inválida",
+                description: "A senha deve conter pelo menos uma letra maiúscula.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!/(?=.*\d)/.test(newPassword)) {
+            toast({
+                title: "Senha Inválida",
+                description: "A senha deve conter pelo menos um número.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!/(?=.*[@$!%*?&])/.test(newPassword)) {
+            toast({
+                title: "Senha Inválida",
+                description: "A senha deve conter pelo menos um caractere especial (@$!%*?&).",
                 variant: "destructive"
             });
             return;
@@ -434,8 +586,8 @@ const RHManagementPanel = () => {
 
         if (newPassword !== confirmNewPassword) {
             toast({
-                title: "Erro",
-                description: "As senhas não coincidem.",
+                title: "Senhas Não Coincidem",
+                description: "As senhas digitadas não coincidem.",
                 variant: "destructive"
             });
             return;
@@ -486,18 +638,25 @@ const RHManagementPanel = () => {
     };
 
     const handleSaveUser = (user: NewRHUser | RHUser) => {
-        console.log('📝 handleSaveUser chamado com:', user);
-        console.log('🔄 Estado da mutation createRHUser:', {
-            isPending: createRHUser.isPending,
-            isError: createRHUser.isError,
-            isSuccess: createRHUser.isSuccess,
-            error: createRHUser.error
-        });
+        const mutation = 'id' in user && user.id ? updateRHUser : createRHUser;
+
+        // Adiciona um timeout para a operação
+        const timeoutId = setTimeout(() => {
+            if (mutation.isPending) {
+                mutation.reset(); // Reseta o estado da mutação
+                toast({
+                    title: "Tempo Esgotado",
+                    description: "A operação demorou demais para responder. Verifique o console de funções do Supabase para erros.",
+                    variant: "destructive",
+                });
+                setIsDialogOpen(false); // Fecha o modal para evitar travamento
+            }
+        }, 30000);
 
         if ('id' in user && user.id) {
-            console.log('✏️ Editando usuário existente:', user.id);
             updateRHUser.mutate(user, {
                 onSuccess: () => {
+                    clearTimeout(timeoutId);
                     console.log('✅ Usuário atualizado com sucesso');
                     toast({ title: "Sucesso!", description: "Membro da equipe atualizado." });
                     refetch();
@@ -505,31 +664,21 @@ const RHManagementPanel = () => {
                     setUserToEdit(null);
                 },
                 onError: (error) => {
+                    clearTimeout(timeoutId);
                     console.error('❌ Erro ao atualizar usuário:', error);
                     toast({ title: "Erro ao atualizar membro", description: error.message, variant: "destructive" });
                 },
             });
         } else {
-            console.log('👤 Criando novo usuário');
-            const newUserData = user as NewRHUser & { password?: string };
-            console.log('📊 Dados do novo usuário:', newUserData);
-
-            if (createRHUser.isPending) {
-                console.warn('⚠️ Mutation já está pendente, ignorando nova tentativa');
-                return;
-            }
-
-            console.log('🚀 Iniciando mutação createRHUser...');
-
-            createRHUser.mutate(newUserData, {
+            createRHUser.mutate(user as NewRHUser, {
                 onSuccess: (data) => {
-                    console.log('✅ Usuário criado com sucesso em handleSaveUser:', data);
-                    // Mostrar credenciais criadas
+                    clearTimeout(timeoutId);
+
                     if (data.password) {
                         setNewUserCredentials({
                             email: data.email,
                             password: data.password,
-                            name: data.full_name
+                            name: data.fullName
                         });
                         setIsCredentialsDialogOpen(true);
                     }
@@ -539,6 +688,7 @@ const RHManagementPanel = () => {
                     setIsDialogOpen(false);
                 },
                 onError: (error) => {
+                    clearTimeout(timeoutId);
                     console.error('❌ Erro em handleSaveUser:', error);
                     console.error('❌ Stack trace:', error.stack);
 
@@ -713,6 +863,12 @@ const RHManagementPanel = () => {
                         <TableBody>
                             {rhUsers.map((rhUser) => {
                                 const isSelf = currentUser?.id === rhUser.user_id;
+                                const roleTextMap = {
+                                    admin: 'Admin',
+                                    recruiter: 'Recrutador',
+                                    manager: 'Gerência',
+                                    juridico: 'Jurídico'
+                                };
                                 return (
                                     <TableRow key={rhUser.id}>
                                         <TableCell className="font-medium">
@@ -726,14 +882,12 @@ const RHManagementPanel = () => {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={rhUser.is_admin ? "default" : "secondary"}>
-                                                {rhUser.is_admin ? "Admin" : "Recrutador"}
+                                            <Badge variant={rhUser.role === 'admin' ? "default" : "secondary"}>
+                                                {roleTextMap[rhUser.role] || 'N/D'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {rhUser.is_admin ? (
-                                                <span className="text-blue-600 font-medium">Acesso total</span>
-                                            ) : (
+                                            {(rhUser.role === 'recruiter' || rhUser.role === 'manager') ? (
                                                 <div className="space-y-1">
                                                     {rhUser.assigned_states && rhUser.assigned_states.length > 0 && (
                                                         <div>
@@ -746,6 +900,8 @@ const RHManagementPanel = () => {
                                                         </div>
                                                     )}
                                                 </div>
+                                            ) : (
+                                                <span className="text-blue-600 font-medium">Acesso total</span>
                                             )}
                                         </TableCell>
                                         <TableCell>

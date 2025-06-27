@@ -34,35 +34,6 @@ const HiredManagement = () => {
             });
     }, [candidates, searchTerm, filters]);
 
-    const handleExportCSV = () => {
-        const csvRows = [];
-        const headers = ['Nome', 'Email', 'Telefone', 'Vaga Contratada', 'Data da Aprovação', 'Link do Currículo'];
-        csvRows.push(headers.join(','));
-
-        for (const candidate of hiredCandidates) {
-            const row = [
-                `"${candidate.name || ''}"`,
-                `"${candidate.email || ''}"`,
-                `"${candidate.phone || ''}"`,
-                `"${candidate.job?.title || 'N/A'}"`,
-                `"${format(new Date(candidate.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}"`,
-                `"${candidate.resume_file_url || ''}"`
-            ];
-            csvRows.push(row.join(','));
-        }
-
-        const csvString = csvRows.join('\n');
-        const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'relatorio_contratados.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
     const uniqueStates = useMemo(() => {
         const approvedCandidates = candidates.filter(c => c.status === 'Aprovado');
         return [...new Set(approvedCandidates.map(c => c.state).filter(Boolean))];
@@ -113,13 +84,6 @@ const HiredManagement = () => {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Button
-                        onClick={handleExportCSV}
-                        className="bg-cgb-primary hover:bg-cgb-primary-dark text-white w-full md:w-auto"
-                    >
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                        Exportar CSV
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent>

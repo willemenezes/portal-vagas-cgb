@@ -41,7 +41,9 @@ import {
   Timer,
   Trophy,
   CheckCircle,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ThumbsUp,
+  ThumbsDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,7 +52,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, addDays } from "date-fns";
+import { format, addDays, subMonths } from "date-fns";
+import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -116,10 +119,19 @@ interface AnalyticsStats {
   hiresThisMonth: number;
 }
 
+interface MonthlyHireData {
+  month: string;
+  contratacoes: number;
+}
+
+interface JobApprovalStats {
+  approved: number;
+  rejected: number;
+}
+
 const Dashboard = () => {
-  // Hooks de autenticação e perfil
   const { user } = useAuth();
-  const { data: rhProfile } = useRHProfile(user?.id);
+  const { data: rhProfile, isLoading: isProfileLoading } = useRHProfile(user?.id);
 
   // Estados para os dados do dashboard
   const [loading, setLoading] = useState(true);
@@ -135,14 +147,19 @@ const Dashboard = () => {
   const [topCities, setTopCities] = useState<CityData[]>([]);
   const [analyticsStats, setAnalyticsStats] = useState<AnalyticsStats>({ avgTimeToHire: 0, hiresThisMonth: 0 });
   const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
+  const [monthlyHires, setMonthlyHires] = useState<MonthlyHireData[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
+    from: addDays(new Date(), -180),
     to: new Date(),
   });
+  const [jobStats, setJobStats] = useState<JobApprovalStats>({ approved: 0, rejected: 0 });
 
-  // Carregar dados ao montar o componente ou quando os filtros mudam
   useEffect(() => {
     let isMounted = true;
+
+    if (isProfileLoading || !rhProfile) {
+      return;
+    }
 
     const fetchDashboardData = async (dateRange?: DateRange) => {
       try {
@@ -260,6 +277,17 @@ const Dashboard = () => {
             fill: cityColors[index]
           }));
 
+        // Busca de todas as vagas para estatísticas
+        const { data: allJobsData, error: allJobsError } = await supabase.from('jobs').select('approval_status');
+        if (!isMounted) return;
+        if (allJobsError) throw allJobsError;
+
+        const approvedJobs = allJobsData?.filter(j => j.approval_status === 'active').length || 0;
+        const rejectedJobs = allJobsData?.filter(j => j.approval_status === 'rejected').length || 0;
+        if (isMounted) {
+          setJobStats({ approved: approvedJobs, rejected: rejectedJobs });
+        }
+
         if (isMounted) {
           setStats({
             totalCandidates,
@@ -360,9 +388,37 @@ const Dashboard = () => {
           fill: funnelColors[index],
         })).filter(d => d.value > 0);
 
+        const hiresByMonth: Record<string, number> = {};
+        const sixMonthsAgo = subMonths(new Date(), 5);
+        sixMonthsAgo.setDate(1);
+
+        approvedCandidates.forEach(c => {
+          const approvalNote = safeNotes.find(n => n.candidate_id === c.id && n.note && n.note.includes('Aprovado'));
+          if (approvalNote) {
+            const approvalDate = new Date(approvalNote.created_at);
+            if (approvalDate >= sixMonthsAgo) {
+              const month = format(approvalDate, 'MMM/yy', { locale: ptBR });
+              hiresByMonth[month] = (hiresByMonth[month] || 0) + 1;
+            }
+          }
+        });
+
+        const last6Months: string[] = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          last6Months.push(format(d, 'MMM/yy', { locale: ptBR }));
+        }
+
+        const monthlyHiresData = last6Months.map(month => ({
+          month,
+          contratacoes: hiresByMonth[month] || 0,
+        }));
+
         if (isMounted) {
           setAnalyticsStats({ avgTimeToHire, hiresThisMonth });
           setFunnelData(funnelDataResult);
+          setMonthlyHires(monthlyHiresData);
         }
 
       } catch (error) {
@@ -376,7 +432,7 @@ const Dashboard = () => {
     return () => {
       isMounted = false;
     };
-  }, [rhProfile, dateRange]);
+  }, [rhProfile, dateRange, isProfileLoading]);
 
   // Função para obter a data atual formatada
   const getCurrentDate = () => {
@@ -384,7 +440,7 @@ const Dashboard = () => {
     return now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
-  if (loading) {
+  if (loading || isProfileLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-cgb-primary" />
@@ -393,6 +449,7 @@ const Dashboard = () => {
     );
   }
 
+  // Renderização padrão para Admin e Recrutador
   return (
     <div className="space-y-8">
       {/* Header do Dashboard */}
@@ -527,67 +584,62 @@ const Dashboard = () => {
             <p className="text-xs text-teal-800/80">Novos talentos aprovados</p>
           </CardContent>
         </Card>
+        {/* Card de Vagas Aprovadas */}
+        <Card className="bg-cyan-100 border-cyan-200 text-cyan-900 transition-all hover:shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Vagas Aprovadas</CardTitle>
+            <ThumbsUp className="w-4 h-4 text-cyan-700" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{jobStats.approved}</div>
+            <p className="text-xs text-cyan-800/80">Requisições de vagas aceitas</p>
+          </CardContent>
+        </Card>
+        {/* Card de Vagas Rejeitadas */}
+        <Card className="bg-rose-100 border-rose-200 text-rose-900 transition-all hover:shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Vagas Rejeitadas</CardTitle>
+            <ThumbsDown className="w-4 h-4 text-rose-700" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{jobStats.rejected}</div>
+            <p className="text-xs text-rose-800/80">Requisições de vagas devolvidas</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Gráficos com dados reais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Gráfico de Cidades */}
-        <ErrorBoundary fallbackMessage="Não foi possível carregar o gráfico de cidades.">
+        {/* Gráfico de Contratações Mensais (Substituindo o de Cidades) */}
+        <ErrorBoundary fallbackMessage="Não foi possível carregar o gráfico de contratações.">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-cgb-primary" />
-                Top 5 Cidades
+                <BarChart2 className="w-5 h-5 text-cgb-primary" />
+                Contratações nos Últimos 6 Meses
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {topCities.length > 0 ? (
+              {monthlyHires.some(d => d.contratacoes > 0) ? (
                 <ChartContainer config={chartConfig} className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <BarChart data={monthlyHires} margin={{ top: 20, right: 20, bottom: 5, left: -15 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} />
+                      <YAxis tickLine={false} axisLine={false} allowDecimals={false} width={30} />
                       <ChartTooltip
                         cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
+                        content={<ChartTooltipContent indicator="dot" />}
                       />
-                      <Pie data={topCities} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({
-                        cx,
-                        cy,
-                        midAngle,
-                        innerRadius,
-                        outerRadius,
-                        percent,
-                        index,
-                      }) => {
-                        const RADIAN = Math.PI / 180;
-                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                        return (
-                          <text
-                            x={x}
-                            y={y}
-                            fill="white"
-                            textAnchor={x > cx ? "start" : "end"}
-                            dominantBaseline="central"
-                            className="text-xs font-bold"
-                          >
-                            {`${(percent * 100).toFixed(0)}%`}
-                          </text>
-                        );
-                      }}>
-                        {topCities.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                    </PieChart>
+                      <Bar dataKey="contratacoes" name="Contratações" fill="#6A0B27" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               ) : (
                 <div className="h-[300px] flex flex-col items-center justify-center text-center text-gray-500">
-                  <MapPin className="w-12 h-12 mb-4 text-gray-300" />
-                  <h3 className="font-semibold text-lg">Nenhuma cidade informada</h3>
-                  <p className="text-sm">Os dados de localização dos candidatos aparecerão aqui.</p>
+                  <BarChart2 className="w-12 h-12 mb-4 text-gray-300" />
+                  <h3 className="font-semibold text-lg">Sem dados de contratação</h3>
+                  <p className="text-sm">As contratações mensais aparecerão aqui.</p>
                 </div>
               )}
             </CardContent>
@@ -607,10 +659,26 @@ const Dashboard = () => {
               {funnelData.length > 0 ? (
                 <ChartContainer config={{}} className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <FunnelChart>
-                      <Tooltip />
-                      <Funnel dataKey="value" data={funnelData} isAnimationActive>
-                        <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
+                    <FunnelChart margin={{ top: 20, right: 160, left: 20, bottom: 5 }}>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          backdropFilter: "blur(4px)",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "0.5rem",
+                        }}
+                      />
+                      <Funnel dataKey="value" data={funnelData} isAnimationActive neckWidth={60} neckHeight={50}>
+                        <LabelList
+                          position="right"
+                          dataKey="name"
+                          stroke="none"
+                          style={{ fill: '#374151', fontWeight: 500 }}
+                          formatter={(name: string) => {
+                            const entry = funnelData.find(d => d.name === name);
+                            return `${name} (${entry?.value || 0})`;
+                          }}
+                        />
                       </Funnel>
                     </FunnelChart>
                   </ResponsiveContainer>
@@ -677,7 +745,6 @@ const Dashboard = () => {
               <button
                 onClick={() => {
                   fetchDashboardData(dateRange);
-                  fetchAnalyticsData(dateRange);
                 }}
                 disabled={loading}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-cgb-primary hover:bg-cgb-primary-dark text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
