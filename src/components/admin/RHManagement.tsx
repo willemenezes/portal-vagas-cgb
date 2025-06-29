@@ -982,7 +982,7 @@ const RHManagementPanel = () => {
                             <h4 className="font-semibold text-blue-800 mb-2">Instruções para o Usuário</h4>
                             <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                                 <li>O usuário pode fazer login diretamente no portal administrativo</li>
-                                <li>Acesse: <strong>http://localhost:8082/admin</strong></li>
+                                <li>Acesse: <strong>{window.location.origin}/admin</strong></li>
                                 <li>Use as credenciais mostradas acima</li>
                                 <li>Recomendamos que ele altere a senha no primeiro acesso</li>
                             </ol>

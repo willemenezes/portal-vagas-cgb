@@ -346,10 +346,6 @@ const SelectionProcess = () => {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline">Atualizar</Button>
-                    <Button className="bg-cgb-primary hover:bg-cgb-primary-dark">Editar Vaga</Button>
-                </div>
             </header>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
