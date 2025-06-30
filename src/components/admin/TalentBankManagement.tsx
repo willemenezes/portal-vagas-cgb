@@ -1,21 +1,23 @@
 import { useState, useMemo } from 'react';
 import { useResumes, Resume, useDeleteResume } from '@/hooks/useResumes';
 import { useAllJobs } from '@/hooks/useJobs';
-import { useCreateCandidate } from '@/hooks/useCandidates';
+import { useCreateCandidate, useCandidates } from '@/hooks/useCandidates';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet, UserPlus, Send } from 'lucide-react';
+import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet, UserPlus, Send, Eye, EyeOff, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
 const TalentBankManagement = () => {
     const { data: resumes = [], isLoading: isLoadingResumes, error: resumesError } = useResumes();
     const { data: allJobs = [], isLoading: isLoadingJobs, error: jobsError } = useAllJobs();
+    const { data: candidates = [] } = useCandidates();
     const createCandidate = useCreateCandidate();
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
@@ -23,6 +25,7 @@ const TalentBankManagement = () => {
         state: 'all',
         city: 'all',
     });
+    const [showInvited, setShowInvited] = useState(false); // Controle para mostrar/ocultar convidados
     const deleteResume = useDeleteResume();
     const { toast } = useToast();
 
@@ -44,6 +47,22 @@ const TalentBankManagement = () => {
         );
     }, [allJobs]);
 
+    // Identificar emails que já foram convidados para vagas
+    const invitedEmails = useMemo(() => {
+        return new Set(
+            candidates
+                .filter(candidate => candidate.status === 'Convidado')
+                .map(candidate => candidate.email.toLowerCase())
+        );
+    }, [candidates]);
+
+    // Contar quantos talentos estão em processo ativo
+    const invitedCount = useMemo(() => {
+        return resumes.filter(resume =>
+            invitedEmails.has(resume.email.toLowerCase())
+        ).length;
+    }, [resumes, invitedEmails]);
+
     const { uniquePositions, uniqueStates, uniqueCities } = useMemo(() => {
         const validResumes = resumes.filter(r => r && typeof r === 'object');
         return {
@@ -57,6 +76,11 @@ const TalentBankManagement = () => {
         return resumes
             .filter(r => {
                 if (!r) return false;
+
+                // Filtro para mostrar/ocultar convidados
+                const isInvited = invitedEmails.has(r.email.toLowerCase());
+                if (!showInvited && isInvited) return false;
+
                 const searchLower = searchTerm.toLowerCase();
                 return (
                     r.name?.toLowerCase().includes(searchLower) ||
@@ -68,7 +92,7 @@ const TalentBankManagement = () => {
             .filter(r => filters.position !== 'all' ? r.position === filters.position : true)
             .filter(r => filters.state !== 'all' ? r.state === filters.state : true)
             .filter(r => filters.city !== 'all' ? r.city === filters.city : true);
-    }, [resumes, searchTerm, filters]);
+    }, [resumes, searchTerm, filters, showInvited, invitedEmails]);
 
     const isLoading = isLoadingResumes || isLoadingJobs;
     const error = resumesError || jobsError;
@@ -89,6 +113,26 @@ const TalentBankManagement = () => {
 
             return locationMatch || positionMatch;
         });
+    };
+
+    // Verificar se o talento já foi convidado
+    const isResumeInvited = (resume: Resume) => {
+        return invitedEmails.has(resume.email.toLowerCase());
+    };
+
+    // Obter informações do processo ativo
+    const getActiveProcessInfo = (resume: Resume) => {
+        const candidate = candidates.find(c =>
+            c.email.toLowerCase() === resume.email.toLowerCase() &&
+            c.status === 'Convidado'
+        );
+        if (candidate && candidate.job) {
+            return {
+                jobTitle: candidate.job.title,
+                status: candidate.status
+            };
+        }
+        return null;
     };
 
     const handleInviteToJob = async () => {
@@ -137,7 +181,7 @@ const TalentBankManagement = () => {
 
             toast({
                 title: "Convite enviado com sucesso!",
-                description: `${resumeToInvite.name} foi convidado(a) para a vaga "${selectedJob?.title}".`,
+                description: `${resumeToInvite.name} foi transferido(a) para a vaga "${selectedJob?.title}".`,
                 duration: 5000
             });
 
@@ -212,7 +256,7 @@ const TalentBankManagement = () => {
                                 <div className="flex items-center gap-2 text-sm">
                                     <Archive className="w-4 h-4 text-green-500" />
                                     <span className="text-green-600 font-medium">
-                                        Visualização completa: Todos os talentos de todas as regiões
+                                        {filteredResumes.length} talentos disponíveis
                                     </span>
                                 </div>
                                 {availableJobs.length > 0 && (
@@ -220,6 +264,14 @@ const TalentBankManagement = () => {
                                         <UserPlus className="w-4 h-4 text-blue-500" />
                                         <span className="text-blue-600 font-medium">
                                             {availableJobs.length} vagas ativas disponíveis para convites
+                                        </span>
+                                    </div>
+                                )}
+                                {invitedCount > 0 && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Filter className="w-4 h-4 text-orange-500" />
+                                        <span className="text-orange-600 font-medium">
+                                            {invitedCount} talentos em processo seletivo ativo
                                         </span>
                                     </div>
                                 )}
@@ -235,6 +287,8 @@ const TalentBankManagement = () => {
                             />
                         </div>
                     </div>
+
+                    {/* Controles de Filtro */}
                     <div className="flex flex-col md:flex-row gap-4 pt-4">
                         <Select value={filters.position} onValueChange={value => setFilters(prev => ({ ...prev, position: value }))}>
                             <SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.position === 'all' ? 'Todos os Cargos' : filters.position}</span></SelectTrigger>
@@ -257,6 +311,16 @@ const TalentBankManagement = () => {
                                 {uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                             </SelectContent>
                         </Select>
+
+                        {/* Toggle para mostrar/ocultar convidados */}
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-md border">
+                            {showInvited ? <Eye className="w-4 h-4 text-gray-600" /> : <EyeOff className="w-4 h-4 text-gray-600" />}
+                            <span className="text-sm font-medium">Mostrar em processo</span>
+                            <Switch
+                                checked={showInvited}
+                                onCheckedChange={setShowInvited}
+                            />
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -275,24 +339,42 @@ const TalentBankManagement = () => {
                                 {filteredResumes.length > 0 ? (
                                     filteredResumes.map((resume) => {
                                         const compatibleJobs = getCompatibleJobs(resume);
+                                        const isInvited = isResumeInvited(resume);
+                                        const processInfo = getActiveProcessInfo(resume);
+
                                         return (
-                                            <TableRow key={resume.id}>
-                                                <TableCell className="font-medium">{resume.name || 'N/A'}</TableCell>
+                                            <TableRow key={resume.id} className={isInvited ? 'bg-blue-50 border-l-4 border-l-blue-400' : ''}>
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{resume.name || 'N/A'}</span>
+                                                        {isInvited && (
+                                                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                                                                Em Processo
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>{resume.email}</TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col">
                                                         <span>{resume.position || 'N/A'}</span>
-                                                        {compatibleJobs.length > 0 && (
-                                                            <Badge variant="outline" className="text-xs mt-1 w-fit">
-                                                                {compatibleJobs.length} vaga{compatibleJobs.length > 1 ? 's' : ''} compatível{compatibleJobs.length > 1 ? 'eis' : ''}
+                                                        {isInvited && processInfo ? (
+                                                            <Badge variant="outline" className="text-xs mt-1 w-fit bg-blue-50 text-blue-600 border-blue-200">
+                                                                📋 {processInfo.jobTitle}
                                                             </Badge>
+                                                        ) : (
+                                                            compatibleJobs.length > 0 && (
+                                                                <Badge variant="outline" className="text-xs mt-1 w-fit">
+                                                                    {compatibleJobs.length} vaga{compatibleJobs.length > 1 ? 's' : ''} compatível{compatibleJobs.length > 1 ? 'eis' : ''}
+                                                                </Badge>
+                                                            )
                                                         )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex gap-2 justify-end">
-                                                        {availableJobs.length > 0 && (
+                                                        {!isInvited && availableJobs.length > 0 && (
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
@@ -319,7 +401,23 @@ const TalentBankManagement = () => {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24">
-                                            Nenhum talento no banco de dados ainda.
+                                            {!showInvited && invitedCount > 0 ? (
+                                                <div className="text-center">
+                                                    <p>Nenhum talento disponível com os filtros selecionados.</p>
+                                                    <p className="text-sm text-gray-500 mt-1">
+                                                        {invitedCount} talento{invitedCount > 1 ? 's estão' : ' está'} em processo seletivo.
+                                                        <Button
+                                                            variant="link"
+                                                            className="p-0 h-auto ml-1"
+                                                            onClick={() => setShowInvited(true)}
+                                                        >
+                                                            Mostrar todos
+                                                        </Button>
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                "Nenhum talento no banco de dados ainda."
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -328,6 +426,11 @@ const TalentBankManagement = () => {
                     </div>
                     <div className="pt-4 text-sm text-gray-600">
                         Mostrando {filteredResumes.length} de {resumes.length} talentos.
+                        {!showInvited && invitedCount > 0 && (
+                            <span className="ml-2 text-blue-600">
+                                ({invitedCount} oculto{invitedCount > 1 ? 's' : ''} - em processo)
+                            </span>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -384,6 +487,9 @@ const TalentBankManagement = () => {
                                 </p>
                                 <p className="text-xs text-blue-600 mt-1">
                                     ✉️ Um email será enviado automaticamente com o convite.
+                                </p>
+                                <p className="text-xs text-orange-600 mt-1">
+                                    📋 O talento será transferido para o processo seletivo da vaga.
                                 </p>
                             </div>
                         )}
