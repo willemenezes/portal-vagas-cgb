@@ -38,13 +38,13 @@ const Index = () => {
   // Usando hook robusto com tratamento completo de erros
   const { data: jobs = [], isLoading, error, refetch } = useJobsRobust();
 
-  // Mostrar popup anti-golpe após 3 segundos
+  // Mostrar popup anti-golpe após 1.5 segundos
   useEffect(() => {
     const hasSeenPopup = localStorage.getItem('cgb-anti-scam-popup-seen');
     if (!hasSeenPopup) {
       const timer = setTimeout(() => {
         setShowAntiScamPopup(true);
-      }, 3000);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, []);
