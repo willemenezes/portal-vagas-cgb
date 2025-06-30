@@ -361,7 +361,7 @@ const JobApplication = () => {
                   </div>
 
                   <div>
-                    <Label>Já trabalhou ou trabalha na CGB Energia? *</Label>
+                    <Label>Já trabalhou ou trabalha no Grupo CGB? *</Label>
                     <div className="flex gap-4 mt-1">
                       <label className="flex items-center gap-1">
                         <input type="radio" name="workedAtCGB" value="Sim" checked={formData.workedAtCGB === "Sim"} onChange={e => setFormData({ ...formData, workedAtCGB: e.target.value })} required /> Sim
@@ -513,7 +513,7 @@ const JobApplication = () => {
                         onInput={e => e.currentTarget.setCustomValidity('')}
                       />
                       <span>
-                        Eu, titular tenho conhecimento e autorizo que a empresa CGB ENERGIA disponha dos meus dados pessoais, de acordo com os artigos 7° da Lei n° 13.709/2018 para fins de seleção que serão. pelo período de 12 meses, especificamente para participação de seleção e recrutamento para vaga de emprego, podendo compartilhar os dados com empresas que auxiliam na realização de recrutamento. <b>CONCORDO</b>
+                        Eu, titular tenho conhecimento e autorizo que a empresa GRUPO CGB disponha dos meus dados pessoais, de acordo com os artigos 7° da Lei n° 13.709/2018 para fins de seleção que serão. pelo período de 12 meses, especificamente para participação de seleção e recrutamento para vaga de emprego, podendo compartilhar os dados com empresas que auxiliam na realização de recrutamento. <b>CONCORDO</b>
                       </span>
                     </label>
                   </div>

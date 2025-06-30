@@ -98,9 +98,9 @@ const CommunicationView = ({ candidate }: { candidate: Candidate }) => {
     const { toast } = useToast();
 
     const EMAIL_TEMPLATES = [
-        { id: 'interview', name: 'Convite para Entrevista', subject: 'Convite para Entrevista na CGB Energia - Vaga de {{vaga}}', body: 'Olá, {{candidato}}!\n\nRecebemos sua aplicação para a vaga de {{vaga}} e ficamos muito interessados no seu perfil.\n\nGostaríamos de convidá-lo(a) para uma entrevista para nos conhecermos melhor.\n\nAtenciosamente,\nEquipe de Recrutamento CGB Energia' },
-        { id: 'rejection', name: 'Feedback Negativo', subject: 'Retorno sobre o processo seletivo para {{vaga}}', body: 'Olá, {{candidato}}.\n\nAgradecemos seu interesse na vaga de {{vaga}}.\n\nNeste momento, optamos por seguir com outros candidatos.\n\nAtenciosamente,\nEquipe de Recrutamento CGB Energia' },
-        { id: 'info', name: 'Informação Geral', subject: 'Contato da CGB Energia sobre sua candidatura', body: 'Olá, {{candidato}}.\n\nEntramos em contato para falar sobre o seu processo seletivo para a vaga de {{vaga}}.\n\n[Insira aqui a sua mensagem]\n\nAtenciosamente,\nEquipe de Recrutamento CGB Energia' },
+        { id: 'interview', name: 'Convite para Entrevista', subject: 'Convite para Entrevista no Grupo CGB - Vaga de {{vaga}}', body: 'Olá, {{candidato}}!\n\nRecebemos sua aplicação para a vaga de {{vaga}} e ficamos muito interessados no seu perfil.\n\nGostaríamos de convidá-lo(a) para uma entrevista para nos conhecermos melhor.\n\nAtenciosamente,\nEquipe de Recrutamento Grupo CGB' },
+        { id: 'rejection', name: 'Feedback Negativo', subject: 'Retorno sobre o processo seletivo para {{vaga}}', body: 'Olá, {{candidato}}.\n\nAgradecemos seu interesse na vaga de {{vaga}}.\n\nNeste momento, optamos por seguir com outros candidatos.\n\nAtenciosamente,\nEquipe de Recrutamento Grupo CGB' },
+        { id: 'info', name: 'Informação Geral', subject: 'Contato do Grupo CGB sobre sua candidatura', body: 'Olá, {{candidato}}.\n\nEntramos em contato para falar sobre o seu processo seletivo para a vaga de {{vaga}}.\n\n[Insira aqui a sua mensagem]\n\nAtenciosamente,\nEquipe de Recrutamento Grupo CGB' },
     ];
 
     const handleTemplateChange = (templateId: string) => {
