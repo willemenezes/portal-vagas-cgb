@@ -452,7 +452,7 @@ const Index = () => {
               {/* Copyright */}
               <div className="border-t border-gray-200 pt-8">
                 <p className="text-gray-500 text-sm font-medium">
-                  © 2024 <span className="text-cgb-primary font-bold">CGB ENERGIA</span>. Todos os direitos reservados.
+                  © 2025 <span className="text-cgb-primary font-bold">GRUPO CGB</span>. Todos os direitos reservados.
                 </p>
                 <p className="text-gray-400 text-xs mt-2">
                   Portal de Carreiras - Sistema de Gestão de Talentos

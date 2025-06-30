@@ -236,7 +236,7 @@ const Login = () => {
           </div>
           <div className="space-y-2">
             <p className="text-gray-600 text-sm font-medium">
-              © 2024 <span className="text-cgb-primary font-bold">CGB ENERGIA</span>. Todos os direitos reservados.
+              © 2025 <span className="text-cgb-primary font-bold">GRUPO CGB</span>. Todos os direitos reservados.
             </p>
             <p className="text-gray-400 text-xs">
               Portal Administrativo - Sistema de Gestão de Carreiras

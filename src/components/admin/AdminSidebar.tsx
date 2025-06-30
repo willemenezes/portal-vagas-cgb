@@ -116,7 +116,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                     </button>
                 </div>
                 <div className="text-center text-gray-600 text-xs mt-5">
-                    <p>&copy; {new Date().getFullYear()} CGB Energia.</p>
+                    <p>&copy; 2025 Grupo CGB.</p>
                     <p className="mt-1">Versão {__APP_VERSION__} ({__COMMIT_HASH__})</p>
                 </div>
             </div>
