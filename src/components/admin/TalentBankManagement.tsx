@@ -1,19 +1,22 @@
 import { useState, useMemo } from 'react';
 import { useResumes, Resume, useDeleteResume } from '@/hooks/useResumes';
 import { useAllJobs } from '@/hooks/useJobs';
+import { useCreateCandidate } from '@/hooks/useCandidates';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet, UserPlus, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const TalentBankManagement = () => {
     const { data: resumes = [], isLoading: isLoadingResumes, error: resumesError } = useResumes();
     const { data: allJobs = [], isLoading: isLoadingJobs, error: jobsError } = useAllJobs();
+    const createCandidate = useCreateCandidate();
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         position: 'all',
@@ -24,10 +27,21 @@ const TalentBankManagement = () => {
     const { toast } = useToast();
 
     const [resumeToDelete, setResumeToDelete] = useState<Resume | null>(null);
+    const [resumeToInvite, setResumeToInvite] = useState<Resume | null>(null);
+    const [selectedJobId, setSelectedJobId] = useState<string>('');
+    const [isInviting, setIsInviting] = useState(false);
 
     const talentBankJobId = useMemo(() => {
         const talentJob = allJobs.find(job => job.title === "Banco de Talentos");
         return talentJob ? talentJob.id : null;
+    }, [allJobs]);
+
+    // Filtrar vagas ativas (excluindo Banco de Talentos)
+    const availableJobs = useMemo(() => {
+        return allJobs.filter(job =>
+            job.status === 'active' &&
+            job.title !== "Banco de Talentos"
+        );
     }, [allJobs]);
 
     const { uniquePositions, uniqueStates, uniqueCities } = useMemo(() => {
@@ -58,6 +72,90 @@ const TalentBankManagement = () => {
 
     const isLoading = isLoadingResumes || isLoadingJobs;
     const error = resumesError || jobsError;
+
+    // Função para sugerir vagas compatíveis
+    const getCompatibleJobs = (resume: Resume) => {
+        return availableJobs.filter(job => {
+            // Compatibilidade por localização
+            const locationMatch = job.state === 'Todos' ||
+                job.state === resume.state ||
+                job.city === resume.city;
+
+            // Compatibilidade por cargo (busca parcial)
+            const positionMatch = !resume.position ||
+                job.title.toLowerCase().includes(resume.position.toLowerCase()) ||
+                job.department.toLowerCase().includes(resume.position.toLowerCase()) ||
+                resume.position.toLowerCase().includes(job.title.toLowerCase());
+
+            return locationMatch || positionMatch;
+        });
+    };
+
+    const handleInviteToJob = async () => {
+        if (!resumeToInvite || !selectedJobId) {
+            toast({
+                title: "Campos obrigatórios",
+                description: "Por favor, selecione uma vaga para o convite.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setIsInviting(true);
+
+        try {
+            const selectedJob = availableJobs.find(j => j.id === selectedJobId);
+
+            // Criar candidatura na tabela candidates
+            const candidateData = {
+                name: resumeToInvite.name || '',
+                email: resumeToInvite.email,
+                phone: resumeToInvite.phone || '',
+                city: resumeToInvite.city || selectedJob?.city || '',
+                state: resumeToInvite.state || selectedJob?.state || '',
+                job_id: selectedJobId,
+                status: 'Convidado' as any, // Status especial para convites
+                resume_file_url: resumeToInvite.resume_file_url,
+                resume_file_name: resumeToInvite.resume_file_name,
+                applied_date: new Date().toISOString(),
+                // Campos adicionais baseados no currículo
+                desiredJob: resumeToInvite.position || selectedJob?.title || '',
+                age: '', // Não disponível no banco de talentos
+                workedAtCGB: '', // Não disponível no banco de talentos
+                whatsapp: resumeToInvite.phone || '',
+                emailInfo: resumeToInvite.email,
+                pcd: '', // Não disponível no banco de talentos
+                travel: '', // Não disponível no banco de talentos
+                cnh: '', // Não disponível no banco de talentos
+                vehicle: '', // Não disponível no banco de talentos
+                vehicleModel: '', // Não disponível no banco de talentos
+                vehicleYear: '', // Não disponível no banco de talentos
+                lgpdConsent: true // Assumir consentimento já dado no banco de talentos
+            };
+
+            await createCandidate.mutateAsync(candidateData);
+
+            toast({
+                title: "Convite enviado com sucesso!",
+                description: `${resumeToInvite.name} foi convidado(a) para a vaga "${selectedJob?.title}".`,
+                duration: 5000
+            });
+
+            // TODO: Implementar envio de email/WhatsApp automático
+
+            setResumeToInvite(null);
+            setSelectedJobId('');
+
+        } catch (error: any) {
+            toast({
+                title: "Erro ao enviar convite",
+                description: error.message || "Tente novamente mais tarde.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsInviting(false);
+        }
+    };
 
     const handleConfirmDelete = () => {
         if (!resumeToDelete) return;
@@ -117,6 +215,14 @@ const TalentBankManagement = () => {
                                         Visualização completa: Todos os talentos de todas as regiões
                                     </span>
                                 </div>
+                                {availableJobs.length > 0 && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <UserPlus className="w-4 h-4 text-blue-500" />
+                                        <span className="text-blue-600 font-medium">
+                                            {availableJobs.length} vagas ativas disponíveis para convites
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="relative mt-4 md:mt-0">
@@ -167,22 +273,49 @@ const TalentBankManagement = () => {
                             </TableHeader>
                             <TableBody>
                                 {filteredResumes.length > 0 ? (
-                                    filteredResumes.map(resume => (
-                                        <TableRow key={resume.id}>
-                                            <TableCell className="font-medium">{resume.name || 'N/A'}</TableCell>
-                                            <TableCell>{resume.email}</TableCell>
-                                            <TableCell>{resume.position || 'N/A'}</TableCell>
-                                            <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="outline" size="sm" asChild disabled={!resume.resume_file_url}>
-                                                    <a href={resume.resume_file_url!} target="_blank" rel="noopener noreferrer"><Download className="w-4 h-4 mr-2" />Baixar</a>
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
-                                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    filteredResumes.map((resume) => {
+                                        const compatibleJobs = getCompatibleJobs(resume);
+                                        return (
+                                            <TableRow key={resume.id}>
+                                                <TableCell className="font-medium">{resume.name || 'N/A'}</TableCell>
+                                                <TableCell>{resume.email}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span>{resume.position || 'N/A'}</span>
+                                                        {compatibleJobs.length > 0 && (
+                                                            <Badge variant="outline" className="text-xs mt-1 w-fit">
+                                                                {compatibleJobs.length} vaga{compatibleJobs.length > 1 ? 's' : ''} compatível{compatibleJobs.length > 1 ? 'eis' : ''}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex gap-2 justify-end">
+                                                        {availableJobs.length > 0 && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => setResumeToInvite(resume)}
+                                                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                                            >
+                                                                <UserPlus className="w-4 h-4 mr-1" />
+                                                                Convidar
+                                                            </Button>
+                                                        )}
+                                                        <Button variant="outline" size="sm" asChild disabled={!resume.resume_file_url}>
+                                                            <a href={resume.resume_file_url!} target="_blank" rel="noopener noreferrer">
+                                                                <Download className="w-4 h-4 mr-2" />Baixar
+                                                            </a>
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
+                                                            <Trash2 className="w-4 h-4 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24">
@@ -199,6 +332,89 @@ const TalentBankManagement = () => {
                 </CardContent>
             </Card>
 
+            {/* Dialog para Convite para Vaga */}
+            <Dialog open={!!resumeToInvite} onOpenChange={() => setResumeToInvite(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <UserPlus className="w-5 h-5 text-blue-600" />
+                            Convidar para Vaga
+                        </DialogTitle>
+                        <DialogDescription>
+                            Convide <strong>{resumeToInvite?.name}</strong> para se candidatar a uma vaga específica.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium">Selecione a Vaga:</label>
+                            <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                                <SelectTrigger className="mt-2">
+                                    <SelectValue placeholder="Escolha uma vaga..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableJobs.map(job => {
+                                        const isCompatible = resumeToInvite ? getCompatibleJobs(resumeToInvite).some(j => j.id === job.id) : false;
+                                        return (
+                                            <SelectItem key={job.id} value={job.id}>
+                                                <div className="flex items-center gap-2">
+                                                    <span>{job.title}</span>
+                                                    {isCompatible && (
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            Compatível
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {job.city}, {job.state}
+                                                </div>
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {selectedJobId && resumeToInvite && (
+                            <div className="bg-blue-50 p-3 rounded-md">
+                                <h4 className="font-medium text-blue-900 mb-2">Prévia do Convite:</h4>
+                                <p className="text-sm text-blue-800">
+                                    <strong>{resumeToInvite.name}</strong> será convidado(a) para se candidatar à vaga
+                                    <strong> {availableJobs.find(j => j.id === selectedJobId)?.title}</strong>.
+                                </p>
+                                <p className="text-xs text-blue-600 mt-1">
+                                    ✉️ Um email será enviado automaticamente com o convite.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setResumeToInvite(null)}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleInviteToJob}
+                            disabled={!selectedJobId || isInviting}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
+                            {isInviting ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Enviando...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Enviar Convite
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog de Confirmação de Exclusão */}
             <AlertDialog open={!!resumeToDelete} onOpenChange={() => setResumeToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
