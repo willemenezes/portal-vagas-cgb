@@ -126,7 +126,7 @@ const ReportsManagement = () => {
                     ['Taxa de Conversão', conversionRate, 'Percentual de candidatos que foram aprovados'],
                     ['Tempo Médio de Contratação', avgTimeToHire, 'Média de dias desde a criação da vaga até a contratação'],
                     ['Contratações no Mês', hiresThisMonth, 'Novos talentos aprovados no último mês'],
-                    ['Vagas Aprovadas', approvedJobsCount, 'Total de requisições de vagas aceitas pelos gestores'],
+                    ['Vagas Processadas', approvedJobsCount, 'Total de requisições de vagas processadas pelos gestores'],
                     ['Vagas Rejeitadas', rejectedJobsCount, 'Total de requisições de vagas devolvidas para o RH']
                 ];
 
@@ -254,8 +254,8 @@ const ReportsManagement = () => {
 
                 <Card className="hover:shadow-lg transition-shadow">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><ThumbsUp className="w-6 h-6 text-cyan-600" /><span>Vagas Aprovadas</span></CardTitle>
-                        <CardDescription>Exporte a lista de todas as vagas que foram aprovadas pelos gestores e se tornaram ativas no portal.</CardDescription>
+                        <CardTitle className="flex items-center gap-3"><ThumbsUp className="w-6 h-6 text-cyan-600" /><span>Vagas Processadas</span></CardTitle>
+                        <CardDescription>Exporte a lista de todas as vagas que foram processadas pelos gestores e se tornaram ativas no portal.</CardDescription>
                     </CardHeader>
                     <CardContent />
                     <CardFooter>

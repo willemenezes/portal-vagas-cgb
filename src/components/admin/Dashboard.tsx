@@ -584,15 +584,15 @@ const Dashboard = () => {
             <p className="text-xs text-teal-800/80">Novos talentos aprovados</p>
           </CardContent>
         </Card>
-        {/* Card de Vagas Aprovadas */}
+        {/* Card de Vagas Processadas */}
         <Card className="bg-cyan-100 border-cyan-200 text-cyan-900 transition-all hover:shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Vagas Aprovadas</CardTitle>
+            <CardTitle className="text-sm font-medium">Vagas Processadas</CardTitle>
             <ThumbsUp className="w-4 h-4 text-cyan-700" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{jobStats.approved}</div>
-            <p className="text-xs text-cyan-800/80">Requisições de vagas aceitas</p>
+            <p className="text-xs text-cyan-800/80">Requisições de vagas processadas</p>
           </CardContent>
         </Card>
         {/* Card de Vagas Rejeitadas */}
