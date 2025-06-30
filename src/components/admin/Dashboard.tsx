@@ -225,14 +225,14 @@ const Dashboard = () => {
           return acc;
         }, {} as Record<string, number>);
 
-        const approvedCount = statusCounts.approved || 0;
+        const approvedCount = statusCounts['Aprovado'] || 0;
         const conversionRate = totalCandidates > 0 ? Math.round((approvedCount / totalCandidates) * 100) : 0;
 
         const statusDataArray: StatusData[] = [
-          { name: "Pendentes", value: statusCounts.pending || 0, color: chartConfig.pendentes.color, icon: Clock },
-          { name: "Entrevista", value: statusCounts.interview || 0, color: chartConfig.interview.color, icon: Users },
+          { name: "Pendentes", value: statusCounts['Cadastrado'] || 0, color: chartConfig.pendentes.color, icon: Clock },
+          { name: "Entrevista", value: (statusCounts['Entrevista com RH'] || 0) + (statusCounts['Entrevista com Gestor'] || 0), color: chartConfig.interview.color, icon: Users },
           { name: "Aprovados", value: approvedCount, color: chartConfig.aprovados.color, icon: Award },
-          { name: "Rejeitados", value: statusCounts.rejected || 0, color: chartConfig.rejeitados.color, icon: TrendingDown },
+          { name: "Rejeitados", value: statusCounts['Reprovado'] || 0, color: chartConfig.rejeitados.color, icon: TrendingDown },
         ];
 
         const today = new Date();
@@ -284,7 +284,7 @@ const Dashboard = () => {
 
         const approvedJobs = allJobsData?.filter(j => j.approval_status === 'active').length || 0;
         // Contar candidatos reprovados ao invés de vagas rejeitadas
-        const rejectedCandidates = validCandidates.filter(c => c.status === 'Reprovado').length || 0;
+        const rejectedCandidates = allCandidates.filter(c => c.status === 'Reprovado').length || 0;
         if (isMounted) {
           setJobStats({ approved: approvedJobs, rejected: rejectedCandidates });
         }
@@ -540,7 +540,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalCandidates}</div>
-            <p className="text-xs text-purple-800/80">Candidatos no banco de talentos</p>
+            <p className="text-xs text-purple-800/80">Currículos cadastrados</p>
           </CardContent>
         </Card>
         {/* Aprovados */}

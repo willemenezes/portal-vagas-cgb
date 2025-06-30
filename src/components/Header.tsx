@@ -45,7 +45,7 @@ const Header = () => {
               Vagas Abertas
             </Link>
             <Link to="/cadastrar-curriculo" className={textLinkClasses}>
-              Banco de Talentos
+              Cadastre Seu Currículo
             </Link>
             <a
               href="https://cgbengenharia.com.br"
@@ -114,7 +114,7 @@ const Header = () => {
               className={mobileNavLinkClasses("/cadastrar-curriculo")}
               onClick={() => setIsMenuOpen(false)}
             >
-              Banco de Talentos
+              Cadastre Seu Currículo
             </Link>
             <a
               href="https://cgbengenharia.com.br"

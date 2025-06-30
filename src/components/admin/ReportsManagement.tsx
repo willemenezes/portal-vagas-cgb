@@ -221,8 +221,8 @@ const ReportsManagement = () => {
 
                 <Card className="hover:shadow-lg transition-shadow">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Archive className="w-6 h-6 text-sky-600" /><span>Banco de Talentos</span></CardTitle>
-                        <CardDescription>Baixe a lista de candidatos que fazem parte do banco de talentos, ideal para buscar perfis para futuras oportunidades.</CardDescription>
+                        <CardTitle className="flex items-center gap-3"><Archive className="w-6 h-6 text-sky-600" /><span>Cadastro de Currículos</span></CardTitle>
+                        <CardDescription>Baixe a lista de candidatos que cadastraram seus currículos, ideal para buscar perfis para futuras oportunidades.</CardDescription>
                     </CardHeader>
                     <CardContent />
                     <CardFooter>

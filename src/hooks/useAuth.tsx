@@ -52,13 +52,32 @@ export const useAuth = (): UseAuthReturn => {
   }, [queryClient]);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      // Timeout de 8 segundos para evitar travamentos
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout no logout do Supabase')), 8000)
+      );
+
+      const logoutPromise = supabase.auth.signOut();
+
+      await Promise.race([logoutPromise, timeoutPromise]);
+
+      // Limpar queries do React Query
+      await queryClient.removeQueries({ queryKey: ['rhProfile'] });
+      await queryClient.clear();
+
+      setUser(null);
+
+    } catch (error) {
       console.error('❌ [AUTH] Erro no logout:', error);
-      throw new Error('Falha ao fazer logout.');
+
+      // Mesmo com erro, limpar estado local
+      await queryClient.clear();
+      setUser(null);
+
+      // Re-throw para que o componente possa tratar
+      throw new Error('Falha ao fazer logout do servidor.');
     }
-    await queryClient.removeQueries({ queryKey: ['rhProfile'] });
-    setUser(null);
   }, [queryClient]);
 
   return { user, loading, signIn, signOut };

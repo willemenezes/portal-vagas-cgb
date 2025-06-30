@@ -1,87 +1,32 @@
 import { useState, useMemo } from 'react';
-import { useCandidates, useUpdateCandidateStatus, useDeleteCandidate, Candidate } from '@/hooks/useCandidates';
+import { useCandidates, useDeleteCandidate, Candidate } from '@/hooks/useCandidates';
 import { useAllJobs } from '@/hooks/useJobs';
-import { useAuth } from '@/hooks/useAuth';
 import { useRHProfile } from '@/hooks/useRH';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Download, FileText, User, Mail, MapPin, Briefcase, Users, Trash2, FileSpreadsheet, MessageSquare } from 'lucide-react';
+import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
-import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
-import { DialogContent, DialogTitle } from '@radix-ui/react-dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useAllRejectionNotes } from '@/hooks/useAllRejectionNotes';
 
 const CandidateManagement = () => {
-  const { user } = useAuth();
-  const { data: rhProfile } = useRHProfile(user?.id);
+  const { data: rhProfile } = useRHProfile();
   const { data: candidates = [], isLoading, error } = useCandidates();
   const { data: jobs = [] } = useAllJobs();
-  const updateStatus = useUpdateCandidateStatus();
-  const createNote = useCreateCandidateNote();
   const deleteCandidate = useDeleteCandidate();
   const { toast } = useToast();
-  const { data: rejectionNotes = [] } = useAllRejectionNotes();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: 'all', jobId: 'all', state: 'all', cnh: 'all', vehicle: 'all',
   });
   const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
-  const [candidateToReject, setCandidateToReject] = useState<Candidate | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
 
   const talentBankJobId = useMemo(() => jobs.find(job => job.title === "Banco de Talentos")?.id, [jobs]);
-
-  const handleStatusChange = (candidate: Candidate, newStatus: SelectionStatus) => {
-    if (newStatus === 'Reprovado') {
-      setCandidateToReject(candidate);
-      setRejectionReason(''); // Limpa o motivo anterior
-    } else {
-      updateStatus.mutate({ id: candidate.id, status: newStatus }, {
-        onSuccess: () => {
-          toast({ title: "Status atualizado!", description: `O status do candidato foi alterado para ${newStatus}.` });
-          if (user) createNote.mutate({ candidate_id: candidate.id, author_id: user.id, note: `Status alterado para "${newStatus}"`, activity_type: 'Mudança de Status' });
-        },
-        onError: (err: any) => toast({ title: "Erro!", description: `Não foi possível atualizar o status: ${err.message}`, variant: "destructive" }),
-      });
-    }
-  };
-
-  const handleConfirmRejection = async () => {
-    if (!candidateToReject || !rejectionReason.trim()) {
-      toast({ title: "Campo obrigatório", description: "Por favor, preencha o motivo da reprovação.", variant: "destructive" });
-      return;
-    }
-
-    const { id: candidateId } = candidateToReject;
-
-    try {
-      await updateStatus.mutateAsync({ id: candidateId, status: 'Reprovado' });
-      if (user) {
-        await createNote.mutateAsync({
-          candidate_id: candidateId,
-          author_id: user.id,
-          note: `Motivo da reprovação: ${rejectionReason}`,
-          activity_type: 'Reprovação'
-        });
-      }
-      toast({ title: "Candidato reprovado", description: "O status e a nota foram salvos com sucesso." });
-    } catch (error: any) {
-      toast({ title: "Erro", description: `Não foi possível completar a ação: ${error.message}`, variant: "destructive" });
-    } finally {
-      setCandidateToReject(null);
-      setRejectionReason("");
-    }
-  };
 
   const filteredCandidates = useMemo(() => {
     if (!Array.isArray(candidates)) return [];
@@ -163,6 +108,12 @@ const CandidateManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Users /> Painel de Candidatos</CardTitle>
           <p className="text-gray-500">Gerencie todos os candidatos que se aplicaram às vagas.</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+            <p className="text-sm text-blue-700">
+              <strong>📋 Visualização:</strong> Este painel é apenas para consulta. Para alterar o status dos candidatos,
+              utilize a seção <strong>"Processos Seletivos"</strong> no menu lateral.
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gray-100 p-4 rounded-lg"><h3>Total de Candidatos</h3><p className="text-3xl font-bold">{summary.Total || 0}</p></div>
@@ -199,33 +150,9 @@ const CandidateManagement = () => {
                         <TableCell><Button variant="outline" size="sm" asChild disabled={!candidate.resume_file_url}><a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer"><FileText className="w-4 h-4 mr-2" />Ver</a></Button></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Select value={currentStatus} onValueChange={(value) => handleStatusChange(candidate, value as SelectionStatus)} disabled={updateStatus.isPending}>
-                              <SelectTrigger className={`${statusColor} border-none font-semibold rounded-md text-xs h-auto py-1 px-2`}><SelectValue /></SelectTrigger>
-                              <SelectContent>{SELECTION_STATUSES.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
-                            </Select>
-                            {currentStatus === 'Reprovado' && (
-                              (() => {
-                                const note = rejectionNotes.find(n => n.candidate_id === candidate.id);
-                                if (!note) return null;
-                                return (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6">
-                                        <MessageSquare className="h-4 w-4 text-gray-500" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80">
-                                      <div className="space-y-2">
-                                        <h4 className="font-medium leading-none">Motivo da Reprovação</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                          {note.note}
-                                        </p>
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                );
-                              })()
-                            )}
+                            <Badge className={`${statusColor} border-none font-semibold`}>
+                              {currentStatus}
+                            </Badge>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -254,35 +181,6 @@ const CandidateManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={!!candidateToReject} onOpenChange={() => setCandidateToReject(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Motivo da Reprovação</DialogTitle>
-            <DialogDescription>
-              Descreva o motivo pelo qual o candidato "{candidateToReject?.name}" está sendo reprovado. A observação será salva no histórico.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Ex: Perfil técnico não alinhado com os requisitos da vaga..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCandidateToReject(null)}>Cancelar</Button>
-            <Button
-              onClick={handleConfirmRejection}
-              disabled={!rejectionReason.trim() || updateStatus.isPending || createNote.isPending}
-              className="bg-destructive hover:bg-destructive/90 text-white"
-            >
-              {(updateStatus.isPending || createNote.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Reprovação"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

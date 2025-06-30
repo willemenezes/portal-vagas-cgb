@@ -42,12 +42,36 @@ const Admin = () => {
   }, [user, loading, navigate]);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return; // Previne múltiplos cliques
+
     setIsLoggingOut(true);
+
     try {
-      await signOut();
-      navigate('/');
+      // Timeout de 10 segundos para evitar travamentos
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout no logout')), 10000)
+      );
+
+      const logoutPromise = signOut();
+
+      await Promise.race([logoutPromise, timeoutPromise]);
+
+      // Limpar cache e navegar
+      navigate('/', { replace: true });
+
     } catch (error) {
       console.error("Erro no logout:", error);
+
+      // Forçar logout local mesmo se houver erro no servidor
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Navegar mesmo com erro
+      navigate('/', { replace: true });
+
+      // Recarregar a página para garantir limpeza completa
+      window.location.reload();
+
     } finally {
       setIsLoggingOut(false);
     }
@@ -95,6 +119,7 @@ const Admin = () => {
         setActiveTab={setActiveTab}
         userRole={rhProfile.role}
         onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
       />
       <main className="flex-1 p-8 overflow-y-auto">
         {/* Adicionar um cabeçalho de boas-vindas */}

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import JobCard from "@/components/JobCard";
@@ -8,7 +8,7 @@ import MapStats from "@/components/MapStats";
 import { useJobsRobust } from "@/hooks/useJobsRobust";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Briefcase, MapPin, Filter, ArrowRight } from "lucide-react";
+import { Search, Briefcase, MapPin, Filter, ArrowRight, AlertTriangle, X } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 
@@ -23,6 +23,7 @@ interface FilterState {
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showAntiScamPopup, setShowAntiScamPopup] = useState<boolean>(false);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     city: "all",
@@ -36,6 +37,22 @@ const Index = () => {
 
   // Usando hook robusto com tratamento completo de erros
   const { data: jobs = [], isLoading, error, refetch } = useJobsRobust();
+
+  // Mostrar popup anti-golpe após 3 segundos
+  useEffect(() => {
+    const hasSeenPopup = localStorage.getItem('cgb-anti-scam-popup-seen');
+    if (!hasSeenPopup) {
+      const timer = setTimeout(() => {
+        setShowAntiScamPopup(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleCloseAntiScamPopup = () => {
+    setShowAntiScamPopup(false);
+    localStorage.setItem('cgb-anti-scam-popup-seen', 'true');
+  };
 
 
 
@@ -85,6 +102,66 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      {/* Anti-Scam Popup */}
+      {showAntiScamPopup && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border-l-8 border-cgb-accent">
+            {/* Header com ícone de alerta */}
+            <div className="bg-gradient-to-r from-cgb-primary to-cgb-accent p-6 relative">
+              <button
+                onClick={handleCloseAntiScamPopup}
+                className="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-1 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="bg-white/20 rounded-full p-3">
+                  <AlertTriangle className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Aviso Importante</h3>
+                  <p className="text-white/90 text-sm">Proteja-se contra golpes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="p-6 space-y-4">
+              <div className="space-y-3">
+                <p className="text-gray-800 font-medium leading-relaxed">
+                  Esclarecemos que <strong className="text-cgb-primary">não realizamos nenhum tipo de cobrança</strong> para participação em nossos processos seletivos.
+                </p>
+
+                <p className="text-gray-700 leading-relaxed">
+                  Todas as candidaturas devem ser feitas <strong>exclusivamente</strong> no site:
+                </p>
+
+                <div className="bg-cgb-primary/5 border border-cgb-primary/20 rounded-lg p-3">
+                  <p className="text-cgb-primary font-bold text-center text-lg">
+                    www.cgbvagas.com.br
+                  </p>
+                </div>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-800 font-semibold text-center">
+                    🚨 Fique atento a tentativas de golpe!
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200">
+                <Button
+                  onClick={handleCloseAntiScamPopup}
+                  className="w-full bg-cgb-primary hover:bg-cgb-primary-dark text-white font-semibold py-3 rounded-lg transition-colors"
+                >
+                  Entendi, continuar navegando
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative z-10">
 
 
@@ -311,14 +388,14 @@ const Index = () => {
               Não encontrou a vaga ideal?
             </h2>
             <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Cadastre-se no nosso banco de talentos e seja o primeiro a saber sobre novas oportunidades
+              Cadastre seu currículo aqui e seja o primeiro a saber sobre novas oportunidades
             </p>
             <Button
               asChild
               className="bg-white text-cgb-primary hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-xl transition-colors"
             >
               <Link to="/cadastrar-curriculo">
-                Banco de Talentos
+                Cadastre Seu Currículo
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </Button>
@@ -344,7 +421,7 @@ const Index = () => {
                   Portal de Carreiras
                 </p>
                 <p className="text-gray-500 max-w-2xl mx-auto">
-                  Conectando talentos excepcionais com oportunidades únicas no setor energético.
+                  Conectando talentos excepcionais com oportunidades únicas.
                 </p>
               </div>
 
@@ -360,7 +437,7 @@ const Index = () => {
                   to="/cadastrar-curriculo"
                   className="text-gray-600 hover:text-cgb-primary transition-colors font-medium"
                 >
-                  Banco de Talentos
+                  Cadastre Seu Currículo
                 </Link>
                 <a
                   href="https://cgbengenharia.com.br"

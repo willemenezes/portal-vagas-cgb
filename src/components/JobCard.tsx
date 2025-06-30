@@ -83,7 +83,7 @@ const JobCard = ({ job, isTalentBank = false }: JobCardProps) => {
               size="lg"
               className="bg-cgb-primary hover:bg-cgb-primary-dark text-white transition-colors shadow-md hover:shadow-lg"
             >
-              Fazer parte do Banco de Talentos
+              Cadastre Seu Currículo
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>

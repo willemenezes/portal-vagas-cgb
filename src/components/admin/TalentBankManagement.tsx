@@ -230,11 +230,11 @@ const TalentBankManagement = () => {
                 <CardHeader>
                     <CardTitle className="text-cgb-blue flex items-center">
                         <Archive className="w-6 h-6 mr-2 text-cgb-blue" />
-                        Banco de Talentos
+                        Cadastro de Currículos
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center py-20">
-                    <p className="text-lg text-gray-600">A vaga "Banco de Talentos" ainda não foi criada.</p>
+                    <p className="text-lg text-gray-600">A vaga "Cadastro de Currículos" ainda não foi criada.</p>
                     <p className="text-sm text-gray-500 mt-2">Por favor, vá para "Gestão de Vagas" e crie a vaga para começar a usar este recurso.</p>
                 </CardContent>
             </Card>
@@ -249,7 +249,7 @@ const TalentBankManagement = () => {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Archive className="w-6 h-6 text-cgb-primary" />
-                                <span>Banco de Talentos</span>
+                                <span>Cadastro de Currículos</span>
                             </CardTitle>
                             <div className="space-y-1 mt-2">
                                 <p className="text-gray-500">Gerencie currículos enviados para futuras oportunidades.</p>
@@ -526,7 +526,7 @@ const TalentBankManagement = () => {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta ação excluirá permanentemente o currículo de "{resumeToDelete?.name}" do banco de talentos.
+                            Esta ação excluirá permanentemente o currículo de "{resumeToDelete?.name}" do sistema.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

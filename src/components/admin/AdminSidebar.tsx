@@ -9,7 +9,8 @@ import {
     UserCheck,
     FileText,
     Send,
-    Gavel
+    Gavel,
+    Loader2
 } from "lucide-react";
 
 // Adicionei um tipo para as props para melhor organização
@@ -18,6 +19,7 @@ type AdminSidebarProps = {
     setActiveTab: (tab: string) => void;
     userRole: 'admin' | 'recruiter' | 'manager' | 'juridico';
     onLogout: () => void;
+    isLoggingOut?: boolean;
 };
 
 const NavItem = ({ icon: Icon, text, active, onClick, isNew = false }) => (
@@ -39,7 +41,7 @@ const NavItem = ({ icon: Icon, text, active, onClick, isNew = false }) => (
     </button>
 );
 
-export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout }: AdminSidebarProps) => {
+export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLoggingOut }: AdminSidebarProps) => {
     let menuItems = [];
 
     if (userRole === 'manager') {
@@ -65,7 +67,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout }: Ad
             { id: "selection-process", icon: TrendingUp, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
             { id: "candidates", icon: Users, text: "Candidatos", action: () => setActiveTab("candidates") },
             { id: "hired", icon: UserCheck, text: "Contratados", action: () => setActiveTab("hired") },
-            { id: "talent-bank", icon: Archive, text: "Banco de Talentos", action: () => setActiveTab("talent-bank") },
+            { id: "talent-bank", icon: Archive, text: "Cadastro de Currículos", action: () => setActiveTab("talent-bank") },
             { id: "reports", icon: FileText, text: "Relatórios", action: () => setActiveTab("reports") },
         ];
 
@@ -99,10 +101,18 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout }: Ad
                 <div className="flex flex-col gap-2 pt-4 border-t border-gray-200">
                     <button
                         onClick={onLogout}
-                        className="w-full flex items-center gap-4 px-4 py-3 text-base font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors rounded-lg group"
+                        disabled={isLoggingOut}
+                        className={`w-full flex items-center gap-4 px-4 py-3 text-base font-semibold transition-colors rounded-lg group ${isLoggingOut
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "text-red-600 hover:bg-red-100 hover:text-red-700"
+                            }`}
                     >
-                        <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-700" />
-                        <span>Sair</span>
+                        {isLoggingOut ? (
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-gray-400" />
+                        ) : (
+                            <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-700" />
+                        )}
+                        <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>
                     </button>
                 </div>
                 <div className="text-center text-gray-600 text-xs mt-5">
