@@ -188,7 +188,7 @@ const Index = () => {
 
                 {/* Subtitle */}
                 <p className="text-lg sm:text-xl text-gray-600 mb-12 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                  Conectamos talentos excepcionais com oportunidades únicas na CGB Energia.
+                  Conectamos talentos excepcionais com oportunidades únicas no Grupo CGB.
                 </p>
               </div>
 
