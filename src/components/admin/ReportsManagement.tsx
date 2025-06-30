@@ -115,8 +115,8 @@ const ReportsManagement = () => {
                 // 7. Vagas Aprovadas
                 const approvedJobsCount = jobs.filter(j => j.approval_status === 'active').length;
 
-                // 8. Vagas Rejeitadas
-                const rejectedJobsCount = jobs.filter(j => j.approval_status === 'rejected').length;
+                // 8. Candidatos Reprovados
+                const rejectedCandidatesCount = candidates.filter(c => c.status === 'Reprovado').length;
 
                 let csvRows = [
                     headers,
@@ -127,7 +127,7 @@ const ReportsManagement = () => {
                     ['Tempo Médio de Contratação', avgTimeToHire, 'Média de dias desde a criação da vaga até a contratação'],
                     ['Contratações no Mês', hiresThisMonth, 'Novos talentos aprovados no último mês'],
                     ['Vagas Processadas', approvedJobsCount, 'Total de requisições de vagas processadas pelos gestores'],
-                    ['Vagas Rejeitadas', rejectedJobsCount, 'Total de requisições de vagas devolvidas para o RH']
+                    ['Candidatos Reprovados', rejectedCandidatesCount, 'Candidatos que não passaram no processo seletivo']
                 ];
 
                 if (csvRows.length <= 1) {

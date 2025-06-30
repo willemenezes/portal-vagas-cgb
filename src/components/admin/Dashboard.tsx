@@ -283,9 +283,10 @@ const Dashboard = () => {
         if (allJobsError) throw allJobsError;
 
         const approvedJobs = allJobsData?.filter(j => j.approval_status === 'active').length || 0;
-        const rejectedJobs = allJobsData?.filter(j => j.approval_status === 'rejected').length || 0;
+        // Contar candidatos reprovados ao invés de vagas rejeitadas
+        const rejectedCandidates = validCandidates.filter(c => c.status === 'Reprovado').length || 0;
         if (isMounted) {
-          setJobStats({ approved: approvedJobs, rejected: rejectedJobs });
+          setJobStats({ approved: approvedJobs, rejected: rejectedCandidates });
         }
 
         if (isMounted) {
@@ -595,15 +596,15 @@ const Dashboard = () => {
             <p className="text-xs text-cyan-800/80">Requisições de vagas processadas</p>
           </CardContent>
         </Card>
-        {/* Card de Vagas Rejeitadas */}
+        {/* Card de Candidatos Reprovados */}
         <Card className="bg-rose-100 border-rose-200 text-rose-900 transition-all hover:shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Vagas Rejeitadas</CardTitle>
+            <CardTitle className="text-sm font-medium">Candidatos Reprovados</CardTitle>
             <ThumbsDown className="w-4 h-4 text-rose-700" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{jobStats.rejected}</div>
-            <p className="text-xs text-rose-800/80">Requisições de vagas devolvidas</p>
+            <p className="text-xs text-rose-800/80">Candidatos que não passaram na seleção</p>
           </CardContent>
         </Card>
       </div>
