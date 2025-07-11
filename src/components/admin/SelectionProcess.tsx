@@ -115,12 +115,15 @@ const SelectionProcess = () => {
         }
     }, [selectedJobId, jobsForSelection]);
 
-    // Verificar e corrigir candidatos em "Validação TJ" com legal_status incorreto
+    /*
+    // Este useEffect foi removido pois estava causando um efeito colateral indesejado.
+    // Ele resetava o `legal_status` para 'pendente' sempre que um candidato em 'Validação TJ'
+    // era aprovado pelo jurídico, desfazendo a ação visualmente no Kanban.
+    // A lógica atual de aprovação já garante a consistência dos status.
     useEffect(() => {
         const checkAndFixLegalStatus = async () => {
             if (!candidates.length) return;
 
-            // Encontrar candidatos em "Validação TJ" que não estão com legal_status "pendente"
             const candidatesInTJWithWrongStatus = candidates.filter(
                 c => c.status === 'Validação TJ' && c.legal_status !== 'pendente'
             );
@@ -140,7 +143,6 @@ const SelectionProcess = () => {
                         } else {
                             console.log(`Legal_status corrigido para ${candidate.name}`);
 
-                            // Adicionar nota no histórico sobre a correção automática
                             if (user) {
                                 createNote.mutate({
                                     candidate_id: candidate.id,
@@ -159,6 +161,7 @@ const SelectionProcess = () => {
 
         checkAndFixLegalStatus();
     }, [candidates]);
+    */
 
     const handleCardClick = (candidate: Candidate) => {
         setSelectedCandidate(candidate);
@@ -237,22 +240,30 @@ const SelectionProcess = () => {
         return initialCols;
     }, [filteredCandidates, activeTab]);
 
-    const onDragEnd = (result: DropResult) => {
+    const onDragEnd = async (result: DropResult) => {
         const { source, destination, draggableId } = result;
         if (!destination) return;
 
-        const candidate = filteredCandidates.find(c => c.id === draggableId);
+        const candidate = candidates.find(c => c.id === draggableId);
         if (!candidate) return;
 
-        // Regra de bloqueio do Kanban
+        // Regra de bloqueio para Validação TJ
         if (source.droppableId === 'Validação TJ' && destination.droppableId !== 'Validação TJ') {
-            if (candidate.legal_status !== 'aprovado' && candidate.legal_status !== 'aprovado_com_restricao') {
+            const { data: legalData, error } = await supabase
+                .from('candidate_legal_data')
+                .select('review_status')
+                .eq('candidate_id', candidate.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error || !legalData || legalData.review_status !== 'approved') {
                 toast({
-                    title: "Ação Bloqueada",
-                    description: "Este candidato ainda não foi validado pelo departamento jurídico.",
-                    variant: "destructive",
+                    title: 'Ação Bloqueada',
+                    description: 'Este candidato ainda não foi validado pelo departamento jurídico.',
+                    variant: 'destructive',
                 });
-                return; // Impede o movimento
+                return;
             }
         }
 

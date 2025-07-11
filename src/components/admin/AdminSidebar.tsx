@@ -17,7 +17,7 @@ import {
 type AdminSidebarProps = {
     activeTab: string;
     setActiveTab: (tab: string) => void;
-    userRole: 'admin' | 'recruiter' | 'manager' | 'juridico';
+    userRole: 'admin' | 'recruiter' | 'manager' | 'juridico' | 'solicitador';
     onLogout: () => void;
     isLoggingOut?: boolean;
 };
@@ -48,7 +48,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         // Menu específico para Gerência
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
-            { id: "approvals", icon: Send, text: "Aprovações", action: () => setActiveTab("approvals") },
+            { id: "unified-approvals", icon: Send, text: "Aprovações", action: () => setActiveTab("unified-approvals") },
             { id: "hired", icon: UserCheck, text: "Contratados", action: () => setActiveTab("hired") },
             { id: "reports", icon: FileText, text: "Relatórios", action: () => setActiveTab("reports") },
         ];
@@ -58,11 +58,16 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
             { id: "legal-validation", icon: Gavel, text: "Validação Legal", action: () => setActiveTab("legal-validation") },
         ];
+    } else if (userRole === 'solicitador') {
+        // Menu específico para Solicitador de Vagas
+        menuItems = [
+            { id: "jobs", icon: Briefcase, text: "Solicitação de Vagas", action: () => setActiveTab("jobs") },
+        ];
     } else {
         // Menu para Admin e Recrutador
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
-            { id: "approvals", icon: Send, text: "Aprovações", action: () => setActiveTab("approvals") },
+            { id: "unified-approvals", icon: Send, text: "Aprovações", action: () => setActiveTab("unified-approvals") },
             { id: "jobs", icon: Briefcase, text: "Gestão de Vagas", isNew: true, action: () => setActiveTab("jobs") },
             { id: "selection-process", icon: TrendingUp, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
             { id: "candidates", icon: Users, text: "Candidatos", action: () => setActiveTab("candidates") },

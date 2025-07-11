@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import JobManagement from "@/components/admin/JobManagement";
+import JobRequestManagement from "@/components/admin/JobRequestManagement";
 import CandidateManagement from "@/components/admin/CandidateManagement";
 import ResumeManagement from "@/components/admin/ResumeManagement";
 import Dashboard from "@/components/admin/Dashboard";
@@ -9,11 +10,11 @@ import RHManagement from "@/components/admin/RHManagement";
 import SelectionProcess from "@/components/admin/SelectionProcess";
 import HiredManagement from "@/components/admin/HiredManagement";
 import ReportsManagement from "@/components/admin/ReportsManagement";
+import UnifiedApprovals from "@/components/admin/UnifiedApprovals";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { Loader2 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import ApprovalManagement from "@/components/admin/ApprovalManagement";
 import LegalValidation from "@/components/admin/LegalValidation";
 
 const Admin = () => {
@@ -26,9 +27,11 @@ const Admin = () => {
   useEffect(() => {
     if (rhProfile) {
       if (rhProfile.role === 'manager') {
-        setActiveTab('approvals');
+        setActiveTab('unified-approvals');
       } else if (rhProfile.role === 'juridico') {
         setActiveTab('legal-validation');
+      } else if (rhProfile.role === 'solicitador') {
+        setActiveTab('jobs');
       } else {
         setActiveTab('dashboard');
       }
@@ -89,12 +92,12 @@ const Admin = () => {
     switch (activeTab) {
       case "dashboard":
         return <Dashboard />;
-      case "approvals":
-        return <ApprovalManagement />;
+      case "unified-approvals":
+        return <UnifiedApprovals />;
       case "legal-validation":
         return <LegalValidation />;
       case "jobs":
-        return <JobManagement />;
+        return rhProfile?.role === 'solicitador' ? <JobRequestManagement /> : <JobManagement />;
       case "candidates":
         return <CandidateManagement />;
       case "hired":

@@ -87,11 +87,13 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
     isLoading?: boolean
 }) => {
     const { toast } = useToast();
+    const { user } = useAuth();
+    const superAdminEmail = 'wille.menezes@cgbengenharia.com.br';
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState<'admin' | 'recruiter' | 'manager' | 'juridico'>('recruiter');
+    const [role, setRole] = useState<'admin' | 'recruiter' | 'manager' | 'juridico' | 'solicitador'>('recruiter');
     const [selectedStates, setSelectedStates] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
@@ -102,10 +104,23 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
     const [loadingIbgeCities, setLoadingIbgeCities] = useState(false);
     const [statesWithCities, setStatesWithCities] = useState<Record<string, { id: number; nome: string }[]>>({});
 
+    // Inicialização segura do role
+    useEffect(() => {
+        if (userToEdit) {
+            setRole(userToEdit.role || 'recruiter');
+        } else {
+            // Se não for superadmin, nunca inicializa como admin
+            if (user?.email === superAdminEmail) {
+                setRole('recruiter');
+            } else {
+                setRole('recruiter');
+            }
+        }
+    }, [userToEdit, isOpen, user]);
+
     useEffect(() => {
         setFullName(userToEdit?.full_name || '');
         setEmail(userToEdit?.email || '');
-        setRole(userToEdit?.role || 'recruiter');
         setSelectedStates(userToEdit?.assigned_states || []);
         setSelectedCities(userToEdit?.assigned_cities || []);
         setPassword('');
@@ -125,7 +140,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                 setLoadingIbgeStates(false);
             }
         };
-        if (isOpen && (role === 'recruiter' || role === 'manager')) {
+        if (isOpen && (role === 'recruiter' || role === 'manager' || role === 'solicitador')) {
             fetchStates();
         }
     }, [isOpen, role]);
@@ -173,7 +188,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
     };
 
     const handleSubmit = () => {
-        const hasRegionalAccess = role === 'recruiter' | role === 'manager';
+        const hasRegionalAccess = role === 'recruiter' || role === 'manager' || role === 'solicitador';
         // A role 'juridico' não tem acesso regional
         const isJuridico = role === 'juridico';
 
@@ -313,6 +328,16 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
         onOpenChange(open);
     }
 
+    if (role === 'admin' && user?.email !== superAdminEmail) {
+        toast({
+            title: 'Permissão negada',
+            description: 'Apenas o superadmin pode criar usuários Admin.',
+            variant: 'destructive',
+        });
+        setRole('recruiter');
+        return;
+    }
+
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -396,19 +421,22 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="role" className="text-right">Nível de Acesso</Label>
-                        <Select onValueChange={(value: 'admin' | 'recruiter' | 'manager' | 'juridico') => setRole(value)} value={role}>
+                        <Select onValueChange={(value) => setRole(value)} value={role}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Selecione o nível" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="admin">Admin (Acesso Total)</SelectItem>
-                                <SelectItem value="recruiter">Recrutador (Acesso por Região)</SelectItem>
-                                <SelectItem value="manager">Gerência (Aprovações por Região)</SelectItem>
-                                <SelectItem value="juridico">Jurídico (Validação de Candidatos)</SelectItem>
+                                {[
+                                    user?.email === superAdminEmail ? <SelectItem value="admin" key="admin">Admin (Acesso total)</SelectItem> : null,
+                                    <SelectItem value="recruiter" key="recruiter">Recrutador</SelectItem>,
+                                    <SelectItem value="manager" key="manager">Gerência</SelectItem>,
+                                    <SelectItem value="solicitador" key="solicitador">Solicitador de Vagas</SelectItem>,
+                                    <SelectItem value="juridico" key="juridico">Jurídico</SelectItem>
+                                ].filter(Boolean)}
                             </SelectContent>
                         </Select>
                     </div>
-                    {(role === 'recruiter' || role === 'manager') && (
+                    {(role === 'recruiter' || role === 'manager' || role === 'solicitador') && (
                         <div className="grid grid-cols-4 items-start gap-4">
                             <Label className="text-right pt-2">Regiões de Acesso</Label>
                             <div className="col-span-3 border rounded-md p-4 max-h-60 overflow-y-auto">
@@ -867,7 +895,8 @@ const RHManagementPanel = () => {
                                     admin: 'Admin',
                                     recruiter: 'Recrutador',
                                     manager: 'Gerência',
-                                    juridico: 'Jurídico'
+                                    juridico: 'Jurídico',
+                                    solicitador: 'Solicitador'
                                 };
                                 return (
                                     <TableRow key={rhUser.id}>
@@ -887,7 +916,7 @@ const RHManagementPanel = () => {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {(rhUser.role === 'recruiter' || rhUser.role === 'manager') ? (
+                                            {(rhUser.role === 'recruiter' || rhUser.role === 'manager' || rhUser.role === 'solicitador') ? (
                                                 <div className="space-y-1">
                                                     {rhUser.assigned_states && rhUser.assigned_states.length > 0 && (
                                                         <div>

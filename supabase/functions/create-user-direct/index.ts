@@ -86,7 +86,7 @@ serve(async (req) => {
 
         const authUserId = authData.user.id;
 
-        const hasRegionalAccess = role === 'recruiter' || role === 'manager';
+        const hasRegionalAccess = role === 'recruiter' || role === 'manager' || role === 'solicitador';
 
         const insertData = {
             user_id: authUserId,

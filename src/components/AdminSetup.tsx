@@ -17,7 +17,7 @@ const AdminSetup = () => {
 
   const handleAdminSetup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       toast({
         title: "Erro na confirmação",
@@ -37,7 +37,7 @@ const AdminSetup = () => {
     }
 
     setLoading(true);
-    
+
     try {
       // Criar usuário administrador
       const { data, error } = await supabase.auth.signUp({
@@ -97,7 +97,7 @@ const AdminSetup = () => {
         </CardTitle>
         <p className="text-cgb-primary/70">Configure a conta do administrador geral</p>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleAdminSetup} className="space-y-4">
           <div className="space-y-2">
@@ -114,7 +114,7 @@ const AdminSetup = () => {
               readOnly
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="admin-password" className="text-cgb-primary font-semibold">
               Senha
@@ -129,7 +129,7 @@ const AdminSetup = () => {
               className="bg-white/80 border-cgb-primary/30 focus:border-cgb-accent"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="confirm-password" className="text-cgb-primary font-semibold">
               Confirmar Senha
@@ -144,9 +144,9 @@ const AdminSetup = () => {
               className="bg-white/80 border-cgb-primary/30 focus:border-cgb-accent"
             />
           </div>
-          
-          <Button 
-            type="submit" 
+
+          <Button
+            type="submit"
             className="w-full bg-gradient-to-r from-cgb-primary to-cgb-accent hover:from-cgb-primary-dark hover:to-cgb-accent-dark text-white font-bold"
             disabled={loading}
           >

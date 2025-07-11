@@ -1,26 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Candidate } from '@/hooks/useCandidates';
 import { useAuth } from '@/hooks/useAuth';
 import {
-    Loader2,
-    ThumbsUp,
-    ThumbsDown,
-    UserCheck,
-    AlertTriangle,
-    MapPin,
-    Briefcase,
-    Clock,
-    User,
-    Phone,
-    Mail,
-    Car,
-    Calendar,
-    Building,
-    FileText,
-    ChevronDown,
-    ChevronUp
+    Loader2, ThumbsUp, ThumbsDown, UserCheck, AlertTriangle, MapPin, Briefcase, Clock, User,
+    Phone, Mail, Car, Calendar, Building, FileText, ChevronDown, ChevronUp, Shield, CheckCircle, XCircle, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,105 +15,40 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { legal_validation_status } from '@/lib/constants';
+import { useLegalData, useReviewLegalData, useMyApprovedValidations, useCandidatesForLegalValidation } from '@/hooks/useLegalData';
+import { useRHProfile } from '@/hooks/useRH';
+import { useUpdateCandidateStatus } from '@/hooks/useCandidates';
+import { maskCPF, maskRG } from '@/utils/legal-validation';
+import { format } from 'date-fns';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ApprovedLegalValidations from './ApprovedLegalValidations';
 
 type LegalStatus = 'aprovado' | 'reprovado' | 'aprovado_com_restricao';
 
 interface ExtendedCandidate extends Candidate {
     job?: {
-        title: string;
-        city: string;
-        state: string;
-        department: string;
-        type: string;
-        workload: string;
-        description: string;
+        title: string; city: string; state: string; department: string; type: string; workload: string; description: string;
     };
-    candidate_city?: string;
-    candidate_state?: string;
-    age?: string;
-    pcd?: string;
-    cnh?: string;
-    vehicle?: string;
-    vehicle_model?: string;
-    vehicle_year?: string;
-    worked_at_cgb?: string;
-    desired_job?: string;
-    applied_date?: string;
+    candidate_legal_data?: { id: string; review_status: string; collected_at: string; }[];
 }
-
-// Hook para buscar candidatos em validação com dados completos
-const useCandidatesForLegalValidation = () => {
-    return useQuery<ExtendedCandidate[], Error>({
-        queryKey: ['candidatesForLegalValidation'],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('candidates')
-                .select(`
-                    *,
-                    job:jobs (
-                        title,
-                        city,
-                        state,
-                        department,
-                        type,
-                        workload,
-                        description
-                    )
-                `)
-                .eq('status', 'Validação TJ')
-                .eq('legal_status', 'pendente');
-            if (error) throw error;
-            return data || [];
-        }
-    });
-};
-
-// Hook para atualizar a validação
-const useUpdateLegalValidation = () => {
-    const queryClient = useQueryClient();
-    const { user } = useAuth();
-    return useMutation({
-        mutationFn: async ({ candidateId, status, comments }: { candidateId: string; status: LegalStatus; comments?: string }) => {
-            // 1. Atualiza a tabela 'candidates'
-            const { error: candidateError } = await supabase
-                .from('candidates')
-                .update({ legal_status: status })
-                .eq('id', candidateId);
-            if (candidateError) throw candidateError;
-
-            // 2. Insere o registro na tabela de validações
-            const { error: validationError } = await supabase
-                .from('candidate_legal_validations')
-                .insert({
-                    candidate_id: candidateId,
-                    validator_id: user?.id,
-                    status,
-                    comments,
-                });
-            if (validationError) throw validationError;
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
-            queryClient.invalidateQueries({ queryKey: ['candidateHistory', variables.candidateId] });
-            queryClient.invalidateQueries({ queryKey: ['candidateNotes', variables.candidateId] });
-            queryClient.invalidateQueries({ queryKey: ['candidateLegalValidations', variables.candidateId] });
-        },
-    });
-};
 
 const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; onAction: (candidate: ExtendedCandidate, action: LegalStatus) => void }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const { data: legalData, isLoading: isLoadingLegal } = useLegalData(candidate.id);
+    const reviewLegalData = useReviewLegalData();
+    const { toast } = useToast();
+    const { user } = useAuth();
+    const { data: rhProfile } = useRHProfile(user?.id);
 
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    const legalDataStatus = legalData?.review_status || 'not_collected';
+
+    const handleLegalReview = async (status: 'approved' | 'rejected' | 'request_changes', notes?: string) => {
+        try {
+            await reviewLegalData.mutateAsync({ candidateId: candidate.id, status, notes });
+        } catch (error) {
+            toast({ title: 'Erro ao revisar dados', description: 'Não foi possível salvar a revisão dos dados jurídicos.', variant: 'destructive' });
+        }
     };
 
     return (
@@ -136,77 +56,30 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div className="flex-1">
-                        <CardTitle className="text-xl mb-2 flex items-center gap-2">
-                            <User className="w-5 h-5" />
-                            {candidate.name}
-                        </CardTitle>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            {/* Informações da Vaga */}
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-primary font-medium">
-                                    <Briefcase className="w-4 h-4" />
-                                    Vaga: {candidate.job?.title || 'N/A'}
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <MapPin className="w-4 h-4" />
-                                    {candidate.job?.city || 'N/A'} - {candidate.job?.state || 'N/A'}
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Building className="w-4 h-4" />
-                                    {candidate.job?.department || 'N/A'}
-                                </div>
-                            </div>
-
-                            {/* Informações do Candidato */}
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Mail className="w-4 h-4" />
-                                    {candidate.email}
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Phone className="w-4 h-4" />
-                                    {candidate.phone}
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Calendar className="w-4 h-4" />
-                                    Aplicado em: {formatDate(candidate.applied_date)}
-                                </div>
-                            </div>
+                        <CardTitle className="text-xl mb-2">{candidate.name}</CardTitle>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Briefcase className="w-4 h-4" /> <span>{candidate.job?.title}</span>
+                            <MapPin className="w-4 h-4 ml-2" /> <span>{candidate.job?.city} - {candidate.job?.state}</span>
                         </div>
                     </div>
-
-                    {/* Botões de Ação */}
                     <div className="flex flex-col gap-2 ml-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onAction(candidate, 'reprovado')}
-                            className="text-red-600 border-red-200 hover:bg-red-50"
-                        >
-                            <ThumbsDown className="w-4 h-4 mr-1" />
-                            Reprovar
+                        {legalData?.review_status !== 'approved' && (
+                            <Alert className="mb-2 text-sm">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    Revise os dados jurídicos primeiro.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <Button size="sm" onClick={() => onAction(candidate, 'aprovado')} disabled={legalData?.review_status !== 'approved'} className="bg-green-600 hover:bg-green-700">
+                            <ThumbsUp className="w-4 h-4 mr-1" /> Aprovar Candidato
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onAction(candidate, 'aprovado_com_restricao')}
-                            className="text-yellow-600 border-yellow-200 hover:bg-yellow-50"
-                        >
-                            <AlertTriangle className="w-4 h-4 mr-1" />
-                            Aprovar c/ Restrição
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={() => onAction(candidate, 'aprovado')}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            <ThumbsUp className="w-4 h-4 mr-1" />
-                            Aprovar
+                        <Button variant="outline" size="sm" onClick={() => onAction(candidate, 'reprovado')} className="text-red-600 border-red-200 hover:bg-red-50">
+                            <ThumbsDown className="w-4 h-4 mr-1" /> Reprovar Candidato
                         </Button>
                     </div>
                 </div>
             </CardHeader>
-
             <CardContent className="pt-0">
                 <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
                     <CollapsibleTrigger asChild>
@@ -217,96 +90,68 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                     </CollapsibleTrigger>
                     <CollapsibleContent className="space-y-4 mt-4">
                         <Separator />
+                        {isLoadingLegal ? <Loader2 className="animate-spin" /> : legalData && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h4 className="font-semibold text-sm text-blue-900 mb-3 flex items-center gap-2"><Shield className="w-4 h-4" />Dados para Validação Jurídica</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+                                    {/* Dados Pessoais */}
+                                    <div className="space-y-2">
+                                        <h5 className="font-medium text-xs text-blue-800 uppercase">Dados Pessoais</h5>
+                                        <div><span className="font-medium">Nome:</span> {legalData.full_name}</div>
+                                        <div><span className="font-medium">CPF:</span> {rhProfile?.role === 'juridico' ? legalData.cpf : maskCPF(legalData.cpf)}</div>
+                                        <div><span className="font-medium">RG:</span> {rhProfile?.role === 'juridico' ? legalData.rg : maskRG(legalData.rg)}</div>
+                                        <div><span className="font-medium">Data Nasc.:</span> {format(new Date(legalData.birth_date), 'dd/MM/yyyy')}</div>
+                                        <div><span className="font-medium">Naturalidade:</span> {legalData.birth_city}/{legalData.birth_state}</div>
+                                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Detalhes da Vaga */}
-                            <div className="space-y-3">
-                                <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                                    <Briefcase className="w-4 h-4" />
-                                    Detalhes da Vaga
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div>
-                                        <span className="font-medium">Tipo:</span>
-                                        <Badge variant="secondary" className="ml-2">
-                                            {candidate.job?.type || 'N/A'}
-                                        </Badge>
+                                    {/* Filiação */}
+                                    <div className="space-y-2">
+                                        <h5 className="font-medium text-xs text-blue-800 uppercase">Filiação</h5>
+                                        <div><span className="font-medium">Mãe:</span> {legalData.mother_name}</div>
+                                        <div><span className="font-medium">Pai:</span> {legalData.father_name || 'Não informado'}</div>
                                     </div>
-                                    <div>
-                                        <span className="font-medium">Carga Horária:</span>
-                                        <span className="ml-2">{candidate.job?.workload || 'N/A'}</span>
+
+                                    {/* Informações Adicionais */}
+                                    <div className="space-y-2">
+                                        <h5 className="font-medium text-xs text-blue-800 uppercase">Informações Adicionais</h5>
+                                        <div><span className="font-medium">Função Pretendida:</span> {legalData.desired_position}</div>
+                                        <div><span className="font-medium">Ex-colaborador:</span> {legalData.is_former_employee ? 'Sim' : 'Não'}</div>
+                                        <div><span className="font-medium">PCD:</span> {legalData.is_pcd ? 'Sim' : 'Não'}</div>
+                                        {legalData.responsible_name && (
+                                            <div><span className="font-medium">Responsável:</span> {legalData.responsible_name}</div>
+                                        )}
                                     </div>
-                                    {candidate.job?.description && (
-                                        <div>
-                                            <span className="font-medium">Descrição:</span>
-                                            <p className="mt-1 text-muted-foreground">{candidate.job.description}</p>
+
+                                    {/* Histórico Profissional */}
+                                    {legalData.work_history && legalData.work_history.length > 0 && (
+                                        <div className="col-span-full space-y-2">
+                                            <h5 className="font-medium text-xs text-blue-800 uppercase">Histórico Profissional</h5>
+                                            <div className="space-y-2">
+                                                {legalData.work_history.map((work, index) => (
+                                                    <div key={index} className="text-sm bg-white rounded p-2 border">
+                                                        <div className="font-medium">{work.position} - {work.company}</div>
+                                                        <div className="text-xs text-gray-600">
+                                                            {format(new Date(work.start_date), 'MM/yyyy')} -
+                                                            {work.is_current ? ' Atual' : work.end_date ? ` ${format(new Date(work.end_date), 'MM/yyyy')}` : ''}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
+                                {legalData.review_status === 'pending' && (
+                                    <div className="mt-4 pt-4 border-t flex gap-2">
+                                        <Button size="sm" onClick={() => handleLegalReview('approved')} className="bg-green-600 hover:bg-green-700">
+                                            <CheckCircle className="w-4 h-4 mr-1" /> Aprovar Dados
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => { const notes = prompt('Motivo da rejeição:'); if (notes) handleLegalReview('rejected', notes); }} className="text-red-500">
+                                            <XCircle className="w-4 h-4 mr-1" /> Rejeitar Dados
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
-
-                            {/* Informações Pessoais */}
-                            <div className="space-y-3">
-                                <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                                    <User className="w-4 h-4" />
-                                    Dados Pessoais
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div>
-                                        <span className="font-medium">Idade:</span>
-                                        <span className="ml-2">{candidate.age || 'N/A'} anos</span>
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">PCD:</span>
-                                        <Badge variant={candidate.pcd === 'Sim' ? 'default' : 'secondary'} className="ml-2">
-                                            {candidate.pcd || 'N/A'}
-                                        </Badge>
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">Cidade:</span>
-                                        <span className="ml-2">
-                                            {candidate.candidate_city || 'N/A'} - {candidate.candidate_state || 'N/A'}
-                                        </span>
-                                    </div>
-                                    {candidate.worked_at_cgb && (
-                                        <div>
-                                            <span className="font-medium">Já trabalhou na CGB:</span>
-                                            <Badge variant="outline" className="ml-2">
-                                                {candidate.worked_at_cgb}
-                                            </Badge>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Informações de Transporte */}
-                            <div className="space-y-3">
-                                <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                                    <Car className="w-4 h-4" />
-                                    Transporte
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div>
-                                        <span className="font-medium">CNH:</span>
-                                        <Badge variant="secondary" className="ml-2">
-                                            {candidate.cnh || 'N/A'}
-                                        </Badge>
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">Veículo:</span>
-                                        <span className="ml-2">{candidate.vehicle || 'N/A'}</span>
-                                    </div>
-                                    {candidate.vehicle_model && (
-                                        <div>
-                                            <span className="font-medium">Modelo:</span>
-                                            <span className="ml-2">
-                                                {candidate.vehicle_model} {candidate.vehicle_year ? `(${candidate.vehicle_year})` : ''}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </CollapsibleContent>
                 </Collapsible>
             </CardContent>
@@ -316,9 +161,9 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
 
 const LegalValidation = () => {
     const { data: candidates, isLoading } = useCandidatesForLegalValidation();
-    const updateValidation = useUpdateLegalValidation();
+    const updateCandidateStatus = useUpdateCandidateStatus();
+    const queryClient = useQueryClient();
     const { toast } = useToast();
-
     const [selectedCandidate, setSelectedCandidate] = useState<ExtendedCandidate | null>(null);
     const [action, setAction] = useState<LegalStatus | null>(null);
     const [comments, setComments] = useState('');
@@ -331,165 +176,68 @@ const LegalValidation = () => {
 
     const handleConfirm = async () => {
         if (!selectedCandidate || !action) return;
-        if (action !== 'aprovado' && !comments.trim()) {
-            toast({
-                title: 'Comentário obrigatório',
-                description: 'Para reprovar ou aprovar com restrição, um comentário é necessário.',
-                variant: 'destructive'
-            });
+        if (action !== 'aprovado' && !comments) {
+            toast({ title: 'Comentário obrigatório', variant: 'destructive' });
             return;
         }
 
-        updateValidation.mutate(
-            { candidateId: selectedCandidate.id, status: action, comments },
+        const newStatus = action === 'aprovado' ? 'Validação Frota' : 'Reprovado';
+
+        updateCandidateStatus.mutate(
+            { id: selectedCandidate.id, status: newStatus as any },
             {
                 onSuccess: () => {
-                    toast({
-                        title: 'Validação Salva!',
-                        description: `A validação para ${selectedCandidate.name} foi registrada com sucesso.`,
-                        variant: 'default'
-                    });
+                    toast({ title: 'Validação Salva!' });
                     setSelectedCandidate(null);
                     setAction(null);
+                    queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
                 },
-                onError: (error: any) => {
-                    toast({
-                        title: 'Erro ao Salvar',
-                        description: error.message,
-                        variant: 'destructive'
-                    });
-                }
+                onError: (error: any) => toast({ title: 'Erro ao Salvar', description: error.message, variant: 'destructive' })
             }
         );
     };
 
-    const getActionLabel = (action: LegalStatus) => {
-        switch (action) {
-            case 'aprovado': return 'Aprovado';
-            case 'reprovado': return 'Reprovado';
-            case 'aprovado_com_restricao': return 'Aprovado com Restrição';
-            default: return action;
-        }
-    };
-
-    const getActionColor = (action: LegalStatus) => {
-        switch (action) {
-            case 'aprovado': return 'text-green-600';
-            case 'reprovado': return 'text-red-600';
-            case 'aprovado_com_restricao': return 'text-yellow-600';
-            default: return 'text-gray-600';
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin" />
-                <span className="ml-2">Carregando candidatos...</span>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <UserCheck className="w-5 h-5" />
-                        Validação Legal de Candidatos
-                    </CardTitle>
-                    <CardDescription>
-                        Aprove, reprove ou aprove com restrições os candidatos na etapa de Validação TJ.
-                        Clique em "Ver detalhes completos" para visualizar todas as informações do candidato e da vaga.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-
-            <div className="space-y-4">
-                {candidates && candidates.length > 0 ? (
-                    candidates.map(candidate => (
-                        <CandidateCard
-                            key={candidate.id}
-                            candidate={candidate}
-                            onAction={handleActionClick}
-                        />
-                    ))
-                ) : (
-                    <Card>
-                        <CardContent className="py-12 text-center">
-                            <UserCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                            <p className="text-lg font-medium mb-2">Nenhum candidato aguardando validação</p>
-                            <p className="text-muted-foreground">
-                                Todos os candidatos foram validados ou não há candidatos na etapa de Validação TJ no momento.
-                            </p>
-                        </CardContent>
-                    </Card>
+        <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="pending">Pendentes <Badge className="ml-2">{candidates?.length || 0}</Badge></TabsTrigger>
+                <TabsTrigger value="history">Meu Histórico</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Validação Legal de Candidatos</CardTitle>
+                        <CardDescription>Aprove ou reprove os candidatos na etapa de Validação TJ.</CardDescription>
+                    </CardHeader>
+                </Card>
+                {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : (
+                    <div className="space-y-4 mt-4">
+                        {candidates && candidates.length > 0 ? candidates.map(c => <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} />)
+                            : <Card><CardContent className="py-12 text-center">Nenhum candidato aguardando validação.</CardContent></Card>}
+                    </div>
                 )}
-            </div>
-
+            </TabsContent>
+            <TabsContent value="history" className="mt-6">
+                <ApprovedLegalValidations />
+            </TabsContent>
             <Dialog open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <UserCheck className="w-5 h-5" />
-                            Confirmar Validação
-                        </DialogTitle>
-                    </DialogHeader>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Confirmar Validação</DialogTitle></DialogHeader>
                     <div className="py-4 space-y-4">
-                        <div className="bg-muted p-4 rounded-lg">
-                            <p className="font-medium">{selectedCandidate?.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                                {selectedCandidate?.job?.title} - {selectedCandidate?.job?.city}/{selectedCandidate?.job?.state}
-                            </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <span>Ação selecionada:</span>
-                            <Badge className={getActionColor(action!)}>
-                                {getActionLabel(action!)}
-                            </Badge>
-                        </div>
-
-                        {(action === 'reprovado' || action === 'aprovado_com_restricao') && (
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">
-                                    {action === 'reprovado' ? 'Motivo da reprovação:' : 'Restrições:'}
-                                </label>
-                                <Textarea
-                                    placeholder={action === 'reprovado'
-                                        ? "Descreva o motivo da reprovação..."
-                                        : "Descreva as restrições para aprovação..."
-                                    }
-                                    value={comments}
-                                    onChange={(e) => setComments(e.target.value)}
-                                    rows={4}
-                                    className="resize-none"
-                                />
-                            </div>
+                        <p>Deseja realmente <strong>{action === 'aprovado' ? 'aprovar' : 'reprovar'}</strong> o candidato <strong>{selectedCandidate?.name}</strong>?</p>
+                        {action !== 'aprovado' && (
+                            <Textarea placeholder="Motivo da reprovação..." value={comments} onChange={(e) => setComments(e.target.value)} />
                         )}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setSelectedCandidate(null)}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={handleConfirm}
-                            disabled={updateValidation.isPending}
-                            className={action === 'aprovado' ? 'bg-green-600 hover:bg-green-700' : ''}
-                        >
-                            {updateValidation.isPending ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Salvando...
-                                </>
-                            ) : (
-                                'Confirmar Validação'
-                            )}
+                        <Button variant="outline" onClick={() => setSelectedCandidate(null)}>Cancelar</Button>
+                        <Button onClick={handleConfirm} disabled={updateCandidateStatus.isPending}>
+                            {updateCandidateStatus.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </Tabs>
     );
 };
 

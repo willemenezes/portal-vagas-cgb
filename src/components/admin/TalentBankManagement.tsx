@@ -354,7 +354,7 @@ const TalentBankManagement = () => {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>{resume.email}</TableCell>
+                                            <TableCell>{resume.email}</TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col">
                                                         <span>{resume.position || 'N/A'}</span>
@@ -371,8 +371,8 @@ const TalentBankManagement = () => {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
-                                                <TableCell className="text-right">
+                                            <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
+                                            <TableCell className="text-right">
                                                     <div className="flex gap-2 justify-end">
                                                         {!isInvited && availableJobs.length > 0 && (
                                                             <Button
@@ -385,17 +385,17 @@ const TalentBankManagement = () => {
                                                                 Convidar
                                                             </Button>
                                                         )}
-                                                        <Button variant="outline" size="sm" asChild disabled={!resume.resume_file_url}>
+                                                <Button variant="outline" size="sm" asChild disabled={!resume.resume_file_url}>
                                                             <a href={resume.resume_file_url!} target="_blank" rel="noopener noreferrer">
                                                                 <Download className="w-4 h-4 mr-2" />Baixar
                                                             </a>
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
-                                                            <Trash2 className="w-4 h-4 text-destructive" />
-                                                        </Button>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
+                                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                                </Button>
                                                     </div>
-                                                </TableCell>
-                                            </TableRow>
+                                            </TableCell>
+                                        </TableRow>
                                         );
                                     })
                                 ) : (

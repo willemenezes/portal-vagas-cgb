@@ -12,12 +12,17 @@ import { useCandidateNotes, useCreateCandidateNote, useCandidateHistory, History
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { User, Mail, Phone, MapPin, Loader2, MessageSquare, Briefcase, Activity, Send, Info, List, X, ExternalLink, Download, MessageCircle, FileClock, Gavel, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Loader2, MessageSquare, Briefcase, Activity, Send, Info, List, X, ExternalLink, Download, MessageCircle, FileClock, Gavel, CheckCircle, XCircle, AlertTriangle, Shield, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LegalDataForm } from './LegalDataForm';
+import { useLegalData, useSaveLegalData } from '@/hooks/useLegalData';
+import { useRHProfile } from '@/hooks/useRH';
+import { Card, CardContent } from '@/components/ui/card';
+import { maskCPF, maskRG } from '@/utils/legal-validation';
 
 // Props do componente
 interface CandidateDetailModalProps {
@@ -285,25 +290,153 @@ const HistoryView = ({ candidate }: { candidate: Candidate }) => {
 };
 
 // Componente para a visão de "Detalhes"
-const DetailsView = ({ candidate }: { candidate: Candidate }) => (
-    <div className="p-8 space-y-8">
-        <div>
-            <h3 className="text-lg font-semibold text-gray-700">Informações de Contato</h3>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
-                <div className="flex items-center gap-3"><Mail className="w-5 h-5 text-gray-400" /> <span>{candidate.email}</span></div>
-                <div className="flex items-center gap-3"><Phone className="w-5 h-5 text-gray-400" /> <span>{candidate.phone}</span></div>
-                <div className="flex items-center gap-3 col-span-full"><MapPin className="w-5 h-5 text-gray-400" /> <span>{`${candidate.city}, ${candidate.state}`}</span></div>
+const DetailsView = ({ candidate }: { candidate: Candidate }) => {
+    const { user } = useAuth();
+    const { data: rhProfile } = useRHProfile(user?.id);
+    const { data: legalData, isLoading: isLoadingLegal } = useLegalData(candidate.id);
+    const saveLegalData = useSaveLegalData();
+    const [showLegalForm, setShowLegalForm] = useState(false);
+    const { toast } = useToast();
+
+    const canCollectLegalData = candidate.status === 'Validação TJ' &&
+        rhProfile &&
+        ['admin', 'recruiter', 'manager'].includes(rhProfile.role);
+
+    const canViewLegalData = legalData &&
+        rhProfile &&
+        ['admin', 'recruiter', 'manager', 'juridico'].includes(rhProfile.role);
+
+    const handleSaveLegalData = async (data: any) => {
+        await saveLegalData.mutateAsync({ candidateId: candidate.id, data });
+        setShowLegalForm(false);
+    };
+
+    const getLegalStatusBadge = () => {
+        if (!legalData) return null;
+
+        const statusConfig = {
+            pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
+            approved: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
+            rejected: { label: 'Reprovado', color: 'bg-red-100 text-red-800' },
+            request_changes: { label: 'Correções Solicitadas', color: 'bg-orange-100 text-orange-800' }
+        };
+
+        const config = statusConfig[legalData.review_status || 'pending'];
+        return <Badge className={`${config.color} border-0`}>{config.label}</Badge>;
+    };
+
+    return (
+        <div className="p-8 space-y-8">
+            <div>
+                <h3 className="text-lg font-semibold text-gray-700">Informações de Contato</h3>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+                    <div className="flex items-center gap-3"><Mail className="w-5 h-5 text-gray-400" /> <span>{candidate.email}</span></div>
+                    <div className="flex items-center gap-3"><Phone className="w-5 h-5 text-gray-400" /> <span>{candidate.phone}</span></div>
+                    <div className="flex items-center gap-3 col-span-full"><MapPin className="w-5 h-5 text-gray-400" /> <span>{`${candidate.city}, ${candidate.state}`}</span></div>
+                </div>
             </div>
-        </div>
-        <div>
-            <h3 className="text-lg font-semibold text-gray-700">Informações da Vaga</h3>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
-                <div className="flex items-center gap-3"><Briefcase className="w-5 h-5 text-gray-400" /> <span>{candidate.job?.title}</span></div>
-                <div className="flex items-center gap-3"><Activity className="w-5 h-5 text-gray-400" /> <span>Status: {candidate.status}</span></div>
+
+            <div>
+                <h3 className="text-lg font-semibold text-gray-700">Informações da Vaga</h3>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+                    <div className="flex items-center gap-3"><Briefcase className="w-5 h-5 text-gray-400" /> <span>{candidate.job?.title}</span></div>
+                    <div className="flex items-center gap-3"><Activity className="w-5 h-5 text-gray-400" /> <span>Status: {candidate.status}</span></div>
+                </div>
             </div>
+
+            {/* Seção de Validação Jurídica */}
+            {(canCollectLegalData || canViewLegalData) && (
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                            <Shield className="w-5 h-5 text-blue-600" />
+                            Validação Jurídica
+                        </h3>
+                        {legalData && getLegalStatusBadge()}
+                    </div>
+
+                    {isLoadingLegal ? (
+                        <Card>
+                            <CardContent className="p-6 flex items-center justify-center">
+                                <Loader2 className="animate-spin h-6 w-6 text-gray-400" />
+                            </CardContent>
+                        </Card>
+                    ) : legalData ? (
+                        <Card>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm text-gray-500">CPF</p>
+                                        <p className="font-medium">{maskCPF(legalData.cpf)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500">RG</p>
+                                        <p className="font-medium">{maskRG(legalData.rg)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500">Data de Nascimento</p>
+                                        <p className="font-medium">
+                                            {format(new Date(legalData.birth_date), 'dd/MM/yyyy')}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500">Naturalidade</p>
+                                        <p className="font-medium">{legalData.birth_city}/{legalData.birth_state}</p>
+                                    </div>
+                                </div>
+
+                                {legalData.review_notes && (
+                                    <div className="pt-4 border-t">
+                                        <p className="text-sm text-gray-500 mb-1">Observações da Revisão</p>
+                                        <p className="text-sm text-gray-700">{legalData.review_notes}</p>
+                                    </div>
+                                )}
+
+                                {canCollectLegalData && (
+                                    <div className="pt-4 border-t">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowLegalForm(true)}
+                                        >
+                                            <FileText className="w-4 h-4 mr-2" />
+                                            Editar Dados
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ) : canCollectLegalData ? (
+                        <Card className="border-dashed">
+                            <CardContent className="p-6 text-center">
+                                <Shield className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 mb-4">
+                                    Dados jurídicos ainda não coletados para este candidato.
+                                </p>
+                                <Button onClick={() => setShowLegalForm(true)}>
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Coletar Dados Jurídicos
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : null}
+                </div>
+            )}
+
+            {/* Modal do Formulário de Dados Jurídicos */}
+            {showLegalForm && (
+                <LegalDataForm
+                    candidateId={candidate.id}
+                    candidateName={candidate.name}
+                    isOpen={showLegalForm}
+                    onClose={() => setShowLegalForm(false)}
+                    onSubmit={handleSaveLegalData}
+                    initialData={legalData}
+                />
+            )}
         </div>
-    </div>
-);
+    );
+};
 
 // Conteúdo Principal que renderiza a view correta
 const MainContent = ({ view, candidate }: { view: string, candidate: Candidate }) => {
