@@ -590,10 +590,14 @@ const JobApplication = () => {
                       className="input"
                     >
                       <option value="">Selecione</option>
-                      <option value="A">CNH - A</option>
-                      <option value="B">CNH - B</option>
-                      <option value="AB">CNH - AB ou demais</option>
-                      <option value="NÃO POSSUO">NÃO POSSUO</option>
+                      <option value="CNH - A - PERMANENTE">CNH - A - PERMANENTE</option>
+                      <option value="CNH - A - PROVISÓRIA">CNH - A - PROVISÓRIA</option>
+                      <option value="CNH - AB - PERMANENTE">CNH - AB - PERMANENTE</option>
+                      <option value="CNH - AB - PROVISÓRIA">CNH - AB - PROVISÓRIA</option>
+                      <option value="CNH - B - PERMANENTE">CNH - B - PERMANENTE</option>
+                      <option value="CNH - B - PROVISÓRIA">CNH - B - PROVISÓRIA</option>
+                      <option value="NÃO POSSUI">NÃO POSSUI</option>
+                      <option value="Outra">Outra</option>
                     </select>
                   </div>
 
