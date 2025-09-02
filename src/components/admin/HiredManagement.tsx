@@ -68,7 +68,7 @@ const HiredManagement = () => {
                         <SelectContent>
                             <SelectItem value="all">Todas as Vagas</SelectItem>
                             {jobs.map(job => (
-                                <SelectItem key={job.id} value={job.id}>{job.title}</SelectItem>
+                                <SelectItem key={job.id} value={job.id}>{job.title} - {job.city}, {job.state}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

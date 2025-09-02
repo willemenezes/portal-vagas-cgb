@@ -372,7 +372,9 @@ const SelectionProcess = () => {
                         </SelectTrigger>
                         <SelectContent>
                             {jobsForSelection.map((job: Job) => (
-                                <SelectItem key={job.id} value={job.id!}>{job.title}</SelectItem>
+                                <SelectItem key={job.id} value={job.id!}>
+                                    {job.title} - {job.city}, {job.state}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
