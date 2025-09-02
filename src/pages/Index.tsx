@@ -182,7 +182,7 @@ const Index = () => {
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
                   <span className="block text-cgb-primary">
-                    Oportunidades que transformam vidas - TESTE LOCAL
+                    Oportunidades que transformam vidas
                   </span>
                 </h1>
 
