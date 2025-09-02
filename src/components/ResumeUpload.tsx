@@ -30,6 +30,7 @@ const ResumeUpload = () => {
     position: "",
     education: "",
     skills: "",
+    cnh: "",
     // Novos campos obrigatórios
     birthDate: "",
     rg: "",
@@ -202,6 +203,7 @@ const ResumeUpload = () => {
         position: "",
         education: "",
         skills: "",
+        cnh: "",
         birthDate: "",
         rg: "",
         cpf: "",
@@ -457,10 +459,29 @@ const ResumeUpload = () => {
                     id="skills"
                     value={formData.skills}
                     onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                    placeholder="Ex: Excel, Inglês, CNH categoria B, NR-10 (separar por vírgula)"
+                    placeholder="Ex: Excel, Inglês, NR-10 (separar por vírgula)"
                     required
                   />
                   <p className="text-xs text-cgb-gray mt-1">Separe as habilidades por vírgula</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="cnh">Possui CNH (Carteira Nacional de Habilitação)? *</Label>
+                  <Select value={formData.cnh} onValueChange={(value) => setFormData({ ...formData, cnh: value })} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CNH - A - PERMANENTE">CNH - A - PERMANENTE</SelectItem>
+                      <SelectItem value="CNH - A - PROVISÓRIA">CNH - A - PROVISÓRIA</SelectItem>
+                      <SelectItem value="CNH - AB - PERMANENTE">CNH - AB - PERMANENTE</SelectItem>
+                      <SelectItem value="CNH - AB - PROVISÓRIA">CNH - AB - PROVISÓRIA</SelectItem>
+                      <SelectItem value="CNH - B - PERMANENTE">CNH - B - PERMANENTE</SelectItem>
+                      <SelectItem value="CNH - B - PROVISÓRIA">CNH - B - PROVISÓRIA</SelectItem>
+                      <SelectItem value="NÃO POSSUI">NÃO POSSUI</SelectItem>
+                      <SelectItem value="Outra">Outra</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
