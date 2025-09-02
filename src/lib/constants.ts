@@ -1,5 +1,4 @@
 export const SELECTION_STATUSES = [
-    "Convidado",
     "Cadastrado",
     "Análise de Currículo",
     "Entrevista com RH",
@@ -16,7 +15,6 @@ export const SELECTION_STATUSES = [
 export type SelectionStatus = typeof SELECTION_STATUSES[number];
 
 export const STATUS_COLORS: Record<SelectionStatus, string> = {
-    "Convidado": "bg-blue-100 text-blue-700 border-blue-300",
     "Cadastrado": "bg-gray-200 text-gray-800",
     "Análise de Currículo": "bg-blue-200 text-blue-800",
     "Entrevista com RH": "bg-indigo-200 text-indigo-800",
@@ -28,4 +26,8 @@ export const STATUS_COLORS: Record<SelectionStatus, string> = {
     "Aprovado": "bg-lime-300 text-lime-800",
     "Reprovado": "bg-red-200 text-red-800",
     "Contratado": "bg-green-300 text-green-800",
-}; 
+};
+
+// Status especial para convites do banco de talentos (não aparece no processo seletivo)
+export const INVITED_STATUS = "Convidado" as const;
+export const INVITED_STATUS_COLOR = "bg-blue-100 text-blue-700 border-blue-300"; 

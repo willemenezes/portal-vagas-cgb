@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { INVITED_STATUS, INVITED_STATUS_COLOR } from '@/lib/constants';
 
 const TalentBankManagement = () => {
     const { data: resumes = [], isLoading: isLoadingResumes, error: resumesError } = useResumes();
@@ -51,7 +52,7 @@ const TalentBankManagement = () => {
     const invitedEmails = useMemo(() => {
         return new Set(
             candidates
-                .filter(candidate => candidate.status === 'Convidado')
+                .filter(candidate => candidate.status === INVITED_STATUS)
                 .map(candidate => candidate.email.toLowerCase())
         );
     }, [candidates]);
@@ -124,7 +125,7 @@ const TalentBankManagement = () => {
     const getActiveProcessInfo = (resume: Resume) => {
         const candidate = candidates.find(c =>
             c.email.toLowerCase() === resume.email.toLowerCase() &&
-            c.status === 'Convidado'
+            c.status === INVITED_STATUS
         );
         if (candidate && candidate.job) {
             return {
@@ -158,7 +159,7 @@ const TalentBankManagement = () => {
                 city: resumeToInvite.city || selectedJob?.city || '',
                 state: resumeToInvite.state || selectedJob?.state || '',
                 job_id: selectedJobId,
-                status: 'Convidado' as any, // Status especial para convites
+                status: INVITED_STATUS as any, // Status especial para convites
                 resume_file_url: resumeToInvite.resume_file_url,
                 resume_file_name: resumeToInvite.resume_file_name,
                 applied_date: new Date().toISOString(),
