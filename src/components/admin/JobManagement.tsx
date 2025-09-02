@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { departments } from "@/data/departments";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Mapeamento de status para aparência do Badge (chaves em inglês, texto em português)
@@ -60,66 +61,7 @@ const JobManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingTalentBank, setIsCreatingTalentBank] = useState(false);
 
-  const departments = [
-    "Técnico em Eletrotécnica",
-    "Técnico em Saneamento",
-    "Técnico Agrícola",
-    "Técnico em Segurança do Trabalho",
-    "Técnico em Manutenção",
-    "Técnico de Redes Elétricas",
-    "Técnico em Instrumentação",
-    "Técnico em Meio Ambiente",
-    "Assistente Administrativo",
-    "Auxiliar de Escritório",
-    "Recepcionista",
-    "Secretária Executiva",
-    "Analista Administrativo",
-    "Controlador de Documentos",
-    "Operador de Máquinas",
-    "Encarregado de Obras",
-    "Auxiliar Operacional",
-    "Ajudante Geral",
-    "Motorista",
-    "Almoxarife",
-    "Operador de Estação de Tratamento",
-    "Montador de Estruturas",
-    "Engenheiro Eletricista",
-    "Engenheiro Ambiental",
-    "Engenheiro Agrônomo",
-    "Engenheiro Civil",
-    "Engenheiro de Segurança do Trabalho",
-    "Engenheiro Mecânico",
-    "Coordenador de Engenharia",
-    "Projetista",
-    "Vendedor Técnico",
-    "Assistente Comercial",
-    "Analista de Propostas",
-    "Coordenador Comercial",
-    "Representante Técnico de Vendas",
-    "Analista de RH",
-    "Assistente de RH",
-    "Recrutador",
-    "Coordenador de Departamento Pessoal",
-    "Psicólogo Organizacional",
-    "Analista Financeiro",
-    "Auxiliar Financeiro",
-    "Assistente de Faturamento",
-    "Tesoureiro",
-    "Contador",
-    "Coordenador Financeiro",
-    "Analista de Suporte",
-    "Técnico de Informática",
-    "Desenvolvedor de Sistemas",
-    "Administrador de Redes",
-    "Analista de Sistemas",
-    "Coordenador de TI",
-    "Gerente de Projetos",
-    "Gerente de Engenharia",
-    "Gerente de Operações",
-    "Gerente Comercial",
-    "Diretor Técnico",
-    "Supervisor de Campo"
-  ];
+
 
   const talentBankJobExists = jobs.some(job => job.title === "Banco de Talentos");
 

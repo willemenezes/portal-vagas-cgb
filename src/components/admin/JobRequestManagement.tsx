@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
 import useJobRequests, { CreateJobRequestData } from "@/hooks/useJobRequests";
 import { CITIES_BY_STATE, STATES, getStateByCity, validateCityState } from "@/data/cities-states";
+import { departments } from "@/data/departments";
 import {
     Plus,
     Send,
@@ -230,64 +231,9 @@ export default function JobRequestManagement() {
                                         <SelectValue placeholder="Selecione o departamento" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Técnico em Eletrotécnica">Técnico em Eletrotécnica</SelectItem>
-                                        <SelectItem value="Técnico em Saneamento">Técnico em Saneamento</SelectItem>
-                                        <SelectItem value="Técnico Agrícola">Técnico Agrícola</SelectItem>
-                                        <SelectItem value="Técnico em Segurança do Trabalho">Técnico em Segurança do Trabalho</SelectItem>
-                                        <SelectItem value="Técnico em Manutenção">Técnico em Manutenção</SelectItem>
-                                        <SelectItem value="Técnico de Redes Elétricas">Técnico de Redes Elétricas</SelectItem>
-                                        <SelectItem value="Técnico em Instrumentação">Técnico em Instrumentação</SelectItem>
-                                        <SelectItem value="Técnico em Meio Ambiente">Técnico em Meio Ambiente</SelectItem>
-                                        <SelectItem value="Assistente Administrativo">Assistente Administrativo</SelectItem>
-                                        <SelectItem value="Auxiliar de Escritório">Auxiliar de Escritório</SelectItem>
-                                        <SelectItem value="Recepcionista">Recepcionista</SelectItem>
-                                        <SelectItem value="Secretária Executiva">Secretária Executiva</SelectItem>
-                                        <SelectItem value="Analista Administrativo">Analista Administrativo</SelectItem>
-                                        <SelectItem value="Controlador de Documentos">Controlador de Documentos</SelectItem>
-                                        <SelectItem value="Operador de Máquinas">Operador de Máquinas</SelectItem>
-                                        <SelectItem value="Encarregado de Obras">Encarregado de Obras</SelectItem>
-                                        <SelectItem value="Auxiliar Operacional">Auxiliar Operacional</SelectItem>
-                                        <SelectItem value="Ajudante Geral">Ajudante Geral</SelectItem>
-                                        <SelectItem value="Motorista">Motorista</SelectItem>
-                                        <SelectItem value="Almoxarife">Almoxarife</SelectItem>
-                                        <SelectItem value="Operador de Estação de Tratamento">Operador de Estação de Tratamento</SelectItem>
-                                        <SelectItem value="Montador de Estruturas">Montador de Estruturas</SelectItem>
-                                        <SelectItem value="Engenheiro Eletricista">Engenheiro Eletricista</SelectItem>
-                                        <SelectItem value="Engenheiro Ambiental">Engenheiro Ambiental</SelectItem>
-                                        <SelectItem value="Engenheiro Agrônomo">Engenheiro Agrônomo</SelectItem>
-                                        <SelectItem value="Engenheiro Civil">Engenheiro Civil</SelectItem>
-                                        <SelectItem value="Engenheiro de Segurança do Trabalho">Engenheiro de Segurança do Trabalho</SelectItem>
-                                        <SelectItem value="Engenheiro Mecânico">Engenheiro Mecânico</SelectItem>
-                                        <SelectItem value="Coordenador de Engenharia">Coordenador de Engenharia</SelectItem>
-                                        <SelectItem value="Projetista">Projetista</SelectItem>
-                                        <SelectItem value="Vendedor Técnico">Vendedor Técnico</SelectItem>
-                                        <SelectItem value="Assistente Comercial">Assistente Comercial</SelectItem>
-                                        <SelectItem value="Analista de Propostas">Analista de Propostas</SelectItem>
-                                        <SelectItem value="Coordenador Comercial">Coordenador Comercial</SelectItem>
-                                        <SelectItem value="Representante Técnico de Vendas">Representante Técnico de Vendas</SelectItem>
-                                        <SelectItem value="Analista de RH">Analista de RH</SelectItem>
-                                        <SelectItem value="Assistente de RH">Assistente de RH</SelectItem>
-                                        <SelectItem value="Recrutador">Recrutador</SelectItem>
-                                        <SelectItem value="Coordenador de Departamento Pessoal">Coordenador de Departamento Pessoal</SelectItem>
-                                        <SelectItem value="Psicólogo Organizacional">Psicólogo Organizacional</SelectItem>
-                                        <SelectItem value="Analista Financeiro">Analista Financeiro</SelectItem>
-                                        <SelectItem value="Auxiliar Financeiro">Auxiliar Financeiro</SelectItem>
-                                        <SelectItem value="Assistente de Faturamento">Assistente de Faturamento</SelectItem>
-                                        <SelectItem value="Tesoureiro">Tesoureiro</SelectItem>
-                                        <SelectItem value="Contador">Contador</SelectItem>
-                                        <SelectItem value="Coordenador Financeiro">Coordenador Financeiro</SelectItem>
-                                        <SelectItem value="Analista de Suporte">Analista de Suporte</SelectItem>
-                                        <SelectItem value="Técnico de Informática">Técnico de Informática</SelectItem>
-                                        <SelectItem value="Desenvolvedor de Sistemas">Desenvolvedor de Sistemas</SelectItem>
-                                        <SelectItem value="Administrador de Redes">Administrador de Redes</SelectItem>
-                                        <SelectItem value="Analista de Sistemas">Analista de Sistemas</SelectItem>
-                                        <SelectItem value="Coordenador de TI">Coordenador de TI</SelectItem>
-                                        <SelectItem value="Gerente de Projetos">Gerente de Projetos</SelectItem>
-                                        <SelectItem value="Gerente de Engenharia">Gerente de Engenharia</SelectItem>
-                                        <SelectItem value="Gerente de Operações">Gerente de Operações</SelectItem>
-                                        <SelectItem value="Gerente Comercial">Gerente Comercial</SelectItem>
-                                        <SelectItem value="Diretor Técnico">Diretor Técnico</SelectItem>
-                                        <SelectItem value="Supervisor de Campo">Supervisor de Campo</SelectItem>
+                                        {departments.map(dept => (
+                                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
