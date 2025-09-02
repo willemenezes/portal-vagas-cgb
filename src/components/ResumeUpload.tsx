@@ -28,7 +28,6 @@ const ResumeUpload = () => {
     city: "",
     state: "",
     position: "",
-    experience: "",
     education: "",
     skills: "",
     // Novos campos obrigatórios
@@ -201,7 +200,6 @@ const ResumeUpload = () => {
         city: "",
         state: "",
         position: "",
-        experience: "",
         education: "",
         skills: "",
         birthDate: "",
@@ -435,17 +433,7 @@ const ResumeUpload = () => {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="experience">Experiência Profissional *</Label>
-                  <Textarea
-                    id="experience"
-                    value={formData.experience}
-                    onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                    placeholder="Descreva sua experiência profissional, cargos anteriores e principais responsabilidades..."
-                    rows={4}
-                    required
-                  />
-                </div>
+
 
                 <div>
                   <Label htmlFor="education">Formação Acadêmica *</Label>
