@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateResume, useUploadResume } from "@/hooks/useResumes";
 import { useNavigate } from "react-router-dom";
 import { useJobsRobust } from "@/hooks/useJobsRobust";
+import { useSaveLegalData } from "@/hooks/useLegalData";
 import { sanitizeFilename } from "@/lib/utils";
 
 const ResumeUpload = () => {
@@ -17,6 +18,7 @@ const ResumeUpload = () => {
   const navigate = useNavigate();
   const createResume = useCreateResume();
   const uploadResume = useUploadResume();
+  const saveLegalData = useSaveLegalData();
   const { data: jobs = [] } = useJobsRobust();
 
   const [formData, setFormData] = useState({
@@ -29,6 +31,15 @@ const ResumeUpload = () => {
     experience: "",
     education: "",
     skills: "",
+    // Novos campos obrigatórios
+    birthDate: "",
+    rg: "",
+    cpf: "",
+    motherName: "",
+    fatherName: "",
+    birthCity: "",
+    lastCompany1: "",
+    lastCompany2: "",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -145,12 +156,36 @@ const ResumeUpload = () => {
       // Create resume record
       const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill !== '');
 
-      await createResume.mutateAsync({
+      const resume = await createResume.mutateAsync({
         ...formData,
         skills: skillsArray,
         resume_file_url: resumeFileUrl,
         resume_file_name: resumeFileName,
         status: 'new'
+      });
+
+      // Salvar dados jurídicos (usando o ID do resume como candidate_id)
+      await saveLegalData.mutateAsync({
+        candidateId: resume.id,
+        data: {
+          full_name: formData.name,
+          birth_date: formData.birthDate,
+          rg: formData.rg,
+          cpf: formData.cpf,
+          mother_name: formData.motherName,
+          father_name: formData.fatherName || '',
+          birth_city: formData.birthCity,
+          birth_state: formData.state,
+          work_history: [
+            ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
+            ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
+          ],
+          is_former_employee: false, // Não temos essa informação no cadastro geral
+          former_employee_details: '',
+          is_pcd: false, // Não temos essa informação no cadastro geral
+          pcd_details: '',
+          desired_position: formData.position
+        }
       });
 
       toast({
@@ -169,6 +204,14 @@ const ResumeUpload = () => {
         experience: "",
         education: "",
         skills: "",
+        birthDate: "",
+        rg: "",
+        cpf: "",
+        motherName: "",
+        fatherName: "",
+        birthCity: "",
+        lastCompany1: "",
+        lastCompany2: "",
       });
       setSelectedFile(null);
 
@@ -283,6 +326,97 @@ const ResumeUpload = () => {
                         )}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+
+                {/* Dados Pessoais Adicionais */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="birthDate">Data de Nascimento *</Label>
+                    <Input
+                      id="birthDate"
+                      type="date"
+                      value={formData.birthDate}
+                      onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="birthCity">Cidade que Nasceu *</Label>
+                    <Input
+                      id="birthCity"
+                      value={formData.birthCity}
+                      onChange={(e) => setFormData({ ...formData, birthCity: e.target.value })}
+                      placeholder="Ex: São Paulo"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="rg">RG *</Label>
+                    <Input
+                      id="rg"
+                      value={formData.rg}
+                      onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
+                      placeholder="Ex: 12.345.678-9"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cpf">CPF *</Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                      placeholder="Ex: 123.456.789-00"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="motherName">Nome da Mãe *</Label>
+                    <Input
+                      id="motherName"
+                      value={formData.motherName}
+                      onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                      placeholder="Nome completo da mãe"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fatherName">Nome do Pai</Label>
+                    <Input
+                      id="fatherName"
+                      value={formData.fatherName}
+                      onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                      placeholder="Nome completo do pai (opcional)"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="lastCompany1">Última Empresa que Trabalhou *</Label>
+                    <Input
+                      id="lastCompany1"
+                      value={formData.lastCompany1}
+                      onChange={(e) => setFormData({ ...formData, lastCompany1: e.target.value })}
+                      placeholder="Nome da empresa mais recente"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastCompany2">Penúltima Empresa que Trabalhou</Label>
+                    <Input
+                      id="lastCompany2"
+                      value={formData.lastCompany2}
+                      onChange={(e) => setFormData({ ...formData, lastCompany2: e.target.value })}
+                      placeholder="Nome da empresa anterior (opcional)"
+                    />
                   </div>
                 </div>
               </div>

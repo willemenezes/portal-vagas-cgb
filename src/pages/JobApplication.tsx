@@ -12,6 +12,7 @@ import { useCreateCandidate } from "@/hooks/useCandidates";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useUploadResume } from "@/hooks/useResumes";
+import { useSaveLegalData } from "@/hooks/useLegalData";
 import { sanitizeFilename } from "@/lib/utils";
 
 const JobApplication = () => {
@@ -23,6 +24,7 @@ const JobApplication = () => {
   const { data: jobs, isLoading: jobsLoading } = useJobs();
   const createCandidate = useCreateCandidate();
   const uploadResume = useUploadResume();
+  const saveLegalData = useSaveLegalData();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -45,6 +47,15 @@ const JobApplication = () => {
     vehicleModel: "",
     vehicleYear: "",
     lgpdConsent: false,
+    // Novos campos obrigatórios
+    birthDate: "",
+    rg: "",
+    cpf: "",
+    motherName: "",
+    fatherName: "",
+    birthCity: "",
+    lastCompany1: "",
+    lastCompany2: "",
   });
 
   const [states, setStates] = useState<{ id: number; nome: string; sigla: string }[]>([]);
@@ -167,13 +178,40 @@ const JobApplication = () => {
         resumeFileUrl = uploadResult.publicUrl;
         resumeFileName = selectedFile.name;
       }
-      await createCandidate.mutateAsync({
+      
+      // Criar candidato
+      const candidate = await createCandidate.mutateAsync({
         ...formData,
         job_id: targetJobId,
         status: 'pending',
         resume_file_url: resumeFileUrl,
         resume_file_name: resumeFileName
       });
+
+      // Salvar dados jurídicos
+      await saveLegalData.mutateAsync({
+        candidateId: candidate.id,
+        data: {
+          full_name: formData.name,
+          birth_date: formData.birthDate,
+          rg: formData.rg,
+          cpf: formData.cpf,
+          mother_name: formData.motherName,
+          father_name: formData.fatherName || '',
+          birth_city: formData.birthCity,
+          birth_state: formData.state,
+          work_history: [
+            ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
+            ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
+          ],
+          is_former_employee: formData.workedAtCGB === 'Sim',
+          former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
+          is_pcd: formData.pcd === 'Sim',
+          pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
+          desired_position: formData.desiredJob || job?.title || 'Não especificado'
+        }
+      });
+
       toast({
         title: "Candidatura enviada com sucesso!",
         description: "Seu currículo foi enviado. Entraremos em contato em breve.",
@@ -358,6 +396,101 @@ const JobApplication = () => {
                       onChange={e => setFormData({ ...formData, age: e.target.value })}
                       required
                     />
+                  </div>
+
+                  {/* Seção: Dados Pessoais Adicionais */}
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-cgb-blue mb-4">Dados Pessoais Adicionais</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="birthDate">Data de Nascimento *</Label>
+                        <Input
+                          id="birthDate"
+                          type="date"
+                          value={formData.birthDate}
+                          onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="birthCity">Cidade que Nasceu *</Label>
+                        <Input
+                          id="birthCity"
+                          value={formData.birthCity}
+                          onChange={(e) => setFormData({ ...formData, birthCity: e.target.value })}
+                          placeholder="Ex: São Paulo"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label htmlFor="rg">RG *</Label>
+                        <Input
+                          id="rg"
+                          value={formData.rg}
+                          onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
+                          placeholder="Ex: 12.345.678-9"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cpf">CPF *</Label>
+                        <Input
+                          id="cpf"
+                          value={formData.cpf}
+                          onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                          placeholder="Ex: 123.456.789-00"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label htmlFor="motherName">Nome da Mãe *</Label>
+                        <Input
+                          id="motherName"
+                          value={formData.motherName}
+                          onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                          placeholder="Nome completo da mãe"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="fatherName">Nome do Pai</Label>
+                        <Input
+                          id="fatherName"
+                          value={formData.fatherName}
+                          onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                          placeholder="Nome completo do pai (opcional)"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label htmlFor="lastCompany1">Última Empresa que Trabalhou *</Label>
+                        <Input
+                          id="lastCompany1"
+                          value={formData.lastCompany1}
+                          onChange={(e) => setFormData({ ...formData, lastCompany1: e.target.value })}
+                          placeholder="Nome da empresa mais recente"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastCompany2">Penúltima Empresa que Trabalhou</Label>
+                        <Input
+                          id="lastCompany2"
+                          value={formData.lastCompany2}
+                          onChange={(e) => setFormData({ ...formData, lastCompany2: e.target.value })}
+                          placeholder="Nome da empresa anterior (opcional)"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div>
