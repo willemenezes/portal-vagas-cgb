@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Search, FileText, MapPin, Briefcase } from 'lucide-react';
 import { type SelectionStatus } from '@/lib/constants';
+import { useNotifications } from './useNotifications';
+import { getUsersByRole, getRHByCandidate } from '@/utils/notifications';
 
 export interface Candidate {
   id: string;
@@ -90,6 +92,7 @@ export const useCreateCandidate = () => {
 
 export const useUpdateCandidateStatus = () => {
   const queryClient = useQueryClient();
+  const { sendNotification } = useNotifications();
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Candidate['status'] }) => {
@@ -103,10 +106,56 @@ export const useUpdateCandidateStatus = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
       // Opcional: atualizar o candidato específico no cache para uma resposta mais rápida da UI
       queryClient.setQueryData(['candidate', variables.id], data);
+
+      // Enviar notificações para status importantes
+      try {
+        if (variables.status === 'Validação TJ') {
+          // Notificar jurídico quando candidato chega para validação
+          const juridicos = await getUsersByRole('juridico');
+          if (juridicos.length > 0) {
+            await sendNotification({
+              type: 'candidate_legal_validation',
+              recipients: juridicos,
+              data: {
+                candidateName: data.name,
+                candidateEmail: data.email,
+                candidateId: data.id,
+                jobTitle: data.job?.title || data.desiredJob,
+                city: data.city || data.job?.city,
+                state: data.state || data.job?.state,
+                actionDate: new Date().toLocaleString('pt-BR')
+              },
+              silent: true
+            });
+          }
+        } else if (variables.status === 'Contratado') {
+          // Notificar stakeholders quando candidato é contratado
+          const rhUsers = await getRHByCandidate(data.id);
+          if (rhUsers.length > 0) {
+            await sendNotification({
+              type: 'candidate_hired',
+              recipients: rhUsers,
+              data: {
+                candidateName: data.name,
+                candidateEmail: data.email,
+                candidateId: data.id,
+                jobTitle: data.job?.title || data.desiredJob,
+                department: data.job?.department,
+                city: data.city || data.job?.city,
+                state: data.state || data.job?.state,
+                actionDate: new Date().toLocaleString('pt-BR')
+              },
+              silent: true
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao enviar notificação de mudança de status:', error);
+      }
     },
   });
 };

@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { CandidateLegalData, LegalDataFormValues } from '@/types/legal-validation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
+import { useNotifications } from './useNotifications';
+import { getRHByCandidate } from '@/utils/notifications';
 
 // Hook para buscar dados jurídicos de um candidato
 export const useLegalData = (candidateId: string | null) => {
@@ -90,6 +92,7 @@ export const useSaveLegalData = () => {
 export const useReviewLegalData = () => {
     const queryClient = useQueryClient();
     const { toast } = useToast();
+    const { sendNotification } = useNotifications();
 
     return useMutation({
         mutationFn: async ({
@@ -129,7 +132,7 @@ export const useReviewLegalData = () => {
 
             return data;
         },
-        onSuccess: (data) => {
+        onSuccess: async (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['legalData', data.candidate_id] });
             queryClient.invalidateQueries({ queryKey: ['candidates'] });
 
@@ -137,6 +140,48 @@ export const useReviewLegalData = () => {
                 title: 'Revisão salva',
                 description: 'A validação jurídica foi atualizada com sucesso.'
             });
+
+            // Enviar notificação para RH sobre resultado da validação
+            try {
+                const rhUsers = await getRHByCandidate(data.candidate_id);
+                if (rhUsers.length > 0) {
+                    // Buscar dados do candidato para o template
+                    const { data: candidate } = await supabase
+                        .from('candidates')
+                        .select(`
+                            *,
+                            job:jobs(title, department, city, state)
+                        `)
+                        .eq('id', data.candidate_id)
+                        .single();
+
+                    if (candidate) {
+                        const notificationType = variables.status === 'approved' 
+                            ? 'legal_validation_approved' 
+                            : 'legal_validation_rejected';
+
+                        await sendNotification({
+                            type: notificationType,
+                            recipients: rhUsers,
+                            data: {
+                                candidateName: candidate.name,
+                                candidateEmail: candidate.email,
+                                candidateId: candidate.id,
+                                jobTitle: candidate.job?.title || candidate.desiredJob,
+                                department: candidate.job?.department,
+                                city: candidate.city || candidate.job?.city,
+                                state: candidate.state || candidate.job?.state,
+                                notes: variables.notes,
+                                status: variables.status,
+                                actionDate: new Date().toLocaleString('pt-BR')
+                            },
+                            silent: true
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao enviar notificação de validação jurídica:', error);
+            }
         },
         onError: (error) => {
             console.error('Erro ao revisar dados jurídicos:', error);

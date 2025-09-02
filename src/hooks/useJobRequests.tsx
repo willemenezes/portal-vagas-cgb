@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRHProfile } from './useRH';
 import { useToast } from './use-toast';
+import { useNotifications } from './useNotifications';
+import { getManagersByRegion, getRHByRegion, getUserById, getJobStakeholders } from '@/utils/notifications';
 
 export interface JobRequest {
     id: string;
@@ -46,6 +48,7 @@ export const useJobRequests = () => {
     const { data: rhProfile } = useRHProfile(user?.id);
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { sendNotification } = useNotifications();
 
     // Buscar solicitações do usuário
     const {
@@ -126,12 +129,36 @@ export const useJobRequests = () => {
 
             return data;
         },
-        onSuccess: () => {
+        onSuccess: async (data) => {
             queryClient.invalidateQueries({ queryKey: ['job-requests'] });
             toast({
                 title: "Solicitação enviada!",
                 description: "Sua solicitação de vaga foi enviada para aprovação da gerência.",
             });
+
+            // Enviar notificação para gerentes da região
+            try {
+                const managers = await getManagersByRegion(data.state, data.city);
+                if (managers.length > 0) {
+                    await sendNotification({
+                        type: 'new_job_request',
+                        recipients: managers,
+                        data: {
+                            jobTitle: data.title,
+                            department: data.department,
+                            city: data.city,
+                            state: data.state,
+                            requestId: data.id,
+                            senderName: data.requested_by_name,
+                            senderRole: 'Coordenador',
+                            actionDate: new Date().toLocaleString('pt-BR')
+                        },
+                        silent: true
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao enviar notificação de nova solicitação:', error);
+            }
         },
         onError: (error: any) => {
             console.error('Erro ao criar solicitação:', error);
@@ -187,12 +214,64 @@ export const useJobRequests = () => {
 
             return data;
         },
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
             queryClient.invalidateQueries({ queryKey: ['job-requests'] });
             toast({
                 title: "Status atualizado!",
                 description: `Solicitação ${data.status === 'aprovado' ? 'aprovada' : 'rejeitada'} com sucesso.`,
             });
+
+            // Enviar notificações baseadas no status
+            try {
+                if (data.status === 'aprovado') {
+                    // Notificar RH da região + coordenador que criou
+                    const rhUsers = await getRHByRegion(data.state, data.city);
+                    const coordinator = await getUserById(data.requested_by);
+                    const recipients = coordinator ? [...rhUsers, coordinator] : rhUsers;
+
+                    if (recipients.length > 0) {
+                        await sendNotification({
+                            type: 'job_request_approved',
+                            recipients,
+                            data: {
+                                jobTitle: data.title,
+                                department: data.department,
+                                city: data.city,
+                                state: data.state,
+                                requestId: data.id,
+                                senderName: data.approved_by,
+                                senderRole: 'Gerente',
+                                notes: data.notes,
+                                actionDate: new Date().toLocaleString('pt-BR')
+                            },
+                            silent: true
+                        });
+                    }
+                } else if (data.status === 'rejeitado') {
+                    // Notificar apenas o coordenador que criou
+                    const coordinator = await getUserById(data.requested_by);
+                    if (coordinator) {
+                        await sendNotification({
+                            type: 'job_request_rejected',
+                            recipients: [coordinator],
+                            data: {
+                                jobTitle: data.title,
+                                department: data.department,
+                                city: data.city,
+                                state: data.state,
+                                requestId: data.id,
+                                senderName: data.approved_by,
+                                senderRole: 'Gerente',
+                                notes: data.notes,
+                                actionDate: new Date().toLocaleString('pt-BR')
+                            },
+                            silent: true
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao enviar notificação de status:', error);
+            }
         },
         onError: (error: any) => {
             console.error('Erro ao atualizar status:', error);
@@ -261,13 +340,48 @@ export const useJobRequests = () => {
 
             return data;
         },
-        onSuccess: () => {
+        onSuccess: async (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['job-requests'] });
             queryClient.invalidateQueries({ queryKey: ['jobs'] });
             toast({
                 title: "Vaga aprovada e criada!",
                 description: "A solicitação foi aprovada e a vaga foi criada diretamente.",
             });
+
+            // Enviar notificação para stakeholders da vaga
+            try {
+                const stakeholders = await getJobStakeholders(variables.requestId);
+                if (stakeholders.length > 0) {
+                    // Buscar dados da solicitação para o template
+                    const { data: requestData } = await supabase
+                        .from('job_requests')
+                        .select('*')
+                        .eq('id', variables.requestId)
+                        .single();
+
+                    if (requestData) {
+                        await sendNotification({
+                            type: 'job_published',
+                            recipients: stakeholders,
+                            data: {
+                                jobTitle: requestData.title,
+                                department: requestData.department,
+                                city: requestData.city,
+                                state: requestData.state,
+                                requestId: requestData.id,
+                                jobId: data,
+                                senderName: rhProfile?.full_name || user?.email || 'RH',
+                                senderRole: 'RH',
+                                notes: variables.notes,
+                                actionDate: new Date().toLocaleString('pt-BR')
+                            },
+                            silent: true
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao enviar notificação de vaga publicada:', error);
+            }
         },
         onError: (error: any) => {
             console.error('Erro ao aprovar e criar vaga:', error);
