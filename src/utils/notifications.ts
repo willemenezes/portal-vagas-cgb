@@ -7,6 +7,8 @@ import { NotificationRecipient } from '@/types/notifications';
  */
 export const getManagersByRegion = async (state: string, city: string): Promise<NotificationRecipient[]> => {
   try {
+    console.log('🔍 Buscando gerentes para estado:', state, 'cidade:', city);
+    
     const { data, error } = await supabase
       .from('rh_users')
       .select('email, full_name, role, assigned_states, assigned_cities')
@@ -14,26 +16,43 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
 
     if (error) throw error;
 
-    return data
+    console.log('📊 Todos os gerentes encontrados:', data);
+
+    const filteredData = data
       ?.filter(user => {
+        console.log(`👤 Analisando gerente: ${user.full_name}`, {
+          assigned_states: user.assigned_states,
+          assigned_cities: user.assigned_cities,
+          target_state: state,
+          target_city: city
+        });
+        
         // Se tem estados atribuídos, verificar se inclui o estado da vaga
         if (user.assigned_states && user.assigned_states.length > 0) {
-          return user.assigned_states.includes(state);
+          const hasState = user.assigned_states.includes(state);
+          console.log(`📍 Estado ${state} encontrado? ${hasState}`);
+          return hasState;
         }
         // Se tem cidades atribuídas, verificar se inclui a cidade da vaga
         if (user.assigned_cities && user.assigned_cities.length > 0) {
-          return user.assigned_cities.includes(city);
+          const hasCity = user.assigned_cities.includes(city);
+          console.log(`🏙️ Cidade ${city} encontrada? ${hasCity}`);
+          return hasCity;
         }
         // Se não tem restrições, pode ver todas
+        console.log('✅ Gerente sem restrições regionais - incluindo');
         return true;
-      })
-      .map(user => ({
-        email: user.email,
-        name: user.full_name,
-        role: user.role
-      })) || [];
+      });
+
+    console.log('✅ Gerentes filtrados:', filteredData);
+
+    return filteredData?.map(user => ({
+      email: user.email,
+      name: user.full_name,
+      role: user.role
+    })) || [];
   } catch (error) {
-    console.error('Erro ao buscar gerentes:', error);
+    console.error('❌ Erro ao buscar gerentes:', error);
     return [];
   }
 };
