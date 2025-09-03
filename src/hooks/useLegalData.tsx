@@ -43,10 +43,13 @@ export const useSaveLegalData = () => {
                 .eq('candidate_id', candidateId)
                 .single();
 
+            // Obter o usuário atual (pode ser null para candidatos não autenticados)
+            const { data: { user } } = await supabase.auth.getUser();
+            
             const payload = {
                 ...data,
                 candidate_id: candidateId,
-                collected_by: (await supabase.auth.getUser()).data.user?.id,
+                collected_by: user?.id || null, // Permitir null para candidatos não autenticados
                 review_status: 'pending'
             };
 
