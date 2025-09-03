@@ -138,9 +138,13 @@ export const useJobRequests = () => {
 
             // Enviar notificação para gerentes da região
             try {
+                console.log('🔍 Buscando gerentes para região:', data.state, data.city);
                 const managers = await getManagersByRegion(data.state, data.city);
+                console.log('👥 Gerentes encontrados:', managers);
+                
                 if (managers.length > 0) {
-                    await sendNotification({
+                    console.log('📧 Enviando notificação para gerentes...');
+                    const notificationResult = await sendNotification({
                         type: 'new_job_request',
                         recipients: managers,
                         data: {
@@ -155,9 +159,12 @@ export const useJobRequests = () => {
                         },
                         silent: true
                     });
+                    console.log('✅ Resultado da notificação:', notificationResult);
+                } else {
+                    console.log('⚠️ Nenhum gerente encontrado para a região');
                 }
             } catch (error) {
-                console.error('Erro ao enviar notificação de nova solicitação:', error);
+                console.error('❌ Erro ao enviar notificação de nova solicitação:', error);
             }
         },
         onError: (error: any) => {
