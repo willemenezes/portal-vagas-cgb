@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+
+// Configurações de CORS diretamente no código
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+};
 
 // Templates de email para cada tipo de notificação
 const EMAIL_TEMPLATES = {
@@ -290,7 +296,7 @@ const EMAIL_TEMPLATES = {
 // Função para processar templates (substituir variáveis)
 function processTemplate(template: string, data: any): string {
   let processed = template;
-  
+
   // Substituir variáveis simples {{variable}}
   Object.keys(data).forEach(key => {
     const regex = new RegExp(`{{${key}}}`, 'g');
@@ -388,8 +394,8 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       results,
       totalSent: results.filter(r => r.status === 'success').length,
       totalFailed: results.filter(r => r.status === 'error').length
@@ -400,9 +406,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro na função send-notification:', error);
-    return new Response(JSON.stringify({ 
-      error: 'Erro interno', 
-      details: error.message 
+    return new Response(JSON.stringify({
+      error: 'Erro interno',
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
