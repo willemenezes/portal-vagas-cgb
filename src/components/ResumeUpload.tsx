@@ -156,25 +156,25 @@ const ResumeUpload = () => {
       // Create resume record
       const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill !== '');
 
-      // Criar resume (removendo campos que não existem na tabela resumes)
-      const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, cnh, ...resumeData } = formData;
+      // Criar apenas os dados específicos para a tabela resumes (sem campos extras)
+      const resumeDataForDB = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        city: formData.city,
+        state: formData.state,
+        position: formData.position,
+        education: formData.education,
+        skills: skillsArray,
+        resume_file_url: resumeFileUrl,
+        resume_file_name: resumeFileName,
+        status: 'new' as const
+      };
       
       // Debug: verificar exatamente o que está sendo enviado
-      console.log('Dados para createResume:', {
-        ...resumeData,
-        skills: skillsArray,
-        resume_file_url: resumeFileUrl,
-        resume_file_name: resumeFileName,
-        status: 'new'
-      });
+      console.log('Dados para createResume (apenas campos válidos):', resumeDataForDB);
       
-      const resume = await createResume.mutateAsync({
-        ...resumeData,
-        skills: skillsArray,
-        resume_file_url: resumeFileUrl,
-        resume_file_name: resumeFileName,
-        status: 'new'
-      });
+      const resume = await createResume.mutateAsync(resumeDataForDB);
 
       // Salvar dados jurídicos (usando o ID do resume como candidate_id)
       await saveLegalData.mutateAsync({
