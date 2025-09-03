@@ -27,19 +27,35 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
           target_city: city
         });
         
-        // Se tem estados atribuídos, verificar se inclui o estado da vaga
+        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
         if (user.assigned_states && user.assigned_states.length > 0) {
           const hasState = user.assigned_states.includes(state);
           console.log(`📍 Estado ${state} encontrado? ${hasState}`);
-          return hasState;
+          
+          // Se tem o estado, verificar se tem cidades específicas
+          if (hasState) {
+            // Se tem cidades específicas, verificar se inclui a cidade da vaga
+            if (user.assigned_cities && user.assigned_cities.length > 0) {
+              const hasCity = user.assigned_cities.includes(city);
+              console.log(`🏙️ Cidade ${city} encontrada? ${hasCity}`);
+              return hasCity;
+            } else {
+              // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+              console.log(`✅ Gerente tem estado ${state} mas sem cidades específicas - incluindo`);
+              return true;
+            }
+          }
+          return false; // Não tem o estado
         }
-        // Se tem cidades atribuídas, verificar se inclui a cidade da vaga
+        
+        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
         if (user.assigned_cities && user.assigned_cities.length > 0) {
           const hasCity = user.assigned_cities.includes(city);
           console.log(`🏙️ Cidade ${city} encontrada? ${hasCity}`);
           return hasCity;
         }
-        // Se não tem restrições, pode ver todas
+        
+        // PRIORIDADE 3: Se não tem restrições, pode ver todas
         console.log('✅ Gerente sem restrições regionais - incluindo');
         return true;
       });
@@ -76,12 +92,27 @@ export const getRHByRegion = async (state: string, city: string): Promise<Notifi
         
         // Para recruiters, aplicar filtro regional
         if (user.assigned_states && user.assigned_states.length > 0) {
-          return user.assigned_states.includes(state);
+          const hasState = user.assigned_states.includes(state);
+          
+          // Se tem o estado, verificar se tem cidades específicas
+          if (hasState) {
+            // Se tem cidades específicas, verificar se inclui a cidade da vaga
+            if (user.assigned_cities && user.assigned_cities.length > 0) {
+              return user.assigned_cities.includes(city);
+            } else {
+              // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+              return true;
+            }
+          }
+          return false; // Não tem o estado
         }
+        
+        // Se não tem estados, mas tem cidades específicas
         if (user.assigned_cities && user.assigned_cities.length > 0) {
           return user.assigned_cities.includes(city);
         }
-        return true;
+        
+        return true; // Sem restrições
       })
       .map(user => ({
         email: user.email,
