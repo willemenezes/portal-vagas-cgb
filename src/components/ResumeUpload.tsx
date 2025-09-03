@@ -156,8 +156,11 @@ const ResumeUpload = () => {
       // Create resume record
       const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill !== '');
 
+      // Criar resume (removendo campos que não existem na tabela resumes)
+      const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, ...resumeData } = formData;
+      
       const resume = await createResume.mutateAsync({
-        ...formData,
+        ...resumeData,
         skills: skillsArray,
         resume_file_url: resumeFileUrl,
         resume_file_name: resumeFileName,

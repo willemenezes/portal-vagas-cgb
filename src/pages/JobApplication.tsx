@@ -179,9 +179,11 @@ const JobApplication = () => {
         resumeFileName = selectedFile.name;
       }
       
-      // Criar candidato
+      // Criar candidato (removendo campos que não existem na tabela candidates)
+      const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, ...candidateData } = formData;
+      
       const candidate = await createCandidate.mutateAsync({
-        ...formData,
+        ...candidateData,
         job_id: targetJobId,
         status: 'pending',
         resume_file_url: resumeFileUrl,
