@@ -157,7 +157,7 @@ const ResumeUpload = () => {
       const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill !== '');
 
       // Criar resume (removendo campos que não existem na tabela resumes)
-      const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, ...resumeData } = formData;
+      const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, cnh, ...resumeData } = formData;
       
       const resume = await createResume.mutateAsync({
         ...resumeData,
@@ -179,6 +179,7 @@ const ResumeUpload = () => {
           father_name: formData.fatherName || '',
           birth_city: formData.birthCity,
           birth_state: formData.state,
+          cnh: formData.cnh, // Adicionado campo CNH
           work_history: [
             ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
             ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])

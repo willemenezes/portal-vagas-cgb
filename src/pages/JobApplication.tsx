@@ -202,6 +202,7 @@ const JobApplication = () => {
           father_name: formData.fatherName || '',
           birth_city: formData.birthCity,
           birth_state: formData.state,
+          cnh: formData.cnh, // Adicionado campo CNH
           work_history: [
             ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
             ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])

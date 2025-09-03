@@ -32,6 +32,7 @@ export interface CandidateLegalData {
     pcd_details?: string;
     desired_position: string;
     responsible_name?: string;
+    cnh?: string; // Campo CNH adicionado
 
     // Controle e Auditoria
     collected_by?: string;
