@@ -159,6 +159,15 @@ const ResumeUpload = () => {
       // Criar resume (removendo campos que não existem na tabela resumes)
       const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, cnh, ...resumeData } = formData;
       
+      // Debug: verificar exatamente o que está sendo enviado
+      console.log('Dados para createResume:', {
+        ...resumeData,
+        skills: skillsArray,
+        resume_file_url: resumeFileUrl,
+        resume_file_name: resumeFileName,
+        status: 'new'
+      });
+      
       const resume = await createResume.mutateAsync({
         ...resumeData,
         skills: skillsArray,
