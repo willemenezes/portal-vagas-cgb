@@ -178,16 +178,16 @@ const JobApplication = () => {
         resumeFileUrl = uploadResult.publicUrl;
         resumeFileName = selectedFile.name;
       }
-      
-      // Criar candidato (removendo campos que não existem na tabela candidates)
-      const { birthDate, rg, cpf, motherName, fatherName, birthCity, lastCompany1, lastCompany2, ...candidateData } = formData;
-      
+
+      // Criar candidato (apenas com campos que existem na tabela candidates)
       const candidate = await createCandidate.mutateAsync({
-        ...candidateData,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        city: formData.city,
+        state: formData.state,
         job_id: targetJobId,
-        status: 'pending',
-        resume_file_url: resumeFileUrl,
-        resume_file_name: resumeFileName
+        status: 'pending' as const
       });
 
       // Salvar dados jurídicos
@@ -211,7 +211,8 @@ const JobApplication = () => {
           former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
           is_pcd: formData.pcd === 'Sim',
           pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
-          desired_position: formData.desiredJob || job?.title || 'Não especificado'
+          desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
+          responsible_name: null
         }
       });
 
@@ -222,11 +223,11 @@ const JobApplication = () => {
       navigate("/");
     } catch (error: any) {
       console.error('Erro detalhado na candidatura:', error);
-      
+
       // Se os dados foram salvos mas houve erro apenas nos dados jurídicos, 
       // ainda consideramos sucesso
-      if (error?.message?.includes('candidate_legal_data') || 
-          error?.message?.includes('permission denied for table users')) {
+      if (error?.message?.includes('candidate_legal_data') ||
+        error?.message?.includes('permission denied for table users')) {
         toast({
           title: "Candidatura enviada com sucesso!",
           description: "Seu currículo foi enviado. Entraremos em contato em breve.",
@@ -417,7 +418,7 @@ const JobApplication = () => {
                   {/* Seção: Dados Pessoais Adicionais */}
                   <div className="border-t pt-6">
                     <h3 className="text-lg font-semibold text-cgb-blue mb-4">Dados Pessoais Adicionais</h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="birthDate">Data de Nascimento *</Label>

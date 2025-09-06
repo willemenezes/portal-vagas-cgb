@@ -44,6 +44,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ExpiryDashboard from "./ExpiryDashboard";
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -208,6 +209,18 @@ const Dashboard = () => {
               <p className="text-xs text-teal-800/80">de candidatos aprovados</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Dashboard de Validade das Vagas */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-cgb-primary" />
+            Controle de Validade das Vagas
+          </h2>
+          <ExpiryDashboard
+            stats={dashboardData?.expiryStats}
+            isLoading={isLoading}
+          />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">

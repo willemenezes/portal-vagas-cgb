@@ -15,6 +15,8 @@ import { useRHProfile } from "@/hooks/useRH";
 import useJobRequests, { CreateJobRequestData } from "@/hooks/useJobRequests";
 import { CITIES_BY_STATE, STATES, getStateByCity, validateCityState } from "@/data/cities-states";
 import { departments } from "@/data/departments";
+import { WORKLOAD_OPTIONS } from "@/data/workload-options";
+import JobQuantityBadge from "./JobQuantityBadge";
 import {
     Plus,
     Send,
@@ -58,7 +60,8 @@ export default function JobRequestManagement() {
         requirements: "",
         benefits: "",
         workload: "40h/semana",
-        justification: ""
+        justification: "",
+        quantity: 1
     });
     const { toast } = useToast();
 
@@ -118,7 +121,8 @@ export default function JobRequestManagement() {
             requirements: newRequest.requirements.split('\n').filter(r => r.trim() !== ''),
             benefits: newRequest.benefits.split('\n').filter(b => b.trim() !== ''),
             workload: newRequest.workload,
-            justification: newRequest.justification
+            justification: newRequest.justification,
+            quantity: newRequest.quantity
         };
 
         // Debug: verificar se justificativa está sendo enviada
@@ -139,7 +143,8 @@ export default function JobRequestManagement() {
                 requirements: "",
                 benefits: "",
                 workload: "40h/semana",
-                justification: ""
+                justification: "",
+                quantity: 1
             });
         } catch (error) {
             // Erro já tratado no hook
@@ -339,6 +344,43 @@ export default function JobRequestManagement() {
                             </div>
                         </div>
 
+                        {/* Novo campo de Quantidade de Vagas */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="quantity">Quantidade de Vagas *</Label>
+                                <Input
+                                    id="quantity"
+                                    type="number"
+                                    min="1"
+                                    max="50"
+                                    value={newRequest.quantity || 1}
+                                    onChange={(e) => setNewRequest({ ...newRequest, quantity: parseInt(e.target.value) || 1 })}
+                                    placeholder="1"
+                                />
+                                <p className="text-xs text-blue-600">
+                                    ℹ️ Quantas vagas iguais você precisa para esta cidade? (máx: 50)
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="workload">Carga Horária</Label>
+                                <Select
+                                    value={newRequest.workload}
+                                    onValueChange={(value) => setNewRequest({ ...newRequest, workload: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione a carga horária" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {WORKLOAD_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="description">Descrição da Vaga *</Label>
                             <Textarea
@@ -387,15 +429,6 @@ export default function JobRequestManagement() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="workload">Carga Horária</Label>
-                            <Input
-                                id="workload"
-                                value={newRequest.workload}
-                                onChange={(e) => setNewRequest({ ...newRequest, workload: e.target.value })}
-                                placeholder="Ex: 40h/semana, 30h/semana"
-                            />
-                        </div>
 
                         <div className="flex justify-end gap-2 pt-4">
                             <Button
@@ -531,6 +564,10 @@ export default function JobRequestManagement() {
                                             <Briefcase className="w-5 h-5 text-cgb-primary" />
                                             <h3 className="text-lg font-semibold text-gray-900">{request.title}</h3>
                                             {getStatusBadge(request.status)}
+                                            <JobQuantityBadge
+                                                quantity={request.quantity || 1}
+                                                expiresAt={request.expires_at}
+                                            />
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">

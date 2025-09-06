@@ -170,10 +170,10 @@ const ResumeUpload = () => {
         resume_file_name: resumeFileName,
         status: 'new' as const
       };
-      
+
       // Debug: verificar exatamente o que está sendo enviado
       console.log('Dados para createResume (apenas campos válidos):', resumeDataForDB);
-      
+
       const resume = await createResume.mutateAsync(resumeDataForDB);
 
       // Salvar dados jurídicos (usando o ID do resume como candidate_id)
@@ -197,7 +197,8 @@ const ResumeUpload = () => {
           former_employee_details: '',
           is_pcd: false, // Não temos essa informação no cadastro geral
           pcd_details: '',
-          desired_position: formData.position
+          desired_position: formData.position || 'Posição não especificada',
+          responsible_name: null
         }
       });
 
@@ -233,16 +234,16 @@ const ResumeUpload = () => {
 
     } catch (error: any) {
       console.error('Erro detalhado no cadastro de currículo:', error);
-      
+
       // Se os dados foram salvos mas houve erro apenas nos dados jurídicos, 
       // ainda consideramos sucesso
-      if (error?.message?.includes('candidate_legal_data') || 
-          error?.message?.includes('permission denied for table users')) {
+      if (error?.message?.includes('candidate_legal_data') ||
+        error?.message?.includes('permission denied for table users')) {
         toast({
           title: "Currículo enviado com sucesso!",
           description: "Seu currículo foi cadastrado em nossa base de dados. Entraremos em contato quando houver oportunidades compatíveis.",
         });
-        
+
         // Reset form
         setFormData({
           name: "",

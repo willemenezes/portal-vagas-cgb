@@ -11,6 +11,8 @@ import SelectionProcess from "@/components/admin/SelectionProcess";
 import HiredManagement from "@/components/admin/HiredManagement";
 import ReportsManagement from "@/components/admin/ReportsManagement";
 import UnifiedApprovals from "@/components/admin/UnifiedApprovals";
+import JobApprovalsWrapper from "@/components/admin/JobApprovalsWrapper";
+import ContractDeadlineManagement from "@/components/admin/ContractDeadlineManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { Loader2 } from "lucide-react";
@@ -98,6 +100,10 @@ const Admin = () => {
         return <LegalValidation />;
       case "jobs":
         return rhProfile?.role === 'solicitador' ? <JobRequestManagement /> : <JobManagement />;
+      case "contract-deadlines":
+        return <ContractDeadlineManagement />;
+      case "selection-process":
+        return <SelectionProcess />;
       case "candidates":
         return <CandidateManagement />;
       case "hired":

@@ -3,7 +3,7 @@ import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 // Configurações CORS específicas para o domínio
 const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://www.cgbvagas.com.br',
+    'Access-Control-Allow-Origin': 'https://www.cgbvagas.com.br, http://localhost:8080, https://cgbvagas.com.br',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
@@ -28,10 +28,7 @@ serve(async (req) => {
     // Tratar requisição pre-flight do CORS
     if (req.method === 'OPTIONS') {
         console.log("✅ Respondendo a requisição OPTIONS (CORS)");
-        return new Response(null, {
-            status: 200,
-            headers: corsHeaders
-        });
+        return new Response('ok', { headers: corsHeaders });
     }
 
     // Verificar se é uma requisição POST
@@ -86,7 +83,6 @@ serve(async (req) => {
 
         await client.close();
 
-        console.log("📧 Email enviado com sucesso!");
         return new Response(JSON.stringify({ message: 'E-mail enviado com sucesso!' }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -104,4 +100,5 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     }
-}); 
+});
+

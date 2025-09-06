@@ -19,7 +19,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { departments } from "@/data/departments";
+import { WORKLOAD_OPTIONS } from "@/data/workload-options";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import JobQuantityBadge from "./JobQuantityBadge";
 
 // Mapeamento de status para aparência do Badge (chaves em inglês, texto em português)
 const approvalStatusConfig = {
@@ -152,14 +154,15 @@ const JobManagement = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (submissionStatus: 'rascunho' | 'aprovacao_pendente') => {
+  const handleSave = async (submissionStatus: 'rascunho' | 'aprovacao_pendente' | 'publicar_direto') => {
     if (!formData) return;
     try {
       if (!user) throw new Error("Você precisa estar logado para salvar.");
 
       const statusMap = {
         rascunho: 'draft',
-        aprovacao_pendente: 'pending_approval'
+        aprovacao_pendente: 'pending_approval',
+        publicar_direto: 'active' // ADMIN pode publicar diretamente
       };
       const statusToSend = statusMap[submissionStatus];
 
@@ -168,7 +171,7 @@ const JobManagement = () => {
         requirements: requirementsText.split('\n').filter(r => r.trim() !== ''),
         benefits: benefitsText.split('\n').filter(b => b.trim() !== ''),
         approval_status: statusToSend, // Define o status em inglês para o DB
-        status: 'draft', // Manter como rascunho até ser ativo
+        status: submissionStatus === 'publicar_direto' ? 'active' : 'draft', // Ativo se publicação direta
       };
 
       let jobDataClean: any = { ...jobToSave };
@@ -280,7 +283,16 @@ const JobManagement = () => {
                   const statusInfo = approvalStatusConfig[statusKey] || { text: job.approval_status || job.status || 'N/D', variant: 'secondary' as const };
                   return (
                     <TableRow key={job.id}>
-                      <TableCell>{job.title}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">{job.title}</span>
+                          <JobQuantityBadge
+                            quantity={job.quantity || 1}
+                            quantityFilled={job.quantity_filled || 0}
+                            expiresAt={job.expires_at}
+                          />
+                        </div>
+                      </TableCell>
                       <TableCell>{job.department}</TableCell>
                       <TableCell>{job.city}, {job.state}</TableCell>
                       <TableCell>{job.applicants || 0}</TableCell>
@@ -350,7 +362,7 @@ interface JobFormProps {
   onSelectChange: (name: string, value: any) => void;
   onRequirementsChange: (value: string) => void;
   onBenefitsChange: (value: string) => void;
-  onSave: (submissionStatus: 'rascunho' | 'aprovacao_pendente') => Promise<void>;
+  onSave: (submissionStatus: 'rascunho' | 'aprovacao_pendente' | 'publicar_direto') => Promise<void>;
   onCancel: () => void;
   departments: string[];
   rhProfile: RHUser | null | undefined;
@@ -372,7 +384,7 @@ const JobForm = ({
   onFormChange, onSelectChange, onRequirementsChange, onBenefitsChange,
   onSave, onCancel, departments, rhProfile
 }: JobFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState<'rascunho' | 'aprovacao_pendente' | false>(false);
+  const [isSubmitting, setIsSubmitting] = useState<'rascunho' | 'aprovacao_pendente' | 'publicar_direto' | false>(false);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loadingStates, setLoadingStates] = useState(true);
@@ -431,7 +443,7 @@ const JobForm = ({
     onSelectChange("city", ""); // Reseta a cidade quando o estado muda
   };
 
-  const handleSubmit = async (submissionStatus: 'rascunho' | 'aprovacao_pendente') => {
+  const handleSubmit = async (submissionStatus: 'rascunho' | 'aprovacao_pendente' | 'publicar_direto') => {
     setIsSubmitting(submissionStatus);
     try {
       await onSave(submissionStatus);
@@ -517,7 +529,7 @@ const JobForm = ({
             </Popover>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label htmlFor="type">Tipo</Label>
             <Select name="type" value={job.type} onValueChange={(value) => onSelectChange("type", value)}>
@@ -531,7 +543,22 @@ const JobForm = ({
             </Select>
           </div>
           <div className="space-y-2">
-            {/* O campo de status antigo foi removido */}
+            <Label htmlFor="quantity">Quantidade de Vagas *</Label>
+            <Input
+              name="quantity"
+              type="number"
+              min="1"
+              max="50"
+              value={job.quantity || 1}
+              onChange={onFormChange}
+              placeholder="1"
+            />
+            <p className="text-xs text-blue-600">
+              ℹ️ Quantas vagas iguais você precisa? (máx: 50)
+            </p>
+          </div>
+          <div className="space-y-2">
+            {/* Campo reservado para futuras funcionalidades */}
           </div>
         </div>
         <div className="space-y-2">
@@ -550,7 +577,18 @@ const JobForm = ({
         </div>
         <div className="space-y-2">
           <Label htmlFor="workload">Carga Horária</Label>
-          <Input name="workload" value={job.workload} onChange={onFormChange} />
+          <Select name="workload" value={job.workload} onValueChange={(value) => onSelectChange("workload", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a carga horária" />
+            </SelectTrigger>
+            <SelectContent>
+              {WORKLOAD_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex justify-end gap-4 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={!!isSubmitting}>Cancelar</Button>
@@ -562,6 +600,19 @@ const JobForm = ({
             {isSubmitting === 'aprovacao_pendente' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Enviar para Aprovação
           </Button>
+          {/* Botão de publicação direta apenas para ADMIN */}
+          {rhProfile && typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin && (
+            <Button
+              type="button"
+              variant="default"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => handleSubmit('publicar_direto')}
+              disabled={!!isSubmitting}
+            >
+              {isSubmitting === 'publicar_direto' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Publicar Direto
+            </Button>
+          )}
         </div>
       </fieldset>
     </form>

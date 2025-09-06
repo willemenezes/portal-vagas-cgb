@@ -8,9 +8,11 @@ import {
     Archive,
     UserCheck,
     FileText,
+    CheckCircle,
     Send,
     Gavel,
-    Loader2
+    Loader2,
+    Calendar
 } from "lucide-react";
 
 // Adicionei um tipo para as props para melhor organização
@@ -48,7 +50,9 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         // Menu específico para Gerência
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
-            { id: "unified-approvals", icon: Send, text: "Aprovações", action: () => setActiveTab("unified-approvals") },
+            { id: "unified-approvals", icon: CheckCircle, text: "Aprovações", action: () => setActiveTab("unified-approvals") },
+            { id: "contract-deadlines", icon: Calendar, text: "Prazos de Contratação", action: () => setActiveTab("contract-deadlines") },
+            { id: "selection-process", icon: Users, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
             { id: "hired", icon: UserCheck, text: "Contratados", action: () => setActiveTab("hired") },
             { id: "reports", icon: FileText, text: "Relatórios", action: () => setActiveTab("reports") },
         ];
@@ -61,14 +65,15 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
     } else if (userRole === 'solicitador') {
         // Menu específico para Solicitador de Vagas
         menuItems = [
-            { id: "jobs", icon: Briefcase, text: "Solicitação de Vagas", action: () => setActiveTab("jobs") },
+            { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
+            { id: "jobs", icon: Briefcase, text: "Minhas Solicitações", action: () => setActiveTab("jobs") },
         ];
     } else {
         // Menu para Admin e Recrutador
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
-            { id: "unified-approvals", icon: Send, text: "Aprovações", action: () => setActiveTab("unified-approvals") },
-            { id: "jobs", icon: Briefcase, text: "Gestão de Vagas", isNew: true, action: () => setActiveTab("jobs") },
+            { id: "jobs", icon: Briefcase, text: "Gestão Completa de Vagas", action: () => setActiveTab("jobs") },
+            { id: "contract-deadlines", icon: Calendar, text: "Prazos de Contratação", action: () => setActiveTab("contract-deadlines") },
             { id: "selection-process", icon: TrendingUp, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
             { id: "candidates", icon: Users, text: "Candidatos", action: () => setActiveTab("candidates") },
             { id: "hired", icon: UserCheck, text: "Contratados", action: () => setActiveTab("hired") },

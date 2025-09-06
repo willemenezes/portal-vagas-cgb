@@ -8,11 +8,11 @@ import { NotificationRecipient } from '@/types/notifications';
 export const getManagersByRegion = async (state: string, city: string): Promise<NotificationRecipient[]> => {
   try {
     console.log('🔍 Buscando gerentes para estado:', state, 'cidade:', city);
-    
+
     const { data, error } = await supabase
       .from('rh_users')
       .select('email, full_name, role, assigned_states, assigned_cities')
-      .eq('role', 'manager');
+      .in('role', ['manager', 'gerente']);
 
     if (error) throw error;
 
@@ -20,18 +20,18 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
 
     const filteredData = data
       ?.filter(user => {
-        console.log(`👤 Analisando gerente: ${user.full_name}`, {
+        console.log(`👤 Analisando gerente: ${user.full_name || user.name}`, {
           assigned_states: user.assigned_states,
           assigned_cities: user.assigned_cities,
           target_state: state,
           target_city: city
         });
-        
+
         // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
         if (user.assigned_states && user.assigned_states.length > 0) {
           const hasState = user.assigned_states.includes(state);
           console.log(`📍 Estado ${state} encontrado? ${hasState}`);
-          
+
           // Se tem o estado, verificar se tem cidades específicas
           if (hasState) {
             // Se tem cidades específicas, verificar se inclui a cidade da vaga
@@ -47,14 +47,14 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
           }
           return false; // Não tem o estado
         }
-        
+
         // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
         if (user.assigned_cities && user.assigned_cities.length > 0) {
           const hasCity = user.assigned_cities.includes(city);
           console.log(`🏙️ Cidade ${city} encontrada? ${hasCity}`);
           return hasCity;
         }
-        
+
         // PRIORIDADE 3: Se não tem restrições, pode ver todas
         console.log('✅ Gerente sem restrições regionais - incluindo');
         return true;
@@ -64,7 +64,7 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
 
     return filteredData?.map(user => ({
       email: user.email,
-      name: user.full_name,
+      name: user.full_name || user.name,
       role: user.role
     })) || [];
   } catch (error) {
@@ -89,11 +89,11 @@ export const getRHByRegion = async (state: string, city: string): Promise<Notifi
       ?.filter(user => {
         // Admins veem todas as regiões
         if (user.role === 'admin') return true;
-        
+
         // Para recruiters, aplicar filtro regional
         if (user.assigned_states && user.assigned_states.length > 0) {
           const hasState = user.assigned_states.includes(state);
-          
+
           // Se tem o estado, verificar se tem cidades específicas
           if (hasState) {
             // Se tem cidades específicas, verificar se inclui a cidade da vaga
@@ -106,17 +106,17 @@ export const getRHByRegion = async (state: string, city: string): Promise<Notifi
           }
           return false; // Não tem o estado
         }
-        
+
         // Se não tem estados, mas tem cidades específicas
         if (user.assigned_cities && user.assigned_cities.length > 0) {
           return user.assigned_cities.includes(city);
         }
-        
+
         return true; // Sem restrições
       })
       .map(user => ({
         email: user.email,
-        name: user.full_name,
+        name: user.full_name || user.name,
         role: user.role
       })) || [];
   } catch (error) {

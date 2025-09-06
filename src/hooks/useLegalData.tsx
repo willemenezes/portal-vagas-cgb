@@ -36,25 +36,75 @@ export const useSaveLegalData = () => {
 
     return useMutation({
         mutationFn: async ({ candidateId, data }: { candidateId: string; data: LegalDataFormValues }) => {
+            console.log('🔍 [useSaveLegalData] Iniciando salvamento para candidato:', candidateId);
+
+            // Validar dados obrigatórios
+            if (!candidateId) {
+                throw new Error('ID do candidato é obrigatório');
+            }
+
+            if (!data.full_name || !data.birth_date || !data.rg || !data.cpf || !data.mother_name || !data.birth_city || !data.birth_state || !data.desired_position) {
+                throw new Error('Todos os campos obrigatórios devem ser preenchidos');
+            }
+
             // Verificar se já existe registro
-            const { data: existing } = await supabase
+            const { data: existing, error: existingError } = await supabase
                 .from('candidate_legal_data')
                 .select('id')
                 .eq('candidate_id', candidateId)
                 .single();
 
+            if (existingError && existingError.code !== 'PGRST116') {
+                console.error('❌ [useSaveLegalData] Erro ao verificar registro existente:', existingError);
+            }
+
+            console.log('📋 [useSaveLegalData] Registro existente:', existing ? 'SIM' : 'NÃO');
+
             // Obter o usuário atual (pode ser null para candidatos não autenticados)
-            const { data: { user } } = await supabase.auth.getUser();
-            
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+            if (userError) {
+                console.error('❌ [useSaveLegalData] Erro ao obter usuário:', userError);
+                // Não falhar se não conseguir obter usuário (para candidatos não autenticados)
+            }
+
+            console.log('👤 [useSaveLegalData] Usuário atual:', user?.id || 'NÃO AUTENTICADO');
+
+            // Preparar o payload garantindo que todos os campos obrigatórios estejam presentes
             const payload = {
-                ...data,
                 candidate_id: candidateId,
-                collected_by: user?.id || null, // Permitir null para candidatos não autenticados
-                review_status: 'pending'
+                full_name: data.full_name,
+                birth_date: data.birth_date,
+                rg: data.rg,
+                cpf: data.cpf,
+                mother_name: data.mother_name,
+                father_name: data.father_name || '',
+                birth_city: data.birth_city,
+                birth_state: data.birth_state,
+                cnh: data.cnh || null,
+                work_history: Array.isArray(data.work_history) ? data.work_history : [],
+                is_former_employee: !!data.is_former_employee,
+                former_employee_details: data.former_employee_details || '',
+                is_pcd: !!data.is_pcd,
+                pcd_details: data.pcd_details || '',
+                desired_position: data.desired_position,
+                responsible_name: data.responsible_name || null,
+                collected_by: user?.id || null,
+                review_status: 'pending' as const
             };
+
+            console.log('📦 [useSaveLegalData] Payload preparado:', {
+                candidate_id: payload.candidate_id,
+                collected_by: payload.collected_by,
+                review_status: payload.review_status,
+                has_cpf: !!payload.cpf,
+                has_full_name: !!payload.full_name,
+                work_history_count: payload.work_history.length
+            });
 
             if (existing) {
                 // Atualizar
+                console.log('🔄 [useSaveLegalData] Atualizando registro existente...');
                 const { data: updated, error } = await supabase
                     .from('candidate_legal_data')
                     .update(payload)
@@ -62,17 +112,29 @@ export const useSaveLegalData = () => {
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ [useSaveLegalData] Erro ao atualizar:', error);
+                    throw error;
+                }
+
+                console.log('✅ [useSaveLegalData] Registro atualizado com sucesso');
                 return updated;
             } else {
                 // Criar
+                console.log('➕ [useSaveLegalData] Criando novo registro...');
                 const { data: created, error } = await supabase
                     .from('candidate_legal_data')
                     .insert(payload)
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ [useSaveLegalData] Erro ao criar:', error);
+                    console.error('❌ [useSaveLegalData] Payload que causou erro:', payload);
+                    throw error;
+                }
+
+                console.log('✅ [useSaveLegalData] Registro criado com sucesso');
                 return created;
             }
         },
@@ -82,9 +144,25 @@ export const useSaveLegalData = () => {
         },
         onError: (error) => {
             console.error('Erro ao salvar dados jurídicos:', error);
+
+            let errorMessage = 'Não foi possível salvar os dados jurídicos. Tente novamente.';
+
+            // Personalizar mensagem de erro baseada no tipo de erro
+            if (error.message?.includes('campos obrigatórios')) {
+                errorMessage = 'Por favor, preencha todos os campos obrigatórios.';
+            } else if (error.message?.includes('duplicate key')) {
+                errorMessage = 'Já existem dados jurídicos para este candidato.';
+            } else if (error.message?.includes('foreign key')) {
+                errorMessage = 'Candidato não encontrado no sistema.';
+            } else if (error.message?.includes('permission denied')) {
+                errorMessage = 'Você não tem permissão para salvar estes dados.';
+            } else if (error.message?.includes('violates check constraint')) {
+                errorMessage = 'Alguns dados estão em formato inválido. Verifique os campos.';
+            }
+
             toast({
                 title: 'Erro ao salvar',
-                description: 'Não foi possível salvar os dados jurídicos. Tente novamente.',
+                description: errorMessage,
                 variant: 'destructive'
             });
         }
@@ -159,8 +237,8 @@ export const useReviewLegalData = () => {
                         .single();
 
                     if (candidate) {
-                        const notificationType = variables.status === 'approved' 
-                            ? 'legal_validation_approved' 
+                        const notificationType = variables.status === 'approved'
+                            ? 'legal_validation_approved'
                             : 'legal_validation_rejected';
 
                         await sendNotification({

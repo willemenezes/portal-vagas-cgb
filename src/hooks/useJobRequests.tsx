@@ -41,6 +41,7 @@ export interface CreateJobRequestData {
     benefits: string[];
     workload: string;
     justification?: string; // Justificativa da criação da vaga
+    quantity?: number; // Quantidade de vagas solicitadas
 }
 
 export const useJobRequests = () => {
@@ -141,7 +142,7 @@ export const useJobRequests = () => {
                 console.log('🔍 Buscando gerentes para região:', data.state, data.city);
                 const managers = await getManagersByRegion(data.state, data.city);
                 console.log('👥 Gerentes encontrados:', managers);
-                
+
                 if (managers.length > 0) {
                     console.log('📧 Enviando notificação para gerentes...');
                     const notificationResult = await sendNotification({

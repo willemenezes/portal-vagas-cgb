@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Users, Briefcase } from "lucide-react";
-import ApprovalManagement from "./ApprovalManagement";
+import { Send, CheckCircle } from "lucide-react";
 import JobRequestApproval from "./JobRequestApproval";
+import JobApprovalsWrapper from "./JobApprovalsWrapper";
 import useJobRequests from "@/hooks/useJobRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
@@ -25,24 +24,24 @@ export default function UnifiedApprovals() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">Central de Aprovações</h2>
-                    <p className="text-gray-600">Gerencie aprovações de candidatos e solicitações de vagas</p>
+                    <p className="text-gray-600">Gerencie solicitações de criação e aprovações de vagas</p>
                 </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="job-requests" className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4" />
-                        Solicitações de Vagas
+                        <Send className="w-4 h-4" />
+                        Solicitações de Criação
                         {jobRequestStats?.pendentes > 0 && (
                             <Badge variant="destructive" className="ml-1">
                                 {jobRequestStats.pendentes}
                             </Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="candidates" className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        Candidatos
+                    <TabsTrigger value="job-approvals" className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Aprovações de Publicação
                     </TabsTrigger>
                 </TabsList>
 
@@ -50,8 +49,8 @@ export default function UnifiedApprovals() {
                     <JobRequestApproval />
                 </TabsContent>
 
-                <TabsContent value="candidates" className="space-y-4">
-                    <ApprovalManagement />
+                <TabsContent value="job-approvals" className="space-y-4">
+                    <JobApprovalsWrapper />
                 </TabsContent>
             </Tabs>
         </div>

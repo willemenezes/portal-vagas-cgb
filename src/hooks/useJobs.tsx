@@ -19,6 +19,9 @@ export interface Job {
   updated_at: string;
   applicants?: number;
   posted?: string;
+  quantity?: number; // Quantidade de vagas
+  quantity_filled?: number; // Quantidade de vagas preenchidas
+  expires_at?: string; // Data de expiração
 }
 
 export const useJobs = () => {
@@ -183,13 +186,16 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
   return useQuery<Job[], Error>({
     queryKey: ['pendingJobs', rhProfile?.user_id],
     queryFn: async () => {
+      console.log('🔍 [usePendingJobs] Perfil:', rhProfile?.role, 'is_admin:', rhProfile && 'is_admin' in rhProfile ? rhProfile.is_admin : 'N/A');
+
       // Se o usuário é um gerente, mas não tem regiões atribuídas, não retorna nada.
-      const isManagerWithNoRegions = 
+      const isManagerWithNoRegions =
         rhProfile?.role === 'manager' &&
         (!rhProfile.assigned_states || rhProfile.assigned_states.length === 0) &&
         (!rhProfile.assigned_cities || rhProfile.assigned_cities.length === 0);
 
       if (isManagerWithNoRegions) {
+        console.log('❌ [usePendingJobs] Gerente sem regiões, retornando vazio');
         return [];
       }
 
@@ -198,18 +204,23 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
         .select('*')
         .eq('approval_status', 'pending_approval');
 
-      // Aplica filtro de região para gerentes (agora mais seguro)
+      // Aplica filtro de região apenas para gerentes (ADMIN vê todas)
       if (rhProfile && rhProfile.role === 'manager') {
+        console.log('🔧 [usePendingJobs] Aplicando filtro de região para GERENTE');
         if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
           query = query.in('state', rhProfile.assigned_states);
         } else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
           query = query.in('city', rhProfile.assigned_cities);
         }
+      } else {
+        console.log('✅ [usePendingJobs] ADMIN ou outro perfil - sem filtro de região');
       }
 
       query = query.order('created_at', { ascending: false });
-      
+
       const { data, error } = await query;
+
+      console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas');
 
       if (error) {
         console.error('Erro ao buscar vagas pendentes:', error);
