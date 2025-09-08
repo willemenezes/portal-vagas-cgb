@@ -9,12 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock
 } from "lucide-react";
 import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { useToast } from "@/hooks/use-toast";
+import { useJobRequests } from "@/hooks/useJobRequests";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -41,6 +42,14 @@ const JobManagement = () => {
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
   const { toast } = useToast();
+  
+  // Hook para job requests (apenas para RH Admin/Admin)
+  const { 
+    jobRequests, 
+    createJobFromRequest, 
+    approveAndCreateJob,
+    isLoading: isLoadingRequests 
+  } = useJobRequests();
 
   // Filtrar vagas por região se não for admin
   const jobs = allJobs.filter(job => {
@@ -63,7 +72,11 @@ const JobManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingTalentBank, setIsCreatingTalentBank] = useState(false);
 
-
+  // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
+  const approvedRequests = jobRequests?.filter(request => 
+    request.status === 'aprovado' && 
+    !request.job_created
+  ) || [];
 
   const talentBankJobExists = jobs.some(job => job.title === "Banco de Talentos");
 
@@ -215,6 +228,43 @@ const JobManagement = () => {
     }
   };
 
+  // Função para criar vaga a partir de job request aprovada
+  const handleCreateJobFromRequest = async (requestId: string) => {
+    try {
+      await createJobFromRequest.mutateAsync(requestId);
+      toast({
+        title: "Vaga criada com sucesso!",
+        description: "A vaga foi criada e está ativa para candidaturas."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao criar vaga",
+        description: "Não foi possível criar a vaga. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para aprovar e criar vaga diretamente
+  const handleApproveAndCreateJob = async (requestId: string) => {
+    try {
+      await approveAndCreateJob.mutateAsync({
+        requestId,
+        notes: "Aprovado e criado pelo RH Admin"
+      });
+      toast({
+        title: "Vaga aprovada e criada!",
+        description: "A solicitação foi aprovada e a vaga foi criada diretamente."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao aprovar e criar vaga",
+        description: "Não foi possível aprovar e criar a vaga. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card className="p-4 shadow-lg bg-white rounded-lg">
       <CardContent className="p-0">
@@ -261,6 +311,79 @@ const JobManagement = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Seção de Job Requests Aprovadas (apenas para RH Admin/Admin) */}
+        {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && approvedRequests.length > 0 && (
+          <div className="mb-6">
+            <Card className="bg-green-50 border-green-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-800">
+                  <CheckCircle className="w-5 h-5" />
+                  Solicitações Aprovadas para Criação
+                  <Badge variant="secondary" className="ml-2">
+                    {approvedRequests.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {approvedRequests.map((request) => (
+                    <div key={request.id} className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-gray-900">{request.title}</h3>
+                            <Badge variant="outline" className="text-green-700 border-green-300">
+                              Aprovado
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                            <div className="flex items-center gap-1">
+                              <Briefcase className="w-4 h-4" />
+                              <span>{request.department}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              <span>{request.city}, {request.state}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{request.workload}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Aprovado por: {request.approved_by}</span>
+                            </div>
+                          </div>
+
+                          {request.notes && (
+                            <div className="text-sm text-gray-600 mb-3">
+                              <p className="font-medium mb-1">Observações do Gerente:</p>
+                              <p className="text-gray-500">{request.notes}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            size="sm"
+                            onClick={() => handleCreateJobFromRequest(request.id)}
+                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                            disabled={createJobFromRequest.isPending}
+                          >
+                            <Plus className="w-4 h-4" />
+                            Criar Vaga
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>
