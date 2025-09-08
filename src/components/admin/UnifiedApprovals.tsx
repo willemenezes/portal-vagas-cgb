@@ -30,7 +30,7 @@ export default function UnifiedApprovals() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className={`grid w-full ${(rhProfile?.role === 'admin' || rhProfile?.is_admin) ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <TabsTrigger value="job-requests" className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         Solicitações de Criação
@@ -40,15 +40,17 @@ export default function UnifiedApprovals() {
                             </Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="approved-requests" className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4" />
-                        Aprovadas para Criar
-                        {jobRequestStats?.aprovados > 0 && (
-                            <Badge variant="secondary" className="ml-1">
-                                {jobRequestStats.aprovados}
-                            </Badge>
-                        )}
-                    </TabsTrigger>
+                    {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && (
+                        <TabsTrigger value="approved-requests" className="flex items-center gap-2">
+                            <Briefcase className="w-4 h-4" />
+                            Aprovadas para Criar
+                            {jobRequestStats?.aprovados > 0 && (
+                                <Badge variant="secondary" className="ml-1">
+                                    {jobRequestStats.aprovados}
+                                </Badge>
+                            )}
+                        </TabsTrigger>
+                    )}
                     <TabsTrigger value="job-approvals" className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4" />
                         Aprovações de Publicação
@@ -59,9 +61,11 @@ export default function UnifiedApprovals() {
                     <JobRequestApproval />
                 </TabsContent>
 
-                <TabsContent value="approved-requests" className="space-y-4">
-                    <ApprovedJobRequests rhProfile={rhProfile} />
-                </TabsContent>
+                {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && (
+                    <TabsContent value="approved-requests" className="space-y-4">
+                        <ApprovedJobRequests rhProfile={rhProfile} />
+                    </TabsContent>
+                )}
 
                 <TabsContent value="job-approvals" className="space-y-4">
                     <JobApprovalsWrapper />
