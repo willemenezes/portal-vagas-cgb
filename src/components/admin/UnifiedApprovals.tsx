@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, Briefcase } from "lucide-react";
 import JobRequestApproval from "./JobRequestApproval";
 import JobApprovalsWrapper from "./JobApprovalsWrapper";
+import ApprovedJobRequests from "./ApprovedJobRequests";
 import useJobRequests from "@/hooks/useJobRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
@@ -29,13 +30,22 @@ export default function UnifiedApprovals() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="job-requests" className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         Solicitações de Criação
                         {jobRequestStats?.pendentes > 0 && (
                             <Badge variant="destructive" className="ml-1">
                                 {jobRequestStats.pendentes}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
+                    <TabsTrigger value="approved-requests" className="flex items-center gap-2">
+                        <Briefcase className="w-4 h-4" />
+                        Aprovadas para Criar
+                        {jobRequestStats?.aprovados > 0 && (
+                            <Badge variant="secondary" className="ml-1">
+                                {jobRequestStats.aprovados}
                             </Badge>
                         )}
                     </TabsTrigger>
@@ -47,6 +57,10 @@ export default function UnifiedApprovals() {
 
                 <TabsContent value="job-requests" className="space-y-4">
                     <JobRequestApproval />
+                </TabsContent>
+
+                <TabsContent value="approved-requests" className="space-y-4">
+                    <ApprovedJobRequests rhProfile={rhProfile} />
                 </TabsContent>
 
                 <TabsContent value="job-approvals" className="space-y-4">
