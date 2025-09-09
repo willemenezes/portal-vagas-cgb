@@ -177,6 +177,10 @@ const ResumeUpload = () => {
       const resume = await createResume.mutateAsync(resumeDataForDB);
 
       // Salvar dados jurídicos (usando o ID do resume como candidate_id)
+      // Debug: Verificar dados antes de enviar
+      console.log('🔍 [ResumeUpload] Dados do formulário:', formData);
+      console.log('🔍 [ResumeUpload] Estado selecionado:', formData.state);
+      
       await saveLegalData.mutateAsync({
         candidateId: resume.id,
         data: {
@@ -187,7 +191,7 @@ const ResumeUpload = () => {
           mother_name: formData.motherName,
           father_name: formData.fatherName || '',
           birth_city: formData.birthCity,
-          birth_state: formData.state,
+          birth_state: formData.state, // Usar o estado selecionado
           cnh: formData.cnh, // Adicionado campo CNH
           work_history: [
             ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
@@ -236,9 +240,10 @@ const ResumeUpload = () => {
       console.error('Erro detalhado no cadastro de currículo:', error);
 
       // Se os dados foram salvos mas houve erro apenas nos dados jurídicos, 
-      // ainda consideramos sucesso
-      if (error?.message?.includes('candidate_legal_data') ||
-        error?.message?.includes('permission denied for table users')) {
+      // ainda consideramos sucesso (mas não para erros de validação)
+      if ((error?.message?.includes('candidate_legal_data') ||
+        error?.message?.includes('permission denied for table users')) &&
+        !error?.message?.includes('Campos obrigatórios não preenchidos')) {
         toast({
           title: "Currículo enviado com sucesso!",
           description: "Seu currículo foi cadastrado em nossa base de dados. Entraremos em contato quando houver oportunidades compatíveis.",
