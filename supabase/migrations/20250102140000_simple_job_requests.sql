@@ -108,7 +108,9 @@ BEGIN
         workload,
         approval_status,
         status,
-        created_by
+        created_by,
+        quantity,
+        expires_at
     ) VALUES (
         request_data.title,
         request_data.department,
@@ -121,7 +123,9 @@ BEGIN
         request_data.workload,
         'ativo',
         'active',
-        request_data.approved_by::uuid
+        request_data.approved_by::uuid,
+        COALESCE(request_data.quantity, 1),
+        NOW() + INTERVAL '20 days' -- 20 dias corridos para contratação
     ) RETURNING id INTO new_job_id;
     
     RETURN new_job_id;

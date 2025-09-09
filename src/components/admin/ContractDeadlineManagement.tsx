@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
     Calendar,
     Clock,
@@ -18,12 +19,23 @@ import {
     Edit
 } from 'lucide-react';
 import { useAllJobs } from '@/hooks/useJobs';
+import { useUpdateJob } from '@/hooks/useJobs';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export const ContractDeadlineManagement: React.FC = () => {
     const { data: allJobs = [], isLoading } = useAllJobs();
+    const updateJobMutation = useUpdateJob();
+    const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [selectedJob, setSelectedJob] = useState<any>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [editFormData, setEditFormData] = useState({
+        quantity: 1,
+        expires_at: ''
+    });
 
     // Filtrar vagas por busca e status
     const filteredJobs = allJobs.filter(job => {
@@ -70,6 +82,50 @@ export const ContractDeadlineManagement: React.FC = () => {
         if (days === 1) return { status: 'expiring_tomorrow', color: 'orange', text: 'Expira amanhã' };
         if (days <= 3) return { status: 'expiring_soon', color: 'yellow', text: `${days} dias restantes` };
         return { status: 'active', color: 'green', text: `${days} dias restantes` };
+    };
+
+    // Função para abrir modal de edição
+    const handleEditJob = (job: any) => {
+        setSelectedJob(job);
+        setEditFormData({
+            quantity: job.quantity || 1,
+            expires_at: job.expires_at ? new Date(job.expires_at).toISOString().slice(0, 16) : ''
+        });
+        setIsEditModalOpen(true);
+    };
+
+    // Função para abrir modal de visualização
+    const handleViewJob = (job: any) => {
+        setSelectedJob(job);
+        setIsViewModalOpen(true);
+    };
+
+    // Função para salvar edição
+    const handleSaveEdit = async () => {
+        if (!selectedJob) return;
+
+        try {
+            await updateJobMutation.mutateAsync({
+                id: selectedJob.id,
+                quantity: editFormData.quantity,
+                expires_at: editFormData.expires_at ? new Date(editFormData.expires_at).toISOString() : null
+            });
+
+            toast({
+                title: "Vaga atualizada!",
+                description: "As alterações foram salvas com sucesso.",
+            });
+
+            setIsEditModalOpen(false);
+            setSelectedJob(null);
+        } catch (error) {
+            console.error('Erro ao atualizar vaga:', error);
+            toast({
+                title: "Erro ao atualizar vaga",
+                description: "Tente novamente mais tarde.",
+                variant: "destructive",
+            });
+        }
     };
 
     if (isLoading) {
@@ -256,10 +312,18 @@ export const ContractDeadlineManagement: React.FC = () => {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="sm">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => handleViewJob(job)}
+                                                >
                                                     <Eye className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="sm">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => handleEditJob(job)}
+                                                >
                                                     <Edit className="w-4 h-4" />
                                                 </Button>
                                             </div>
@@ -278,6 +342,113 @@ export const ContractDeadlineManagement: React.FC = () => {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Modal de Visualização */}
+            <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Detalhes da Vaga</DialogTitle>
+                        <DialogDescription>
+                            Informações completas sobre a vaga e seus prazos
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedJob && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Título</label>
+                                    <p className="text-sm">{selectedJob.title}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Departamento</label>
+                                    <p className="text-sm">{selectedJob.department}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Local</label>
+                                    <p className="text-sm">{selectedJob.city}, {selectedJob.state}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Quantidade</label>
+                                    <p className="text-sm">{selectedJob.quantity || 1} vaga(s)</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Data de Expiração</label>
+                                    <p className="text-sm">
+                                        {selectedJob.expires_at 
+                                            ? new Date(selectedJob.expires_at).toLocaleDateString('pt-BR')
+                                            : 'Não definido'
+                                        }
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Status</label>
+                                    <p className="text-sm">
+                                        {selectedJob.expires_at ? getExpiryStatus(selectedJob.expires_at).text : 'Sem prazo'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de Edição */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Editar Vaga</DialogTitle>
+                        <DialogDescription>
+                            Atualize a quantidade e prazo de expiração da vaga
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedJob && (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Quantidade de Vagas</label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={editFormData.quantity}
+                                    onChange={(e) => setEditFormData(prev => ({
+                                        ...prev,
+                                        quantity: parseInt(e.target.value) || 1
+                                    }))}
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Data de Expiração</label>
+                                <Input
+                                    type="datetime-local"
+                                    value={editFormData.expires_at}
+                                    onChange={(e) => setEditFormData(prev => ({
+                                        ...prev,
+                                        expires_at: e.target.value
+                                    }))}
+                                    className="mt-1"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Deixe vazio para usar prazo padrão de 20 dias
+                                </p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => setIsEditModalOpen(false)}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button 
+                                    onClick={handleSaveEdit}
+                                    disabled={updateJobMutation.isPending}
+                                >
+                                    {updateJobMutation.isPending ? 'Salvando...' : 'Salvar'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
