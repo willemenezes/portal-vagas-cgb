@@ -22,6 +22,7 @@ export interface Job {
   quantity?: number; // Quantidade de vagas
   quantity_filled?: number; // Quantidade de vagas preenchidas
   expires_at?: string; // Data de expiração
+  hired_count?: number; // Candidatos contratados/aprovados
 }
 
 export const useJobs = () => {
@@ -114,15 +115,28 @@ export const useAllJobs = () => {
                 console.warn('Erro ao contar candidates:', countError);
               }
 
+              // Contar candidatos contratados/aprovados
+              const { count: hiredCount, error: hiredError } = await supabase
+                .from('candidates')
+                .select('id', { count: 'exact', head: true })
+                .eq('job_id', job.id)
+                .in('status', ['Contratado', 'Aprovado']);
+
+              if (hiredError) {
+                console.warn('Erro ao contar candidatos contratados:', hiredError);
+              }
+
               return {
                 ...job,
                 applicants: count || 0,
+                hired_count: hiredCount || 0,
                 posted: new Date(job.created_at).toLocaleDateString('pt-BR')
               };
             } catch (error) {
               return {
                 ...job,
                 applicants: 0,
+                hired_count: 0,
                 posted: new Date(job.created_at).toLocaleDateString('pt-BR')
               };
             }

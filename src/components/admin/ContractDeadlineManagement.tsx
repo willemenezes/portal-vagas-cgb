@@ -49,7 +49,8 @@ export const ContractDeadlineManagement: React.FC = () => {
                 const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                 return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
             })()) ||
-            (statusFilter === 'active' && job.expires_at && new Date(job.expires_at) > new Date());
+            (statusFilter === 'active' && job.status === 'active') ||
+            (statusFilter === 'completed' && (job.status === 'completed' || job.approval_status === 'concluido'));
 
         return matchesSearch && matchesStatus;
     });
@@ -227,6 +228,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                                     <SelectItem value="expired">Expiradas</SelectItem>
                                     <SelectItem value="expiring_soon">Expirando em breve</SelectItem>
                                     <SelectItem value="active">Ativas</SelectItem>
+                                    <SelectItem value="completed">Concluídas</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

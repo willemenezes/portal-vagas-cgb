@@ -31,6 +31,8 @@ const approvalStatusConfig = {
   active: { text: "Ativa", variant: "success" as const },
   rejected: { text: "Rejeitada", variant: "destructive" as const },
   closed: { text: "Fechada", variant: "outline" as const },
+  ativo: { text: "Ativa", variant: "success" as const },
+  concluido: { text: "Concluída", variant: "default" as const },
 };
 
 const JobManagement = () => {
