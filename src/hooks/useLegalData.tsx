@@ -394,31 +394,43 @@ export const useCandidatesForLegalValidation = () => {
     return useQuery<ExtendedCandidate[], Error>({
         queryKey: ['candidatesForLegalValidation'],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from('candidates')
-                .select(`
-                    *,
-                    job:jobs (
-                        title,
-                        city,
-                        state,
-                        department,
-                        type,
-                        workload,
-                        description
-                    ),
-                    candidate_legal_data (
-                        id,
-                        review_status,
-                        collected_at
-                    )
-                `)
-                .eq('status', 'Validação TJ')
-                .order('created_at', { ascending: false });
+            try {
+                const { data, error } = await supabase
+                    .from('candidates')
+                    .select(`
+                        *,
+                        job:jobs (
+                            title,
+                            city,
+                            state,
+                            department,
+                            type,
+                            workload,
+                            description
+                        ),
+                        candidate_legal_data (
+                            id,
+                            review_status,
+                            collected_at
+                        )
+                    `)
+                    .eq('status', 'Validação TJ')
+                    .order('created_at', { ascending: false });
 
-            if (error) throw error;
+                if (error) {
+                    console.error('❌ [useCandidatesForLegalValidation] Erro na query:', error);
+                    throw error;
+                }
 
-            return data || [];
-        }
+                console.log('✅ [useCandidatesForLegalValidation] Dados carregados:', data?.length || 0, 'candidatos');
+                return data || [];
+            } catch (error) {
+                console.error('❌ [useCandidatesForLegalValidation] Erro geral:', error);
+                throw error;
+            }
+        },
+        retry: 2,
+        staleTime: 30000, // 30 segundos
+        refetchOnWindowFocus: false // Evita refetch desnecessário
     });
 }; 

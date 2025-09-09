@@ -19,12 +19,26 @@ import { useLegalData, useReviewLegalData, useMyApprovedValidations, useCandidat
 import { useRHProfile } from '@/hooks/useRH';
 import { useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { maskCPF, maskRG } from '@/utils/legal-validation';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ApprovedLegalValidations from './ApprovedLegalValidations';
 
 type LegalStatus = 'aprovado' | 'reprovado' | 'aprovado_com_restricao';
+
+// Função helper para formatação segura de datas
+const safeFormatDate = (dateString: string | null | undefined, formatString: string = 'dd/MM/yyyy'): string => {
+    if (!dateString) return 'Não informado';
+    
+    try {
+        const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
+        if (!isValid(date)) return 'Data inválida';
+        return format(date, formatString);
+    } catch (error) {
+        console.warn('Erro ao formatar data:', dateString, error);
+        return 'Data inválida';
+    }
+};
 
 
 const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; onAction: (candidate: ExtendedCandidate, action: LegalStatus) => void }) => {
@@ -60,9 +74,9 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
     return (
         <>
             <Card className="w-full hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                        <div className="flex-1">
+            <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                    <div className="flex-1">
                             <CardTitle className="text-xl mb-2 flex items-center gap-2">
                                 <User className="w-5 h-5" />
                                 {candidate.name}
@@ -108,14 +122,14 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                         </Button>
                     </div>
                     
-                    {legalData?.review_status !== 'approved' && (
+                        {legalData?.review_status !== 'approved' && (
                         <Alert className="mb-4">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
                                 <strong>Atenção:</strong> Revise os dados jurídicos antes de aprovar o candidato.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                                </AlertDescription>
+                            </Alert>
+                        )}
 
                     <div className="flex gap-2">
                         <Button 
@@ -179,7 +193,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                         {isLoadingLegal ? (
                             <div className="flex justify-center py-8">
                                 <Loader2 className="w-8 h-8 animate-spin" />
-                            </div>
+                </div>
                         ) : legalData ? (
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
@@ -196,7 +210,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                         <div><span className="font-medium">Nome Completo:</span> {legalData.full_name}</div>
                                         <div><span className="font-medium">CPF:</span> {rhProfile?.role === 'juridico' ? legalData.cpf : maskCPF(legalData.cpf)}</div>
                                         <div><span className="font-medium">RG:</span> {rhProfile?.role === 'juridico' ? legalData.rg : maskRG(legalData.rg)}</div>
-                                        <div><span className="font-medium">Data de Nascimento:</span> {legalData.birth_date ? format(new Date(legalData.birth_date), 'dd/MM/yyyy') : 'Não informado'}</div>
+                                        <div><span className="font-medium">Data de Nascimento:</span> {safeFormatDate(legalData.birth_date)}</div>
                                         <div><span className="font-medium">Naturalidade:</span> {legalData.birth_city}/{legalData.birth_state}</div>
                                     </div>
 
@@ -224,28 +238,28 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                             <div><span className="font-medium">Responsável:</span> {legalData.responsible_name}</div>
                                         )}
                                     </div>
-                                </div>
+                                    </div>
 
-                                {/* Histórico Profissional */}
-                                {legalData.work_history && legalData.work_history.length > 0 && (
+                                    {/* Histórico Profissional */}
+                                    {legalData.work_history && legalData.work_history.length > 0 && (
                                     <div className="mt-6 space-y-3">
                                         <h5 className="font-medium text-blue-800 uppercase text-xs border-b border-blue-200 pb-1">
                                             Histórico Profissional
                                         </h5>
                                         <div className="grid gap-3">
-                                            {legalData.work_history.map((work, index) => (
+                                                {legalData.work_history.map((work, index) => (
                                                 <div key={index} className="bg-white rounded-lg p-3 border border-blue-100">
                                                     <div className="font-medium text-gray-900">{work.position}</div>
                                                     <div className="text-gray-600">{work.company}</div>
                                                     <div className="text-xs text-gray-500 mt-1">
-                                                        {work.start_date ? format(new Date(work.start_date), 'MM/yyyy') : 'N/A'} -
-                                                        {work.is_current ? ' Atual' : work.end_date ? ` ${format(new Date(work.end_date), 'MM/yyyy')}` : ' Não informado'}
+                                                        {safeFormatDate(work.start_date, 'MM/yyyy')} -
+                                                        {work.is_current ? ' Atual' : ` ${safeFormatDate(work.end_date, 'MM/yyyy')}`}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
                                 {/* Ações de Revisão dos Dados */}
                                 {legalData.review_status === 'pending' && (
@@ -264,7 +278,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                                     <CheckCircle className="w-4 h-4 mr-1" />
                                                 )}
                                                 Aprovar Dados
-                                            </Button>
+                                        </Button>
                                             <Button 
                                                 size="sm" 
                                                 variant="outline" 
@@ -277,7 +291,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                             >
                                                 <XCircle className="w-4 h-4 mr-1" /> 
                                                 Rejeitar Dados
-                                            </Button>
+                                        </Button>
                                         </div>
                                     </div>
                                 )}
@@ -316,11 +330,18 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
 };
 
 const LegalValidation = () => {
-    const { data: candidates, isLoading } = useCandidatesForLegalValidation();
+    const { data: candidates, isLoading, error } = useCandidatesForLegalValidation();
     const updateCandidateStatus = useUpdateCandidateStatus();
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [selectedCandidate, setSelectedCandidate] = useState<ExtendedCandidate | null>(null);
+
+    // Log de debug para investigar problemas
+    console.log('🔍 [LegalValidation] Estado:', { 
+        candidates: candidates?.length, 
+        isLoading, 
+        error: error?.message 
+    });
     const [action, setAction] = useState<LegalStatus | null>(null);
     const [comments, setComments] = useState('');
 
@@ -375,17 +396,17 @@ const LegalValidation = () => {
         };
 
         updateCandidateStatus.mutate(updateData, {
-            onSuccess: () => {
+                onSuccess: () => {
                 toast({ 
                     title: 'Validação realizada!', 
                     description: successMessage,
                     variant: action === 'reprovado' ? 'destructive' : 'default'
                 });
-                setSelectedCandidate(null);
-                setAction(null);
+                    setSelectedCandidate(null);
+                    setAction(null);
                 setComments('');
-                queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
-            },
+                    queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
+                },
             onError: (error: any) => {
                 toast({ 
                     title: 'Erro ao salvar validação', 
@@ -395,6 +416,22 @@ const LegalValidation = () => {
             }
         });
     };
+
+    // Tratamento de erro
+    if (error) {
+        return (
+            <Card>
+                <CardContent className="py-12 text-center">
+                    <Alert className="max-w-md mx-auto">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            Erro ao carregar candidatos: {error.message}
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Tabs defaultValue="pending" className="w-full">
@@ -409,10 +446,22 @@ const LegalValidation = () => {
                         <CardDescription>Aprove ou reprove os candidatos na etapa de Validação TJ.</CardDescription>
                     </CardHeader>
                 </Card>
-                {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : (
+                {isLoading ? (
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        <span className="ml-2">Carregando candidatos...</span>
+                    </div>
+                ) : (
                     <div className="space-y-4 mt-4">
-                        {candidates && candidates.length > 0 ? candidates.map(c => <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} />)
-                            : <Card><CardContent className="py-12 text-center">Nenhum candidato aguardando validação.</CardContent></Card>}
+                        {candidates && candidates.length > 0 ? candidates.map(c => (
+                            <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} />
+                        )) : (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <p className="text-gray-500">Nenhum candidato aguardando validação.</p>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 )}
             </TabsContent>
