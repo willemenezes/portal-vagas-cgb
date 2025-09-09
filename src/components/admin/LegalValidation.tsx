@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useLegalData, useReviewLegalData, useMyApprovedValidations, useCandidatesForLegalValidation } from '@/hooks/useLegalData';
+import { useLegalData, useReviewLegalData, useMyApprovedValidations, useCandidatesForLegalValidation, ExtendedCandidate } from '@/hooks/useLegalData';
 import { useRHProfile } from '@/hooks/useRH';
 import { useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { maskCPF, maskRG } from '@/utils/legal-validation';
@@ -26,12 +26,6 @@ import ApprovedLegalValidations from './ApprovedLegalValidations';
 
 type LegalStatus = 'aprovado' | 'reprovado' | 'aprovado_com_restricao';
 
-interface ExtendedCandidate extends Candidate {
-    job?: {
-        title: string; city: string; state: string; department: string; type: string; workload: string; description: string;
-    };
-    candidate_legal_data?: { id: string; review_status: string; collected_at: string; }[];
-}
 
 const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; onAction: (candidate: ExtendedCandidate, action: LegalStatus) => void }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -202,7 +196,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                         <div><span className="font-medium">Nome Completo:</span> {legalData.full_name}</div>
                                         <div><span className="font-medium">CPF:</span> {rhProfile?.role === 'juridico' ? legalData.cpf : maskCPF(legalData.cpf)}</div>
                                         <div><span className="font-medium">RG:</span> {rhProfile?.role === 'juridico' ? legalData.rg : maskRG(legalData.rg)}</div>
-                                        <div><span className="font-medium">Data de Nascimento:</span> {format(new Date(legalData.birth_date), 'dd/MM/yyyy')}</div>
+                                        <div><span className="font-medium">Data de Nascimento:</span> {legalData.birth_date ? format(new Date(legalData.birth_date), 'dd/MM/yyyy') : 'Não informado'}</div>
                                         <div><span className="font-medium">Naturalidade:</span> {legalData.birth_city}/{legalData.birth_state}</div>
                                     </div>
 
@@ -244,7 +238,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                                     <div className="font-medium text-gray-900">{work.position}</div>
                                                     <div className="text-gray-600">{work.company}</div>
                                                     <div className="text-xs text-gray-500 mt-1">
-                                                        {format(new Date(work.start_date), 'MM/yyyy')} -
+                                                        {work.start_date ? format(new Date(work.start_date), 'MM/yyyy') : 'N/A'} -
                                                         {work.is_current ? ' Atual' : work.end_date ? ` ${format(new Date(work.end_date), 'MM/yyyy')}` : ' Não informado'}
                                                     </div>
                                                 </div>

@@ -5,6 +5,25 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { useNotifications } from './useNotifications';
 import { getRHByCandidate } from '@/utils/notifications';
+import { Candidate } from './useCandidates';
+
+// Interface para candidato com dados jurídicos
+export interface ExtendedCandidate extends Candidate {
+    job?: {
+        title: string;
+        city: string;
+        state: string;
+        department: string;
+        type: string;
+        workload: string;
+        description: string;
+    };
+    candidate_legal_data?: {
+        id: string;
+        review_status: string;
+        collected_at: string;
+    }[];
+}
 
 // Hook para buscar dados jurídicos de um candidato
 export const useLegalData = (candidateId: string | null) => {
