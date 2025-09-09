@@ -51,6 +51,36 @@ export const useJobRequests = () => {
     const queryClient = useQueryClient();
     const { sendNotification } = useNotifications();
 
+    // Configurar escuta em tempo real para mudanças na tabela job_requests
+    useEffect(() => {
+        if (!user) return;
+
+        const channel = supabase
+            .channel('job_requests_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Escuta INSERT, UPDATE, DELETE
+                    schema: 'public',
+                    table: 'job_requests'
+                },
+                (payload) => {
+                    console.log('🔄 [useJobRequests] Mudança detectada na tabela job_requests:', payload);
+                    
+                    // Invalidar todas as queries de job-requests para sincronizar
+                    queryClient.invalidateQueries({ 
+                        queryKey: ['job-requests'],
+                        exact: false
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user, queryClient]);
+
     // Buscar solicitações do usuário
     const {
         data: jobRequests = [],
@@ -131,7 +161,10 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: async (data) => {
-            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+            queryClient.invalidateQueries({ 
+                queryKey: ['job-requests'],
+                exact: false
+            });
             toast({
                 title: "Solicitação enviada!",
                 description: "Sua solicitação de vaga foi enviada para aprovação da gerência.",
@@ -223,7 +256,10 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: async (data) => {
-            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+            queryClient.invalidateQueries({ 
+                queryKey: ['job-requests'],
+                exact: false
+            });
             toast({
                 title: "Status atualizado!",
                 description: `Solicitação ${data.status === 'aprovado' ? 'aprovada' : 'rejeitada'} com sucesso.`,
@@ -308,7 +344,10 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+            queryClient.invalidateQueries({ 
+                queryKey: ['job-requests'],
+                exact: false
+            });
             queryClient.invalidateQueries({ queryKey: ['jobs'] });
             toast({
                 title: "Vaga criada!",
@@ -349,7 +388,10 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: async (data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+            queryClient.invalidateQueries({ 
+                queryKey: ['job-requests'],
+                exact: false
+            });
             queryClient.invalidateQueries({ queryKey: ['jobs'] });
             toast({
                 title: "Vaga aprovada e criada!",
@@ -430,7 +472,10 @@ export const useJobRequests = () => {
             return updatedData;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+            queryClient.invalidateQueries({ 
+                queryKey: ['job-requests'],
+                exact: false
+            });
             toast({
                 title: "Solicitação atualizada!",
                 description: "As alterações foram salvas com sucesso.",
@@ -451,6 +496,13 @@ export const useJobRequests = () => {
         mutationFn: async (requestId: string) => {
             if (!user) throw new Error('Usuário não autenticado');
 
+            // Buscar dados da solicitação antes de excluir para notificação
+            const { data: requestData } = await supabase
+                .from('job_requests')
+                .select('title, requested_by')
+                .eq('id', requestId)
+                .single();
+
             const { error } = await supabase
                 .from('job_requests')
                 .delete()
@@ -461,10 +513,32 @@ export const useJobRequests = () => {
                 throw error;
             }
 
-            return requestId;
+            return { requestId, requestData };
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+        onSuccess: async ({ requestId, requestData }) => {
+            // Invalidar TODAS as queries de job-requests para sincronizar todos os usuários
+            queryClient.invalidateQueries({ 
+                queryKey: ['job-requests'],
+                exact: false // Invalida todas as queries que começam com 'job-requests'
+            });
+
+            // Enviar notificação para o solicitador se os dados estiverem disponíveis
+            if (requestData) {
+                try {
+                    await sendNotification({
+                        type: 'job_request_deleted',
+                        recipients: [{ user_id: requestData.requested_by }],
+                        data: {
+                            requestTitle: requestData.title,
+                            actionDate: new Date().toLocaleString('pt-BR')
+                        },
+                        silent: false
+                    });
+                } catch (error) {
+                    console.error('Erro ao notificar exclusão:', error);
+                }
+            }
+
             toast({
                 title: "Solicitação excluída!",
                 description: "A solicitação foi removida permanentemente.",
