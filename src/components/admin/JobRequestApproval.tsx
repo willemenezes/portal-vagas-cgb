@@ -516,21 +516,6 @@ export default function JobRequestApproval() {
                                                                 )}
                                                                 Aprovar
                                                             </Button>
-                                                            <Button
-                                                                className="bg-blue-600 hover:bg-blue-700"
-                                                                onClick={() => {
-                                                                    handleApproveAndCreateJob(selectedRequest.id);
-                                                                    setIsDetailsOpen(false);
-                                                                }}
-                                                                disabled={isUpdating}
-                                                            >
-                                                                {isUpdating ? (
-                                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                                ) : (
-                                                                    <Briefcase className="w-4 h-4 mr-2" />
-                                                                )}
-                                                                Aprovar e Criar Vaga
-                                                            </Button>
                                                         </div>
                                                     </div>
                                                 )}
