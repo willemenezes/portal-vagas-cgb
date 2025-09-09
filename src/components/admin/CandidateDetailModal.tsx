@@ -51,58 +51,10 @@ const ModalHeader = ({ candidate, onClose }: { candidate: Candidate, onClose: ()
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={async () => {
-                    if (candidate.resume_file_url) {
-                        console.log('🔍 URL do currículo:', candidate.resume_file_url);
-                        
-                        try {
-                            // Extrair o caminho do arquivo da URL
-                            const url = new URL(candidate.resume_file_url);
-                            const filePath = url.pathname.split('/storage/v1/object/public/resumes/')[1];
-                            console.log('📁 Caminho do arquivo:', filePath);
-                            
-                            if (filePath) {
-                                // Usar Supabase Storage API para baixar o arquivo
-                                const { data, error } = await supabase.storage
-                                    .from('resumes')
-                                    .download(filePath);
-                                
-                                if (error) {
-                                    console.error('❌ Erro ao baixar do Storage:', error);
-                                    // Fallback: tentar abrir URL original
-                                    window.open(candidate.resume_file_url, '_blank');
-                                    return;
-                                }
-                                
-                                // Criar blob URL e forçar download
-                                const blobUrl = window.URL.createObjectURL(data);
-                                const link = document.createElement('a');
-                                link.href = blobUrl;
-                                link.download = `curriculo_${candidate.name?.replace(/\s+/g, '_') || 'candidato'}.pdf`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                window.URL.revokeObjectURL(blobUrl);
-                                
-                                console.log('✅ Download realizado com sucesso!');
-                            } else {
-                                console.error('❌ Não foi possível extrair o caminho do arquivo');
-                                // Fallback: tentar abrir URL original
-                                window.open(candidate.resume_file_url, '_blank');
-                            }
-                        } catch (error) {
-                            console.error('❌ Erro no download:', error);
-                            // Fallback: tentar abrir URL original
-                            window.open(candidate.resume_file_url, '_blank');
-                        }
-                    }
-                }}
-                disabled={!candidate.resume_file_url}
-            >
-                <Download className="w-4 h-4 mr-2" /> Ver Currículo
+            <Button variant="outline" size="sm" asChild>
+                <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
+                    <Download className="w-4 h-4 mr-2" /> Ver Currículo
+                </a>
             </Button>
             <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-5 w-5" />

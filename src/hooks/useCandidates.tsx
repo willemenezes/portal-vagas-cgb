@@ -18,6 +18,8 @@ export interface Candidate {
   created_at: string | null;
   updated_at: string | null;
   legal_validation_comment?: string | null;
+  resume_file_url?: string | null;
+  resume_file_name?: string | null;
   job?: {
     title: string;
     city: string;

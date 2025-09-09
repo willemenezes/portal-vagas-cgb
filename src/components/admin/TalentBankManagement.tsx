@@ -13,7 +13,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from '@/integrations/supabase/client';
 import { INVITED_STATUS, INVITED_STATUS_COLOR } from '@/lib/constants';
 
 const TalentBankManagement = () => {
@@ -356,7 +355,7 @@ const TalentBankManagement = () => {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                            <TableCell>{resume.email}</TableCell>
+                                                <TableCell>{resume.email}</TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col">
                                                         <span>{resume.position || 'N/A'}</span>
@@ -373,8 +372,8 @@ const TalentBankManagement = () => {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                            <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
-                                            <TableCell className="text-right">
+                                                <TableCell>{new Date(resume.submitted_date).toLocaleDateString('pt-BR')}</TableCell>
+                                                <TableCell className="text-right">
                                                     <div className="flex gap-2 justify-end">
                                                         {!isInvited && availableJobs.length > 0 && (
                                                             <Button
@@ -387,56 +386,17 @@ const TalentBankManagement = () => {
                                                                 Convidar
                                                             </Button>
                                                         )}
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm" 
-                                                    onClick={async () => {
-                                                        if (resume.resume_file_url) {
-                                                            try {
-                                                                // Extrair o caminho do arquivo da URL
-                                                                const url = new URL(resume.resume_file_url);
-                                                                const filePath = url.pathname.split('/storage/v1/object/public/resumes/')[1];
-                                                                
-                                                                if (filePath) {
-                                                                    // Usar Supabase Storage API para baixar o arquivo
-                                                                    const { data, error } = await supabase.storage
-                                                                        .from('resumes')
-                                                                        .download(filePath);
-                                                                    
-                                                                    if (error) {
-                                                                        console.error('❌ Erro ao baixar do Storage:', error);
-                                                                        window.open(resume.resume_file_url, '_blank');
-                                                                        return;
-                                                                    }
-                                                                    
-                                                                    // Criar blob URL e forçar download
-                                                                    const blobUrl = window.URL.createObjectURL(data);
-                                                                    const link = document.createElement('a');
-                                                                    link.href = blobUrl;
-                                                                    link.download = `curriculo_${resume.name?.replace(/\s+/g, '_') || 'candidato'}.pdf`;
-                                                                    document.body.appendChild(link);
-                                                                    link.click();
-                                                                    document.body.removeChild(link);
-                                                                    window.URL.revokeObjectURL(blobUrl);
-                                                                } else {
-                                                                    window.open(resume.resume_file_url, '_blank');
-                                                                }
-                                                            } catch (error) {
-                                                                console.error('❌ Erro no download:', error);
-                                                                window.open(resume.resume_file_url, '_blank');
-                                                            }
-                                                        }
-                                                    }}
-                                                    disabled={!resume.resume_file_url}
-                                                >
-                                                    <Download className="w-4 h-4 mr-2" />Baixar
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
-                                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                                </Button>
+                                                        <Button variant="outline" size="sm" asChild disabled={!resume.resume_file_url}>
+                                                            <a href={resume.resume_file_url!} target="_blank" rel="noopener noreferrer">
+                                                                <Download className="w-4 h-4 mr-2" />Baixar
+                                                            </a>
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
+                                                            <Trash2 className="w-4 h-4 text-destructive" />
+                                                        </Button>
                                                     </div>
-                                            </TableCell>
-                                        </TableRow>
+                                                </TableCell>
+                                            </TableRow>
                                         );
                                     })
                                 ) : (

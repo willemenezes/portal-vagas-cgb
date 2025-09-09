@@ -179,7 +179,7 @@ const JobApplication = () => {
         resumeFileName = selectedFile.name;
       }
 
-      // Criar candidato (apenas com campos que existem na tabela candidates)
+      // Criar candidato (incluindo URL do currículo)
       const candidate = await createCandidate.mutateAsync({
         name: formData.name,
         email: formData.email,
@@ -187,7 +187,9 @@ const JobApplication = () => {
         city: formData.city,
         state: formData.state,
         job_id: targetJobId,
-        status: 'pending' as const
+        status: 'pending' as const,
+        resume_file_url: resumeFileUrl || null,
+        resume_file_name: resumeFileName || null
       });
 
       // Salvar dados jurídicos - com tratamento de erro melhorado

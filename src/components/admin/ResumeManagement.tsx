@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
 import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
-import { supabase } from '@/integrations/supabase/client';
 
 const ResumeManagement = () => {
   const { user } = useAuth();
@@ -259,49 +258,10 @@ const ResumeManagement = () => {
                         <TableCell>{candidate.desiredJob || 'N/A'}</TableCell>
                         <TableCell>{`${candidate.city || ''}, ${candidate.state || ''}`}</TableCell>
                         <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={async () => {
-                              if (candidate.resume_file_url) {
-                                try {
-                                  // Extrair o caminho do arquivo da URL
-                                  const url = new URL(candidate.resume_file_url);
-                                  const filePath = url.pathname.split('/storage/v1/object/public/resumes/')[1];
-                                  
-                                  if (filePath) {
-                                    // Usar Supabase Storage API para baixar o arquivo
-                                    const { data, error } = await supabase.storage
-                                        .from('resumes')
-                                        .download(filePath);
-                                    
-                                    if (error) {
-                                      console.error('❌ Erro ao baixar do Storage:', error);
-                                      window.open(candidate.resume_file_url, '_blank');
-                                      return;
-                                    }
-                                    
-                                    // Criar blob URL e forçar download
-                                    const blobUrl = window.URL.createObjectURL(data);
-                                    const link = document.createElement('a');
-                                    link.href = blobUrl;
-                                    link.download = `curriculo_${candidate.name?.replace(/\s+/g, '_') || 'candidato'}.pdf`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(blobUrl);
-                                  } else {
-                                    window.open(candidate.resume_file_url, '_blank');
-                                  }
-                                } catch (error) {
-                                  console.error('❌ Erro no download:', error);
-                                  window.open(candidate.resume_file_url, '_blank');
-                                }
-                              }
-                            }}
-                            disabled={!candidate.resume_file_url}
-                          >
-                            <Download className="w-4 h-4 mr-2" /> Ver
+                          <Button asChild variant="outline" size="sm" disabled={!candidate.resume_file_url}>
+                            <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
+                              <Download className="w-4 h-4 mr-2" /> Ver
+                            </a>
                           </Button>
                         </TableCell>
                         <TableCell>
