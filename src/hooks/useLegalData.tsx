@@ -43,34 +43,38 @@ export const useSaveLegalData = () => {
                 throw new Error('ID do candidato é obrigatório');
             }
 
-            // Validar campos obrigatórios com verificação mais flexível
-            const requiredFields = {
+            // Validar apenas campos realmente críticos (mais flexível)
+            const criticalFields = {
                 full_name: data.full_name?.trim(),
+                desired_position: data.desired_position?.trim()
+            };
+
+            const missingCriticalFields = Object.entries(criticalFields)
+                .filter(([key, value]) => !value || value === '')
+                .map(([key]) => key);
+
+            if (missingCriticalFields.length > 0) {
+                console.error('❌ [useSaveLegalData] Campos críticos faltando:', missingCriticalFields);
+                console.error('❌ [useSaveLegalData] Dados recebidos:', data);
+                throw new Error(`Campos críticos não preenchidos: ${missingCriticalFields.join(', ')}`);
+            }
+
+            // Log de debug para campos opcionais vazios (sem bloquear)
+            const optionalFields = {
                 birth_date: data.birth_date,
                 rg: data.rg?.trim(),
                 cpf: data.cpf?.trim(),
                 mother_name: data.mother_name?.trim(),
                 birth_city: data.birth_city?.trim(),
-                birth_state: data.birth_state?.trim(),
-                desired_position: data.desired_position?.trim()
+                birth_state: data.birth_state?.trim()
             };
 
-            const missingFields = Object.entries(requiredFields)
+            const emptyOptionalFields = Object.entries(optionalFields)
                 .filter(([key, value]) => !value || value === '')
                 .map(([key]) => key);
 
-            // Debug detalhado (apenas se necessário)
-            if (missingFields.length > 0) {
-                console.log('🔍 [useSaveLegalData] Validação de campos obrigatórios:');
-                Object.entries(requiredFields).forEach(([key, value]) => {
-                    console.log(`  - ${key}: "${value}" (${typeof value})`);
-                });
-            }
-
-            if (missingFields.length > 0) {
-                console.error('❌ [useSaveLegalData] Campos obrigatórios faltando:', missingFields);
-                console.error('❌ [useSaveLegalData] Dados recebidos:', data);
-                throw new Error(`Campos obrigatórios não preenchidos: ${missingFields.join(', ')}`);
+            if (emptyOptionalFields.length > 0) {
+                console.warn('⚠️ [useSaveLegalData] Campos opcionais vazios (não bloqueiam):', emptyOptionalFields);
             }
 
             // Verificar se já existe registro
