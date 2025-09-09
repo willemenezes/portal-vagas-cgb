@@ -171,39 +171,64 @@ const ResumeUpload = () => {
         status: 'new' as const
       };
 
+      // Debug: Verificar dados antes de validar
+      console.log('🔍 [ResumeUpload] Dados do formulário antes da validação:', formData);
+      console.log('🔍 [ResumeUpload] Estado selecionado:', formData.state);
+
+      // PRIMEIRO: Validar dados jurídicos ANTES de criar o resume
+      const legalDataPayload = {
+        full_name: formData.name,
+        birth_date: formData.birthDate,
+        rg: formData.rg,
+        cpf: formData.cpf,
+        mother_name: formData.motherName,
+        father_name: formData.fatherName || '',
+        birth_city: formData.birthCity,
+        birth_state: formData.state,
+        cnh: formData.cnh,
+        work_history: [
+          ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
+          ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
+        ],
+        is_former_employee: false,
+        former_employee_details: '',
+        is_pcd: false,
+        pcd_details: '',
+        desired_position: formData.position || 'Posição não especificada',
+        responsible_name: null
+      };
+
+      // Verificar campos obrigatórios antes de criar resume
+      const requiredFields = {
+        full_name: legalDataPayload.full_name?.trim(),
+        birth_date: legalDataPayload.birth_date,
+        rg: legalDataPayload.rg?.trim(),
+        cpf: legalDataPayload.cpf?.trim(),
+        mother_name: legalDataPayload.mother_name?.trim(),
+        birth_city: legalDataPayload.birth_city?.trim(),
+        birth_state: legalDataPayload.birth_state?.trim(),
+        desired_position: legalDataPayload.desired_position?.trim()
+      };
+
+      const missingFields = Object.entries(requiredFields)
+        .filter(([key, value]) => !value || value === '')
+        .map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        console.error('❌ [ResumeUpload] Campos obrigatórios faltando:', missingFields);
+        throw new Error(`Campos obrigatórios não preenchidos: ${missingFields.join(', ')}`);
+      }
+
       // Debug: verificar exatamente o que está sendo enviado
       console.log('Dados para createResume (apenas campos válidos):', resumeDataForDB);
 
+      // SÓ AGORA: Criar resume (após validação bem-sucedida)
       const resume = await createResume.mutateAsync(resumeDataForDB);
 
-      // Salvar dados jurídicos (usando o ID do resume como candidate_id)
-      // Debug: Verificar dados antes de enviar
-      console.log('🔍 [ResumeUpload] Dados do formulário:', formData);
-      console.log('🔍 [ResumeUpload] Estado selecionado:', formData.state);
-      
+      // Salvar dados jurídicos (agora já validados)
       await saveLegalData.mutateAsync({
         candidateId: resume.id,
-        data: {
-          full_name: formData.name,
-          birth_date: formData.birthDate,
-          rg: formData.rg,
-          cpf: formData.cpf,
-          mother_name: formData.motherName,
-          father_name: formData.fatherName || '',
-          birth_city: formData.birthCity,
-          birth_state: formData.state, // Usar o estado selecionado
-          cnh: formData.cnh, // Adicionado campo CNH
-          work_history: [
-            ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
-            ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
-          ],
-          is_former_employee: false, // Não temos essa informação no cadastro geral
-          former_employee_details: '',
-          is_pcd: false, // Não temos essa informação no cadastro geral
-          pcd_details: '',
-          desired_position: formData.position || 'Posição não especificada',
-          responsible_name: null
-        }
+        data: legalDataPayload
       });
 
       toast({

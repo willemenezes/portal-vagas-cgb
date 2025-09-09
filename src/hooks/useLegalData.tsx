@@ -55,15 +55,17 @@ export const useSaveLegalData = () => {
                 desired_position: data.desired_position?.trim()
             };
 
-            // Debug detalhado
-            console.log('🔍 [useSaveLegalData] Validação de campos obrigatórios:');
-            Object.entries(requiredFields).forEach(([key, value]) => {
-                console.log(`  - ${key}: "${value}" (${typeof value})`);
-            });
-
             const missingFields = Object.entries(requiredFields)
                 .filter(([key, value]) => !value || value === '')
                 .map(([key]) => key);
+
+            // Debug detalhado (apenas se necessário)
+            if (missingFields.length > 0) {
+                console.log('🔍 [useSaveLegalData] Validação de campos obrigatórios:');
+                Object.entries(requiredFields).forEach(([key, value]) => {
+                    console.log(`  - ${key}: "${value}" (${typeof value})`);
+                });
+            }
 
             if (missingFields.length > 0) {
                 console.error('❌ [useSaveLegalData] Campos obrigatórios faltando:', missingFields);

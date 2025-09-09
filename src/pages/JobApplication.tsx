@@ -179,7 +179,58 @@ const JobApplication = () => {
         resumeFileName = selectedFile.name;
       }
 
-      // Criar candidato (apenas com campos que existem na tabela candidates)
+      // Debug: Verificar dados antes de validar
+      console.log('🔍 [JobApplication] Dados do formulário antes da validação:', formData);
+      console.log('🔍 [JobApplication] Estado selecionado:', formData.state);
+
+      // PRIMEIRO: Validar dados jurídicos ANTES de criar o candidato
+      const legalDataPayload = {
+        full_name: formData.name,
+        birth_date: formData.birthDate,
+        rg: formData.rg,
+        cpf: formData.cpf,
+        mother_name: formData.motherName,
+        father_name: formData.fatherName || '',
+        birth_city: formData.birthCity,
+        birth_state: formData.state,
+        cnh: formData.cnh,
+        work_history: [
+          ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
+          ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
+        ],
+        is_former_employee: formData.workedAtCGB === 'Sim',
+        former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
+        is_pcd: formData.pcd === 'Sim',
+        pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
+        desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
+        responsible_name: null
+      };
+
+      // Validar dados jurídicos primeiro (sem salvar ainda)
+      console.log('🔍 [JobApplication] Dados jurídicos a serem validados:', legalDataPayload);
+
+      // Verificar campos obrigatórios antes de criar candidato
+      const requiredFields = {
+        full_name: legalDataPayload.full_name?.trim(),
+        birth_date: legalDataPayload.birth_date,
+        rg: legalDataPayload.rg?.trim(),
+        cpf: legalDataPayload.cpf?.trim(),
+        mother_name: legalDataPayload.mother_name?.trim(),
+        birth_city: legalDataPayload.birth_city?.trim(),
+        birth_state: legalDataPayload.birth_state?.trim(),
+        desired_position: legalDataPayload.desired_position?.trim()
+      };
+
+      const missingFields = Object.entries(requiredFields)
+        .filter(([key, value]) => !value || value === '')
+        .map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        console.error('❌ [JobApplication] Campos obrigatórios faltando:', missingFields);
+        throw new Error(`Campos obrigatórios não preenchidos: ${missingFields.join(', ')}`);
+      }
+
+      // SÓ AGORA: Criar candidato (após validação bem-sucedida)
       const candidate = await createCandidate.mutateAsync({
         name: formData.name,
         email: formData.email,
@@ -190,30 +241,10 @@ const JobApplication = () => {
         status: 'pending' as const
       });
 
-      // Salvar dados jurídicos
+      // Salvar dados jurídicos (agora já validados)
       await saveLegalData.mutateAsync({
         candidateId: candidate.id,
-        data: {
-          full_name: formData.name,
-          birth_date: formData.birthDate,
-          rg: formData.rg,
-          cpf: formData.cpf,
-          mother_name: formData.motherName,
-          father_name: formData.fatherName || '',
-          birth_city: formData.birthCity,
-          birth_state: formData.state,
-          cnh: formData.cnh, // Adicionado campo CNH
-          work_history: [
-            ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
-            ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
-          ],
-          is_former_employee: formData.workedAtCGB === 'Sim',
-          former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
-          is_pcd: formData.pcd === 'Sim',
-          pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
-          desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
-          responsible_name: null
-        }
+        data: legalDataPayload
       });
 
       toast({
