@@ -14,6 +14,8 @@ export interface DashboardStats {
     topCities: CityData[];
     funnelData: FunnelData[];
     weeklyData: WeeklyData[];
+    completedJobs: number;
+    avgTimeToComplete: number;
 }
 
 interface WeeklyData {
@@ -155,7 +157,52 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         };
     });
 
-    return { totalCandidates, totalJobs: totalJobs || 0, conversionRate, approvedCount, statusData, topCities, funnelData, weeklyData };
+    // Buscar vagas concluídas
+    let completedJobsQuery = supabase.from('jobs').select('*').or('status.eq.completed,approval_status.eq.concluido');
+    if (!unrestrictedRoles.includes(rhProfile.role)) {
+        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+            completedJobsQuery = completedJobsQuery.in('state', rhProfile.assigned_states);
+        } else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            completedJobsQuery = completedJobsQuery.in('city', rhProfile.assigned_cities);
+        }
+    }
+    const { data: completedJobsData, error: completedJobsError } = await completedJobsQuery;
+    if (completedJobsError) throw completedJobsError;
+    
+    const completedJobs = completedJobsData?.length || 0;
+    
+    // Calcular tempo médio para conclusão
+    let totalCompletionTime = 0;
+    let jobsWithValidDates = 0;
+    
+    if (completedJobsData) {
+        completedJobsData.forEach(job => {
+            if (job.created_at && job.updated_at) {
+                const createdDate = new Date(job.created_at);
+                const completedDate = new Date(job.updated_at);
+                const daysDiff = Math.ceil((completedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysDiff > 0) {
+                    totalCompletionTime += daysDiff;
+                    jobsWithValidDates++;
+                }
+            }
+        });
+    }
+    
+    const avgTimeToComplete = jobsWithValidDates > 0 ? Math.round(totalCompletionTime / jobsWithValidDates) : 0;
+
+    return { 
+        totalCandidates, 
+        totalJobs: totalJobs || 0, 
+        conversionRate, 
+        approvedCount, 
+        statusData, 
+        topCities, 
+        funnelData, 
+        weeklyData,
+        completedJobs,
+        avgTimeToComplete
+    };
 };
 
 export const useDashboardData = (rhProfile: RHUser | null, dateRange?: DateRange) => {

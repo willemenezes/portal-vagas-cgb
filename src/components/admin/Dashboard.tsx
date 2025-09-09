@@ -108,7 +108,9 @@ const Dashboard = () => {
     statusData,
     topCities,
     funnelData,
-    weeklyData
+    weeklyData,
+    completedJobs,
+    avgTimeToComplete
   } = dashboardData;
 
   // Adicionado filtro para remover status com 0 candidatos
@@ -207,6 +209,26 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{conversionRate}%</div>
               <p className="text-xs text-teal-800/80">de candidatos aprovados</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-purple-50 border-purple-100 text-purple-900 transition-all hover:shadow-md hover:-translate-y-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vagas Finalizadas</CardTitle>
+              <CheckCircle className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completedJobs}</div>
+              <p className="text-xs text-purple-800/80">processos concluídos</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-orange-50 border-orange-100 text-orange-900 transition-all hover:shadow-md hover:-translate-y-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
+              <Clock className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{avgTimeToComplete}</div>
+              <p className="text-xs text-orange-800/80">dias para conclusão</p>
             </CardContent>
           </Card>
         </div>
