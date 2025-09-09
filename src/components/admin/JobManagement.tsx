@@ -15,7 +15,7 @@ import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hoo
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { useToast } from "@/hooks/use-toast";
-import { useJobRequests } from "@/hooks/useJobRequests";
+import { useJobRequests, JobRequest, CreateJobRequestData } from "@/hooks/useJobRequests";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -600,65 +600,65 @@ const JobManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Confirmação de Exclusão */}
-      <SimpleModal
-        isOpen={!!deleteConfirmRequest}
-        onClose={() => setDeleteConfirmRequest(null)}
-        title="Confirmar Cancelamento"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
-            <Trash2 className="w-8 h-8 text-red-600" />
-            <div>
-              <p className="font-semibold text-red-800">Cancelar Solicitação</p>
-              <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
+        {/* Modal de Confirmação de Exclusão */}
+        <SimpleModal
+          open={!!deleteConfirmRequest}
+          onClose={() => setDeleteConfirmRequest(null)}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-red-800">Confirmar Cancelamento</h3>
+                <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            
+            {deleteConfirmRequest && (
+              <div className="p-4 bg-gray-50 rounded-lg border">
+                <p className="font-medium text-gray-900 mb-1">
+                  {deleteConfirmRequest.title}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {deleteConfirmRequest.department} • {deleteConfirmRequest.city}, {deleteConfirmRequest.state}
+                </p>
+              </div>
+            )}
+
+            <p className="text-gray-700">
+              Tem certeza de que deseja cancelar esta solicitação de vaga? 
+              Esta ação removerá permanentemente a solicitação do sistema.
+            </p>
+
+            <div className="flex gap-3 justify-end pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmRequest(null)}
+              >
+                Manter Solicitação
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteRequest}
+                disabled={deleteJobRequest.isPending}
+              >
+                {deleteJobRequest.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Cancelar Solicitação
+                  </>
+                )}
+              </Button>
             </div>
           </div>
-          
-          {deleteConfirmRequest && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900 mb-1">
-                {deleteConfirmRequest.title}
-              </p>
-              <p className="text-sm text-gray-600">
-                {deleteConfirmRequest.department} • {deleteConfirmRequest.city}, {deleteConfirmRequest.state}
-              </p>
-            </div>
-          )}
-
-          <p className="text-gray-700">
-            Tem certeza de que deseja cancelar esta solicitação de vaga? 
-            Esta ação removerá permanentemente a solicitação do sistema.
-          </p>
-
-          <div className="flex gap-3 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirmRequest(null)}
-            >
-              Manter Solicitação
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteRequest}
-              disabled={deleteJobRequest.isPending}
-            >
-              {deleteJobRequest.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Cancelando...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Cancelar Solicitação
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </SimpleModal>
+        </SimpleModal>
     </Card>
   );
 };
@@ -941,15 +941,15 @@ const JobRequestEditForm = ({
   isLoading: boolean; 
 }) => {
   const [formData, setFormData] = useState({
-    title: request.title,
-    department: request.department,
-    city: request.city,
-    state: request.state,
-    type: request.type,
-    description: request.description,
-    requirements: request.requirements,
-    benefits: request.benefits,
-    workload: request.workload,
+    title: request.title || '',
+    department: request.department || '',
+    city: request.city || '',
+    state: request.state || '',
+    type: request.type || 'CLT',
+    description: request.description || '',
+    requirements: Array.isArray(request.requirements) ? request.requirements : [],
+    benefits: Array.isArray(request.benefits) ? request.benefits : [],
+    workload: request.workload || '40h/semana',
     justification: request.justification || ''
   });
 
@@ -1015,9 +1015,13 @@ const JobRequestEditForm = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {WORKLOAD_OPTIONS.map(option => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
+              <SelectItem value="40h/semana">40h/semana</SelectItem>
+              <SelectItem value="44h/semana">44h/semana</SelectItem>
+              <SelectItem value="36h/semana">36h/semana</SelectItem>
+              <SelectItem value="30h/semana">30h/semana</SelectItem>
+              <SelectItem value="20h/semana">20h/semana</SelectItem>
+              <SelectItem value="Meio período">Meio período</SelectItem>
+              <SelectItem value="Período integral">Período integral</SelectItem>
             </SelectContent>
           </Select>
         </div>
