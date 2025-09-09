@@ -17,6 +17,7 @@ export interface Candidate {
   applied_date: string | null;
   created_at: string | null;
   updated_at: string | null;
+  legal_validation_comment?: string | null;
   job?: {
     title: string;
     city: string;
@@ -81,10 +82,28 @@ export const useUpdateCandidateStatus = () => {
   const { sendNotification } = useNotifications();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: Candidate['status'] }) => {
+    mutationFn: async ({ 
+      id, 
+      status, 
+      legal_validation_comment 
+    }: { 
+      id: string; 
+      status: Candidate['status'];
+      legal_validation_comment?: string;
+    }) => {
+      const updateData: any = { 
+        status, 
+        updated_at: new Date().toISOString() 
+      };
+
+      // Adicionar comentário de validação jurídica se fornecido
+      if (legal_validation_comment !== undefined) {
+        updateData.legal_validation_comment = legal_validation_comment;
+      }
+
       const { data, error } = await supabase
         .from('candidates')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

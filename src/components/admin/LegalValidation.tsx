@@ -361,8 +361,9 @@ const LegalValidation = () => {
                 successMessage = 'Candidato aprovado com sucesso!';
                 break;
             case 'aprovado_com_restricao':
-                newStatus = 'Aprovado com Restrições';
-                successMessage = 'Candidato aprovado com restrições!';
+                // CORREÇÃO: Candidato fica desbloqueado para RH decidir
+                newStatus = 'Validação Frota'; 
+                successMessage = 'Candidato aprovado com restrições! RH pode revisar.';
                 break;
             case 'reprovado':
                 newStatus = 'Reprovado';
@@ -376,7 +377,7 @@ const LegalValidation = () => {
         const updateData = {
             id: selectedCandidate.id,
             status: newStatus as any,
-            ...(comments.trim() && { legal_validation_comment: comments.trim() })
+            legal_validation_comment: comments.trim() || null
         };
 
         updateCandidateStatus.mutate(updateData, {

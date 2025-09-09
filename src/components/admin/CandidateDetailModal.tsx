@@ -423,6 +423,29 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                 </div>
             )}
 
+            {/* Seção de Restrições Jurídicas */}
+            {candidate.legal_validation_comment && (
+                <div>
+                    <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-4">
+                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                        Restrições e Observações Jurídicas
+                    </h3>
+                    <Card className="border-yellow-200 bg-yellow-50">
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-1 flex-shrink-0" />
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-2">Observações do Departamento Jurídico:</p>
+                                    <p className="text-gray-800 font-medium leading-relaxed">
+                                        {candidate.legal_validation_comment}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
             {/* Modal do Formulário de Dados Jurídicos */}
             {showLegalForm && (
                 <LegalDataForm
