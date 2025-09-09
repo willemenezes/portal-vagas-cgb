@@ -423,8 +423,8 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                 </div>
             )}
 
-            {/* Seção de Restrições Jurídicas */}
-            {candidate.legal_validation_comment && (
+            {/* Seção de Restrições Jurídicas - buscar dos dados jurídicos */}
+            {legalData?.review_notes && (
                 <div>
                     <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-4">
                         <AlertTriangle className="w-5 h-5 text-yellow-600" />
@@ -437,7 +437,7 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                                 <div>
                                     <p className="text-sm text-gray-600 mb-2">Observações do Departamento Jurídico:</p>
                                     <p className="text-gray-800 font-medium leading-relaxed">
-                                        {candidate.legal_validation_comment}
+                                        {legalData.review_notes}
                                     </p>
                                 </div>
                             </div>

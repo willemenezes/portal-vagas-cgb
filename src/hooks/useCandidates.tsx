@@ -17,7 +17,7 @@ export interface Candidate {
   applied_date: string | null;
   created_at: string | null;
   updated_at: string | null;
-  legal_validation_comment?: string | null;
+  // legal_validation_comment?: string | null; // Campo removido - comentários ficam em candidate_legal_data
   job?: {
     title: string;
     city: string;
@@ -82,24 +82,23 @@ export const useUpdateCandidateStatus = () => {
   const { sendNotification } = useNotifications();
 
   return useMutation({
-    mutationFn: async ({ 
-      id, 
-      status, 
-      legal_validation_comment 
+    mutationFn: async ({
+      id,
+      status
     }: { 
       id: string; 
       status: Candidate['status'];
-      legal_validation_comment?: string;
     }) => {
       const updateData: any = { 
         status, 
         updated_at: new Date().toISOString() 
       };
 
-      // Adicionar comentário de validação jurídica se fornecido
-      if (legal_validation_comment !== undefined) {
-        updateData.legal_validation_comment = legal_validation_comment;
-      }
+              // Adicionar comentário de validação jurídica se fornecido
+              // Temporariamente comentado até coluna ser adicionada no banco
+              // if (legal_validation_comment !== undefined) {
+              //   updateData.legal_validation_comment = legal_validation_comment;
+              // }
 
       const { data, error } = await supabase
         .from('candidates')

@@ -389,14 +389,30 @@ const LegalValidation = () => {
         }
 
         // Preparar dados para atualização
+        // Atualizar status do candidato (sem comentário por enquanto - coluna não existe)
         const updateData = {
             id: selectedCandidate.id,
-            status: newStatus as any,
-            legal_validation_comment: comments.trim() || null
+            status: newStatus as any
         };
 
         updateCandidateStatus.mutate(updateData, {
-                onSuccess: () => {
+                onSuccess: async () => {
+                    // Se há comentários, salvar nos dados jurídicos
+                    if (comments.trim()) {
+                        try {
+                            await supabase
+                                .from('candidate_legal_data')
+                                .update({
+                                    review_status: action === 'aprovado' ? 'approved' : action === 'reprovado' ? 'rejected' : 'approved_with_restrictions',
+                                    review_notes: comments.trim(),
+                                    reviewed_at: new Date().toISOString()
+                                })
+                                .eq('candidate_id', selectedCandidate.id);
+                        } catch (error) {
+                            console.warn('Erro ao salvar comentários:', error);
+                        }
+                    }
+
                 toast({ 
                     title: 'Validação realizada!', 
                     description: successMessage,
