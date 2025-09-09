@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2 } from 'lucide-react';
+import { ResumeButton } from './ResumeButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
@@ -150,7 +151,7 @@ const CandidateManagement = () => {
                         <TableCell><div className="font-medium">{candidate.name || 'Nome não informado'}</div><div className="text-sm text-gray-500">{candidate.email || 'E-mail não informado'}</div></TableCell>
                         <TableCell>{candidate.job?.title || candidate.desiredJob || 'N/A'}</TableCell>
                         <TableCell>{`${candidate.city || candidate.job?.city || 'Cidade não informada'}, ${candidate.state || candidate.job?.state || ''}`}</TableCell>
-                        <TableCell><Button variant="outline" size="sm" asChild disabled={!candidate.resume_file_url}><a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer"><FileText className="w-4 h-4 mr-2" />Ver</a></Button></TableCell>
+                        <TableCell><ResumeButton candidate={candidate} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge className={`${statusColor} border-none font-semibold`}>

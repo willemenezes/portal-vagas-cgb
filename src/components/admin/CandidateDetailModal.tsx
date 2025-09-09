@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Phone, MapPin, Loader2, MessageSquare, Briefcase, Activity, Send, Info, List, X, ExternalLink, Download, MessageCircle, FileClock, Gavel, CheckCircle, XCircle, AlertTriangle, Shield, FileText } from 'lucide-react';
+import { ResumeButton } from './ResumeButton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,11 +52,13 @@ const ModalHeader = ({ candidate, onClose }: { candidate: Candidate, onClose: ()
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-                <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
-                    <Download className="w-4 h-4 mr-2" /> Ver Currículo
-                </a>
-            </Button>
+            <ResumeButton 
+                candidate={candidate} 
+                iconType="download" 
+                className="bg-white hover:bg-gray-50"
+            >
+                Ver Currículo
+            </ResumeButton>
             <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-5 w-5" />
             </Button>

@@ -59,6 +59,30 @@ export const useCandidates = () => {
   });
 };
 
+// Hook para buscar currículo por email (fallback para candidatos antigos)
+export const useResumeByEmail = (email: string) => {
+  return useQuery({
+    queryKey: ['resume-by-email', email],
+    queryFn: async () => {
+      if (!email) return null;
+      
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('resume_file_url, resume_file_name')
+        .eq('email', email)
+        .single();
+
+      if (error) {
+        console.log('Nenhum currículo encontrado para:', email);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!email,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+};
+
 export const useCreateCandidate = () => {
   const queryClient = useQueryClient();
 
