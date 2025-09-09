@@ -51,10 +51,24 @@ const ModalHeader = ({ candidate, onClose }: { candidate: Candidate, onClose: ()
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-                <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
-                    <Download className="w-4 h-4 mr-2" /> Ver Currículo
-                </a>
+            <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                    if (candidate.resume_file_url) {
+                        // Forçar download do arquivo
+                        const link = document.createElement('a');
+                        link.href = candidate.resume_file_url;
+                        link.download = `curriculo_${candidate.name?.replace(/\s+/g, '_') || 'candidato'}.pdf`;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                }}
+                disabled={!candidate.resume_file_url}
+            >
+                <Download className="w-4 h-4 mr-2" /> Ver Currículo
             </Button>
             <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-5 w-5" />

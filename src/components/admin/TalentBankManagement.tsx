@@ -386,10 +386,24 @@ const TalentBankManagement = () => {
                                                                 Convidar
                                                             </Button>
                                                         )}
-                                                <Button variant="outline" size="sm" asChild disabled={!resume.resume_file_url}>
-                                                            <a href={resume.resume_file_url!} target="_blank" rel="noopener noreferrer">
-                                                                <Download className="w-4 h-4 mr-2" />Baixar
-                                                            </a>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={() => {
+                                                        if (resume.resume_file_url) {
+                                                            // Forçar download do arquivo
+                                                            const link = document.createElement('a');
+                                                            link.href = resume.resume_file_url;
+                                                            link.download = `curriculo_${resume.name?.replace(/\s+/g, '_') || 'candidato'}.pdf`;
+                                                            link.target = '_blank';
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            document.body.removeChild(link);
+                                                        }
+                                                    }}
+                                                    disabled={!resume.resume_file_url}
+                                                >
+                                                    <Download className="w-4 h-4 mr-2" />Baixar
                                                 </Button>
                                                 <Button variant="ghost" size="icon" onClick={() => setResumeToDelete(resume)}>
                                                     <Trash2 className="w-4 h-4 text-destructive" />

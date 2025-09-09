@@ -112,11 +112,25 @@ const HiredManagement = () => {
                                             {format(new Date(candidate.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" asChild disabled={!candidate.resume_file_url}>
-                                                <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    Ver
-                                                </a>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={() => {
+                                                    if (candidate.resume_file_url) {
+                                                        // Forçar download do arquivo
+                                                        const link = document.createElement('a');
+                                                        link.href = candidate.resume_file_url;
+                                                        link.download = `curriculo_${candidate.name?.replace(/\s+/g, '_') || 'candidato'}.pdf`;
+                                                        link.target = '_blank';
+                                                        document.body.appendChild(link);
+                                                        link.click();
+                                                        document.body.removeChild(link);
+                                                    }
+                                                }}
+                                                disabled={!candidate.resume_file_url}
+                                            >
+                                                <FileText className="w-4 h-4 mr-2" />
+                                                Ver
                                             </Button>
                                         </TableCell>
                                     </TableRow>
