@@ -43,8 +43,26 @@ export const useSaveLegalData = () => {
                 throw new Error('ID do candidato é obrigatório');
             }
 
-            if (!data.full_name || !data.birth_date || !data.rg || !data.cpf || !data.mother_name || !data.birth_city || !data.birth_state || !data.desired_position) {
-                throw new Error('Todos os campos obrigatórios devem ser preenchidos');
+            // Validar campos obrigatórios com verificação mais flexível
+            const requiredFields = {
+                full_name: data.full_name?.trim(),
+                birth_date: data.birth_date,
+                rg: data.rg?.trim(),
+                cpf: data.cpf?.trim(),
+                mother_name: data.mother_name?.trim(),
+                birth_city: data.birth_city?.trim(),
+                birth_state: data.birth_state?.trim(),
+                desired_position: data.desired_position?.trim()
+            };
+
+            const missingFields = Object.entries(requiredFields)
+                .filter(([key, value]) => !value || value === '')
+                .map(([key]) => key);
+
+            if (missingFields.length > 0) {
+                console.error('❌ [useSaveLegalData] Campos obrigatórios faltando:', missingFields);
+                console.error('❌ [useSaveLegalData] Dados recebidos:', data);
+                throw new Error(`Campos obrigatórios não preenchidos: ${missingFields.join(', ')}`);
             }
 
             // Verificar se já existe registro
