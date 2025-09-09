@@ -48,6 +48,8 @@ const JobManagement = () => {
     jobRequests, 
     createJobFromRequest, 
     approveAndCreateJob,
+    updateJobRequest,
+    deleteJobRequest,
     isLoading: isLoadingRequests 
   } = useJobRequests();
 
@@ -71,6 +73,11 @@ const JobManagement = () => {
   const [benefitsText, setBenefitsText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingTalentBank, setIsCreatingTalentBank] = useState(false);
+  
+  // Estados para edição de job requests
+  const [editingRequest, setEditingRequest] = useState<JobRequest | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<JobRequest | null>(null);
 
   // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
   const approvedRequests = jobRequests?.filter(request => 
@@ -265,6 +272,45 @@ const JobManagement = () => {
     }
   };
 
+  // Função para editar job request
+  const handleEditRequest = (request: JobRequest) => {
+    setEditingRequest(request);
+    setIsEditModalOpen(true);
+  };
+
+  // Função para salvar edição de job request
+  const handleSaveEditRequest = async (data: Partial<CreateJobRequestData>) => {
+    if (!editingRequest) return;
+    
+    try {
+      await updateJobRequest.mutateAsync({
+        id: editingRequest.id,
+        data
+      });
+      setIsEditModalOpen(false);
+      setEditingRequest(null);
+    } catch (error) {
+      // Error já tratado no hook
+    }
+  };
+
+  // Função para confirmar exclusão de job request
+  const handleDeleteRequest = async (request: JobRequest) => {
+    setDeleteConfirmRequest(request);
+  };
+
+  // Função para executar exclusão
+  const confirmDeleteRequest = async () => {
+    if (!deleteConfirmRequest) return;
+    
+    try {
+      await deleteJobRequest.mutateAsync(deleteConfirmRequest.id);
+      setDeleteConfirmRequest(null);
+    } catch (error) {
+      // Error já tratado no hook
+    }
+  };
+
   return (
     <Card className="p-4 shadow-lg bg-white rounded-lg">
       <CardContent className="p-0">
@@ -312,72 +358,132 @@ const JobManagement = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Seção de Job Requests Aprovadas (apenas para RH Admin/Admin) */}
+        {/* Seção de Job Requests Aprovadas (apenas para RH Admin/Admin) - LAYOUT MELHORADO */}
         {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && approvedRequests.length > 0 && (
           <div className="mb-6">
-            <Card className="bg-green-50 border-green-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-800">
-                  <CheckCircle className="w-5 h-5" />
-                  Solicitações Aprovadas para Criação
-                  <Badge variant="secondary" className="ml-2">
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-3 text-green-800">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">Solicitações Aprovadas para Criação</h2>
+                      <p className="text-sm text-green-600 font-normal mt-1">
+                        Revise, edite ou publique as vagas aprovadas pelos gerentes
+                      </p>
+                    </div>
+                  </CardTitle>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 text-lg px-3 py-1">
                     {approvedRequests.length}
                   </Badge>
-                </CardTitle>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="pt-0">
+                <div className="grid gap-4">
                   {approvedRequests.map((request) => (
-                    <div key={request.id} className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-gray-900">{request.title}</h3>
-                            <Badge variant="outline" className="text-green-700 border-green-300">
-                              Aprovado
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
-                            <div className="flex items-center gap-1">
-                              <Briefcase className="w-4 h-4" />
-                              <span>{request.department}</span>
+                    <Card key={request.id} className="bg-white border border-green-200 shadow-md hover:shadow-lg transition-shadow duration-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="text-xl font-bold text-gray-900">{request.title}</h3>
+                              <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                                ✓ Aprovado
+                              </Badge>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              <span>{request.city}, {request.state}</span>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <div className="p-1 bg-gray-100 rounded">
+                                  <Briefcase className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Departamento</p>
+                                  <p className="font-medium">{request.department}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <div className="p-1 bg-gray-100 rounded">
+                                  <Users className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Localização</p>
+                                  <p className="font-medium">{request.city}, {request.state}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <div className="p-1 bg-gray-100 rounded">
+                                  <Clock className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Carga Horária</p>
+                                  <p className="font-medium">{request.workload}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <div className="p-1 bg-green-100 rounded">
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Aprovado por</p>
+                                  <p className="font-medium text-green-700">{request.approved_by}</p>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{request.workload}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <CheckCircle className="w-4 h-4" />
-                              <span>Aprovado por: {request.approved_by}</span>
-                            </div>
-                          </div>
 
-                          {request.notes && (
-                            <div className="text-sm text-gray-600 mb-3">
-                              <p className="font-medium mb-1">Observações do Gerente:</p>
-                              <p className="text-gray-500">{request.notes}</p>
-                            </div>
-                          )}
+                            {request.description && (
+                              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                <p className="text-sm font-medium text-gray-700 mb-1">Descrição:</p>
+                                <p className="text-sm text-gray-600 leading-relaxed">{request.description}</p>
+                              </div>
+                            )}
+
+                            {request.notes && (
+                              <div className="mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-200">
+                                <p className="text-sm font-medium text-blue-800 mb-1">Observações do Gerente:</p>
+                                <p className="text-sm text-blue-700">{request.notes}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex flex-wrap gap-2 justify-end pt-4 border-t border-gray-100">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditRequest(request)}
+                            className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteRequest(request)}
+                            className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Cancelar
+                          </Button>
                           <Button
                             size="sm"
                             onClick={() => handleCreateJobFromRequest(request.id)}
-                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                             disabled={createJobFromRequest.isPending}
                           >
-                            <Plus className="w-4 h-4" />
-                            Criar Vaga
+                            {createJobFromRequest.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Plus className="w-4 h-4" />
+                            )}
+                            Publicar Vaga
                           </Button>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </CardContent>
@@ -473,6 +579,86 @@ const JobManagement = () => {
           </TooltipProvider>
         )}
       </CardContent>
+
+      {/* Modal de Edição de Job Request */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-blue-600" />
+              Editar Solicitação de Vaga
+            </DialogTitle>
+          </DialogHeader>
+          {editingRequest && (
+            <JobRequestEditForm
+              request={editingRequest}
+              onSave={handleSaveEditRequest}
+              onCancel={() => setIsEditModalOpen(false)}
+              isLoading={updateJobRequest.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <SimpleModal
+        isOpen={!!deleteConfirmRequest}
+        onClose={() => setDeleteConfirmRequest(null)}
+        title="Confirmar Cancelamento"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
+            <Trash2 className="w-8 h-8 text-red-600" />
+            <div>
+              <p className="font-semibold text-red-800">Cancelar Solicitação</p>
+              <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
+            </div>
+          </div>
+          
+          {deleteConfirmRequest && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="font-medium text-gray-900 mb-1">
+                {deleteConfirmRequest.title}
+              </p>
+              <p className="text-sm text-gray-600">
+                {deleteConfirmRequest.department} • {deleteConfirmRequest.city}, {deleteConfirmRequest.state}
+              </p>
+            </div>
+          )}
+
+          <p className="text-gray-700">
+            Tem certeza de que deseja cancelar esta solicitação de vaga? 
+            Esta ação removerá permanentemente a solicitação do sistema.
+          </p>
+
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmRequest(null)}
+            >
+              Manter Solicitação
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteRequest}
+              disabled={deleteJobRequest.isPending}
+            >
+              {deleteJobRequest.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Cancelar Solicitação
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </SimpleModal>
     </Card>
   );
 };
@@ -740,6 +926,145 @@ const JobForm = ({
       </fieldset>
     </form>
   )
+};
+
+// Componente para formulário de edição de job request
+const JobRequestEditForm = ({ 
+  request, 
+  onSave, 
+  onCancel, 
+  isLoading 
+}: { 
+  request: JobRequest; 
+  onSave: (data: Partial<CreateJobRequestData>) => void; 
+  onCancel: () => void; 
+  isLoading: boolean; 
+}) => {
+  const [formData, setFormData] = useState({
+    title: request.title,
+    department: request.department,
+    city: request.city,
+    state: request.state,
+    type: request.type,
+    description: request.description,
+    requirements: request.requirements,
+    benefits: request.benefits,
+    workload: request.workload,
+    justification: request.justification || ''
+  });
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">Título da Vaga *</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="department">Departamento *</Label>
+          <Select value={formData.department} onValueChange={(value) => handleChange('department', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map(dept => (
+                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="city">Cidade *</Label>
+          <Input
+            id="city"
+            value={formData.city}
+            onChange={(e) => handleChange('city', e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="state">Estado *</Label>
+          <Input
+            id="state"
+            value={formData.state}
+            onChange={(e) => handleChange('state', e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="workload">Carga Horária *</Label>
+          <Select value={formData.workload} onValueChange={(value) => handleChange('workload', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WORKLOAD_OPTIONS.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Descrição da Vaga *</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          rows={4}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="justification">Justificativa</Label>
+        <Textarea
+          id="justification"
+          value={formData.justification}
+          onChange={(e) => handleChange('justification', e.target.value)}
+          rows={3}
+          placeholder="Justifique a necessidade desta vaga..."
+        />
+      </div>
+
+      <div className="flex gap-3 justify-end pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Edit className="w-4 h-4 mr-2" />
+              Salvar Alterações
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
 };
 
 export default JobManagement;

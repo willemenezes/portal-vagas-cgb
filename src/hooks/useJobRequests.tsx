@@ -401,6 +401,51 @@ export const useJobRequests = () => {
         },
     });
 
+    // Atualizar solicitação de vaga completa (para edição)
+    const updateJobRequest = useMutation({
+        mutationFn: async ({ 
+            id, 
+            data 
+        }: { 
+            id: string; 
+            data: Partial<CreateJobRequestData> 
+        }) => {
+            if (!user) throw new Error('Usuário não autenticado');
+
+            const { data: updatedData, error } = await supabase
+                .from('job_requests')
+                .update({
+                    ...data,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Erro ao atualizar solicitação:', error);
+                throw error;
+            }
+
+            return updatedData;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['job-requests'] });
+            toast({
+                title: "Solicitação atualizada!",
+                description: "As alterações foram salvas com sucesso.",
+            });
+        },
+        onError: (error: any) => {
+            console.error('Erro ao atualizar solicitação:', error);
+            toast({
+                title: "Erro ao atualizar solicitação",
+                description: error?.message || "Tente novamente mais tarde.",
+                variant: "destructive",
+            });
+        },
+    });
+
     // Excluir solicitação de vaga
     const deleteJobRequest = useMutation({
         mutationFn: async (requestId: string) => {
@@ -450,12 +495,13 @@ export const useJobRequests = () => {
         error,
         refetch,
         createJobRequest,
+        updateJobRequest,
         updateJobRequestStatus,
         createJobFromRequest,
         approveAndCreateJob,
         deleteJobRequest,
         isCreating: createJobRequest.isPending,
-        isUpdating: updateJobRequestStatus.isPending,
+        isUpdating: updateJobRequestStatus.isPending || updateJobRequest.isPending,
         isDeleting: deleteJobRequest.isPending,
     };
 };
