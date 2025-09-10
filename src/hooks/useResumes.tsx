@@ -14,6 +14,8 @@ export interface Resume {
   skills?: string[] | null;
   resume_file_url?: string | null;
   resume_file_name?: string | null;
+  cnh?: string | null;
+  vehicle?: string | null;
   status: 'new' | 'reviewed' | 'shortlisted' | 'contacted';
   submitted_date: string;
   created_at: string;

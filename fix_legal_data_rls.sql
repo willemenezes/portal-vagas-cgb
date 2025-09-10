@@ -77,3 +77,4 @@ COMMENT ON POLICY "RH pode atualizar dados jurídicos" ON candidate_legal_data I
 COMMENT ON POLICY "Juridico pode visualizar dados" ON candidate_legal_data IS 'Permite que jurídico visualize todos os dados';
 COMMENT ON POLICY "Juridico pode atualizar revisao" ON candidate_legal_data IS 'Permite que jurídico atualize campos de revisão';
 
+

@@ -43,3 +43,4 @@ export const getWorkloadValues = () => WORKLOAD_OPTIONS.map(option => option.val
 // Função para obter apenas os labels (para exibição)
 export const getWorkloadLabels = () => WORKLOAD_OPTIONS.map(option => option.label);
 
+

@@ -20,6 +20,8 @@ export interface Candidate {
   legal_validation_comment?: string | null;
   resume_file_url?: string | null;
   resume_file_name?: string | null;
+  cnh?: string | null;
+  vehicle?: string | null;
   job?: {
     title: string;
     city: string;
@@ -65,7 +67,7 @@ export const useResumeByEmail = (email: string) => {
     queryKey: ['resume-by-email', email],
     queryFn: async () => {
       if (!email) return null;
-      
+
       const { data, error } = await supabase
         .from('resumes')
         .select('resume_file_url, resume_file_name')
@@ -112,14 +114,14 @@ export const useUpdateCandidateStatus = () => {
       id,
       status,
       legal_validation_comment
-    }: { 
-      id: string; 
+    }: {
+      id: string;
       status: Candidate['status'];
       legal_validation_comment?: string;
     }) => {
-      const updateData: any = { 
-        status, 
-        updated_at: new Date().toISOString() 
+      const updateData: any = {
+        status,
+        updated_at: new Date().toISOString()
       };
 
       // Adicionar comentário de validação jurídica se fornecido

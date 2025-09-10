@@ -25,6 +25,8 @@ const TalentBankManagement = () => {
         position: 'all',
         state: 'all',
         city: 'all',
+        cnh: 'all',
+        vehicle: 'all',
     });
     const [showInvited, setShowInvited] = useState(false); // Controle para mostrar/ocultar convidados
     const deleteResume = useDeleteResume();
@@ -92,7 +94,9 @@ const TalentBankManagement = () => {
             })
             .filter(r => filters.position !== 'all' ? r.position === filters.position : true)
             .filter(r => filters.state !== 'all' ? r.state === filters.state : true)
-            .filter(r => filters.city !== 'all' ? r.city === filters.city : true);
+            .filter(r => filters.city !== 'all' ? r.city === filters.city : true)
+            .filter(r => filters.cnh !== 'all' ? r.cnh === filters.cnh : true)
+            .filter(r => filters.vehicle !== 'all' ? r.vehicle === filters.vehicle : true);
     }, [resumes, searchTerm, filters, showInvited, invitedEmails]);
 
     const isLoading = isLoadingResumes || isLoadingJobs;
@@ -246,72 +250,45 @@ const TalentBankManagement = () => {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col md:flex-row justify-between md:items-center">
-                        <div>
-                            <CardTitle className="flex items-center gap-2">
-                                <Archive className="w-6 h-6 text-cgb-primary" />
-                                <span>Cadastro de Currículos</span>
-                            </CardTitle>
-                            <div className="space-y-1 mt-2">
-                                <p className="text-gray-500">Gerencie currículos enviados para futuras oportunidades.</p>
-                                <div className="flex items-center gap-2 text-sm">
-                                    <Archive className="w-4 h-4 text-green-500" />
-                                    <span className="text-green-600 font-medium">
-                                        {filteredResumes.length} talentos disponíveis
-                                    </span>
-                                </div>
-                                {availableJobs.length > 0 && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <UserPlus className="w-4 h-4 text-blue-500" />
-                                        <span className="text-blue-600 font-medium">
-                                            {availableJobs.length} vagas ativas disponíveis para convites
-                                        </span>
-                                    </div>
-                                )}
-                                {invitedCount > 0 && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Filter className="w-4 h-4 text-orange-500" />
-                                        <span className="text-orange-600 font-medium">
-                                            {invitedCount} talentos em processo seletivo ativo
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
+                    <CardTitle className="flex items-center gap-2">
+                        <Archive className="w-6 h-6 text-cgb-primary" />
+                        <span>Cadastro de Currículos</span>
+                    </CardTitle>
+                    <div className="space-y-1 mt-2">
+                        <p className="text-gray-500">Gerencie currículos enviados para futuras oportunidades.</p>
+                        <div className="flex items-center gap-2 text-sm">
+                            <Archive className="w-4 h-4 text-green-500" />
+                            <span className="text-green-600 font-medium">
+                                {filteredResumes.length} talentos disponíveis
+                            </span>
                         </div>
+                        {availableJobs.length > 0 && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <UserPlus className="w-4 h-4 text-blue-500" />
+                                <span className="text-blue-600 font-medium">
+                                    {availableJobs.length} vagas ativas disponíveis para convites
+                                </span>
+                            </div>
+                        )}
+                        {invitedCount > 0 && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <Filter className="w-4 h-4 text-orange-500" />
+                                <span className="text-orange-600 font-medium">
+                                    {invitedCount} talentos em processo seletivo ativo
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="p-4 space-y-4">
+                    {/* Filtros padronizados - mesmo estilo da aba Candidatos - CORRIGIDO */}
                     <div className="flex flex-col md:flex-row gap-4">
-                        <div className="relative flex-grow">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <Input
-                                placeholder="Buscar por nome, e-mail, cargo ou habilidade..."
-                                className="pl-10"
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <Select value={filters.position} onValueChange={value => setFilters(prev => ({ ...prev, position: value }))}>
-                            <SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.position === 'all' ? 'Todos os Cargos' : filters.position}</span></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos os Cargos</SelectItem>
-                                {uniquePositions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <Select value={filters.state} onValueChange={value => setFilters(prev => ({ ...prev, state: value, city: 'all' }))}>
-                            <SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.state === 'all' ? 'Todos os Estados' : filters.state}</span></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos os Estados</SelectItem>
-                                {uniqueStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <Select value={filters.city} onValueChange={value => setFilters(prev => ({ ...prev, city: value }))}>
-                            <SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.city === 'all' ? 'Todas as Cidades' : filters.city}</span></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todas as Cidades</SelectItem>
-                                {uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <div className="relative flex-grow"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><Input placeholder="Buscar por nome, e-mail ou cargo..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                        <Select value={filters.position} onValueChange={value => setFilters(prev => ({ ...prev, position: value }))}><SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.position === 'all' ? 'Todos os Cargos' : filters.position}</span></SelectTrigger><SelectContent><SelectItem value="all">Todos os Cargos</SelectItem>{uniquePositions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
+                        <Select value={filters.state} onValueChange={value => setFilters(prev => ({ ...prev, state: value, city: 'all' }))}><SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.state === 'all' ? 'Todos os Estados' : filters.state}</span></SelectTrigger><SelectContent><SelectItem value="all">Todos os Estados</SelectItem>{uniqueStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+                        <Select value={filters.city} onValueChange={value => setFilters(prev => ({ ...prev, city: value }))}><SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.city === 'all' ? 'Todas as Cidades' : filters.city}</span></SelectTrigger><SelectContent><SelectItem value="all">Todas as Cidades</SelectItem>{uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+                        <Select value={filters.cnh} onValueChange={value => setFilters(prev => ({ ...prev, cnh: value }))}><SelectTrigger><span>Possui CNH?</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="sim">Sim</SelectItem><SelectItem value="não">Não</SelectItem></SelectContent></Select>
+                        <Select value={filters.vehicle} onValueChange={value => setFilters(prev => ({ ...prev, vehicle: value }))}><SelectTrigger><span>Tipo de Veículo</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="carro">Carro</SelectItem><SelectItem value="moto">Moto</SelectItem><SelectItem value="nao">Não possuo</SelectItem></SelectContent></Select>
 
                         {/* Toggle para mostrar/ocultar convidados */}
                         <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-md border">

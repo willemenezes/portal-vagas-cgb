@@ -1,0 +1,3 @@
+Deploy trigger - filtros padronizados
+Timestamp: 2025-01-02 15:30:00
+

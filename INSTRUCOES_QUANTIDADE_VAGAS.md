@@ -211,3 +211,4 @@ Com essas implementações, você terá um sistema de vagas **profissional**, **
 - ✅ Indicadores visuais informativos
 - ✅ Experiência otimizada para todos os usuários
 
+
