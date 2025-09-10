@@ -44,15 +44,15 @@ const JobManagement = () => {
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
   const { toast } = useToast();
-  
+
   // Hook para job requests (apenas para RH Admin/Admin)
-  const { 
-    jobRequests, 
-    createJobFromRequest, 
+  const {
+    jobRequests,
+    createJobFromRequest,
     approveAndCreateJob,
     updateJobRequest,
     deleteJobRequest,
-    isLoading: isLoadingRequests 
+    isLoading: isLoadingRequests
   } = useJobRequests();
 
   // Filtrar vagas por região se não for admin
@@ -63,7 +63,7 @@ const JobManagement = () => {
       // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
       if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states) && rhProfile.assigned_states.length > 0) {
         const hasState = rhProfile.assigned_states.includes(job.state);
-        
+
         // Se tem o estado, verificar se tem cidades específicas
         if (hasState) {
           // Se tem cidades específicas, verificar se inclui a cidade da vaga
@@ -76,7 +76,7 @@ const JobManagement = () => {
         }
         return false; // Não tem o estado
       }
-      
+
       // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
       if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
         return rhProfile.assigned_cities.includes(job.city);
@@ -90,15 +90,15 @@ const JobManagement = () => {
   const [benefitsText, setBenefitsText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingTalentBank, setIsCreatingTalentBank] = useState(false);
-  
+
   // Estados para edição de job requests
   const [editingRequest, setEditingRequest] = useState<JobRequest | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<JobRequest | null>(null);
 
   // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
-  const approvedRequests = jobRequests?.filter(request => 
-    request.status === 'aprovado' && 
+  const approvedRequests = jobRequests?.filter(request =>
+    request.status === 'aprovado' &&
     !request.job_created
   ) || [];
 
@@ -298,7 +298,7 @@ const JobManagement = () => {
   // Função para salvar edição de job request
   const handleSaveEditRequest = async (data: Partial<CreateJobRequestData>) => {
     if (!editingRequest) return;
-    
+
     try {
       await updateJobRequest.mutateAsync({
         id: editingRequest.id,
@@ -319,7 +319,7 @@ const JobManagement = () => {
   // Função para executar exclusão
   const confirmDeleteRequest = async () => {
     if (!deleteConfirmRequest) return;
-    
+
     try {
       await deleteJobRequest.mutateAsync(deleteConfirmRequest.id);
       setDeleteConfirmRequest(null);
@@ -350,7 +350,7 @@ const JobManagement = () => {
             setFormData(null);
           }
         }}>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{formData?.id ? "Editar Vaga" : "Criar Nova Vaga"}</DialogTitle>
             </DialogHeader>
@@ -410,7 +410,7 @@ const JobManagement = () => {
                                 ✓ Aprovado
                               </Badge>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                               <div className="flex items-center gap-2 text-gray-600">
                                 <div className="p-1 bg-gray-100 rounded">
@@ -617,65 +617,65 @@ const JobManagement = () => {
         </DialogContent>
       </Dialog>
 
-        {/* Modal de Confirmação de Exclusão */}
-        <SimpleModal
-          open={!!deleteConfirmRequest}
-          onClose={() => setDeleteConfirmRequest(null)}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-red-800">Confirmar Cancelamento</h3>
-                <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
-              </div>
+      {/* Modal de Confirmação de Exclusão */}
+      <SimpleModal
+        open={!!deleteConfirmRequest}
+        onClose={() => setDeleteConfirmRequest(null)}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Trash2 className="w-6 h-6 text-red-600" />
             </div>
-            
-            {deleteConfirmRequest && (
-              <div className="p-4 bg-gray-50 rounded-lg border">
-                <p className="font-medium text-gray-900 mb-1">
-                  {deleteConfirmRequest.title}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {deleteConfirmRequest.department} • {deleteConfirmRequest.city}, {deleteConfirmRequest.state}
-                </p>
-              </div>
-            )}
-
-            <p className="text-gray-700">
-              Tem certeza de que deseja cancelar esta solicitação de vaga? 
-              Esta ação removerá permanentemente a solicitação do sistema.
-            </p>
-
-            <div className="flex gap-3 justify-end pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirmRequest(null)}
-              >
-                Manter Solicitação
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={confirmDeleteRequest}
-                disabled={deleteJobRequest.isPending}
-              >
-                {deleteJobRequest.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Cancelando...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Cancelar Solicitação
-                  </>
-                )}
-              </Button>
+            <div>
+              <h3 className="text-lg font-semibold text-red-800">Confirmar Cancelamento</h3>
+              <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
             </div>
           </div>
-        </SimpleModal>
+
+          {deleteConfirmRequest && (
+            <div className="p-4 bg-gray-50 rounded-lg border">
+              <p className="font-medium text-gray-900 mb-1">
+                {deleteConfirmRequest.title}
+              </p>
+              <p className="text-sm text-gray-600">
+                {deleteConfirmRequest.department} • {deleteConfirmRequest.city}, {deleteConfirmRequest.state}
+              </p>
+            </div>
+          )}
+
+          <p className="text-gray-700">
+            Tem certeza de que deseja cancelar esta solicitação de vaga?
+            Esta ação removerá permanentemente a solicitação do sistema.
+          </p>
+
+          <div className="flex gap-3 justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmRequest(null)}
+            >
+              Manter Solicitação
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteRequest}
+              disabled={deleteJobRequest.isPending}
+            >
+              {deleteJobRequest.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Cancelar Solicitação
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </SimpleModal>
     </Card>
   );
 };
@@ -752,11 +752,23 @@ const JobForm = ({
     const fetchCities = async () => {
       try {
         setLoadingCities(true);
-        const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${job.state}/municipios?orderBy=nome`);
-        const data = await response.json();
-        setCities(data);
+
+        // Primeiro buscar o ID do estado pela sigla
+        const stateResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${job.state}`);
+        const stateData = await stateResponse.json();
+
+        if (stateData && stateData.id) {
+          // Agora buscar as cidades usando o ID do estado
+          const citiesResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateData.id}/municipios?orderBy=nome`);
+          const citiesData = await citiesResponse.json();
+          setCities(citiesData);
+        } else {
+          console.error("Estado não encontrado:", job.state);
+          setCities([]);
+        }
       } catch (error) {
         console.error("Erro ao buscar cidades:", error);
+        setCities([]);
       } finally {
         setLoadingCities(false);
       }
@@ -823,32 +835,41 @@ const JobForm = ({
                 >
                   <span className="truncate">
                     {loadingCities
-                      ? "Carregando..."
+                      ? "Carregando cidades..."
                       : (job.city ? job.city : "Selecione a cidade")
                     }
                   </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  {loadingCities ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
                   <CommandInput placeholder="Buscar cidade..." />
                   <CommandList>
-                    <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
-                    <CommandGroup>
-                      {cities.map((city) => (
-                        <CommandItem
-                          key={city.id}
-                          value={city.nome}
-                          onSelect={(currentValue) => {
-                            onSelectChange("city", currentValue === job.city ? "" : city.nome);
-                            setOpenCityPopover(false);
-                          }}
-                        >
-                          {city.nome}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
+                    {loadingCities ? (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        <span>Carregando cidades...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
+                        <CommandGroup>
+                          {cities.map((city) => (
+                            <CommandItem
+                              key={city.id}
+                              value={city.nome}
+                              onSelect={(currentValue) => {
+                                onSelectChange("city", currentValue === job.city ? "" : city.nome);
+                                setOpenCityPopover(false);
+                              }}
+                            >
+                              {city.nome}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </>
+                    )}
                   </CommandList>
                 </Command>
               </PopoverContent>
@@ -891,6 +912,87 @@ const JobForm = ({
           <Label htmlFor="description">Descrição</Label>
           <Textarea name="description" value={job.description} onChange={onFormChange} rows={5} required />
         </div>
+
+        {/* Campos de Controle Interno */}
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">📋 Controle Interno</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="solicitante_nome">Nome do Solicitante</Label>
+              <Input
+                name="solicitante_nome"
+                value={job.solicitante_nome || ''}
+                onChange={onFormChange}
+                placeholder="Ex: João Silva"
+              />
+              <p className="text-xs text-gray-500">
+                ℹ️ Para controle interno - quem está solicitando esta vaga
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="solicitante_funcao">Função/Contrato do Solicitante</Label>
+              <Input
+                name="solicitante_funcao"
+                value={job.solicitante_funcao || ''}
+                onChange={onFormChange}
+                placeholder="Ex: Gerente de TI - CLT"
+              />
+              <p className="text-xs text-gray-500">
+                ℹ️ Para controle interno - função e tipo de contrato
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2 mt-4">
+            <Label htmlFor="observacoes_internas">Observações Internas</Label>
+            <Textarea
+              name="observacoes_internas"
+              value={job.observacoes_internas || ''}
+              onChange={onFormChange}
+              placeholder="Observações adicionais para controle interno..."
+              rows={2}
+            />
+            <p className="text-xs text-gray-500">
+              ℹ️ Estas informações são apenas para controle interno
+            </p>
+          </div>
+
+          {/* Tipo de Solicitação */}
+          <div className="space-y-2 mt-4">
+            <Label htmlFor="tipo_solicitacao">Tipo de Solicitação *</Label>
+            <Select
+              value={job.tipo_solicitacao || 'aumento_quadro'}
+              onValueChange={(value) => onSelectChange("tipo_solicitacao", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de solicitação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="aumento_quadro">Aumento de Quadro</SelectItem>
+                <SelectItem value="substituicao">Substituição</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              ℹ️ Selecione se é para aumentar o quadro ou substituir alguém
+            </p>
+          </div>
+
+          {/* Campo condicional para substituição */}
+          {job.tipo_solicitacao === "substituicao" && (
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="nome_substituido">Nome da Pessoa que Saiu *</Label>
+              <Input
+                name="nome_substituido"
+                value={job.nome_substituido || ''}
+                onChange={onFormChange}
+                placeholder="Ex: Maria Santos"
+              />
+              <p className="text-xs text-gray-500">
+                ℹ️ Nome da pessoa que está sendo substituída
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="requirements">Requisitos (um por linha)</Label>
@@ -946,16 +1048,16 @@ const JobForm = ({
 };
 
 // Componente para formulário de edição de job request
-const JobRequestEditForm = ({ 
-  request, 
-  onSave, 
-  onCancel, 
-  isLoading 
-}: { 
-  request: JobRequest; 
-  onSave: (data: Partial<CreateJobRequestData>) => void; 
-  onCancel: () => void; 
-  isLoading: boolean; 
+const JobRequestEditForm = ({
+  request,
+  onSave,
+  onCancel,
+  isLoading
+}: {
+  request: JobRequest;
+  onSave: (data: Partial<CreateJobRequestData>) => void;
+  onCancel: () => void;
+  isLoading: boolean;
 }) => {
   const [formData, setFormData] = useState({
     title: request.title || '',

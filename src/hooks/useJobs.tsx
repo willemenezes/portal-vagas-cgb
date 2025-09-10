@@ -23,6 +23,11 @@ export interface Job {
   quantity_filled?: number; // Quantidade de vagas preenchidas
   expires_at?: string; // Data de expiração
   hired_count?: number; // Candidatos contratados/aprovados
+  solicitante_nome?: string; // Nome do solicitante para controle interno
+  solicitante_funcao?: string; // Função/contrato do solicitante para controle interno
+  observacoes_internas?: string; // Observações internas para controle
+  tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
+  nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
 }
 
 export const useJobs = () => {

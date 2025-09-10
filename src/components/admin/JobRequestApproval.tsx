@@ -445,6 +445,47 @@ export default function JobRequestApproval() {
                                                             </div>
                                                         )}
 
+                                                        {/* Campos de Controle Interno */}
+                                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                                            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
+                                                                📋 Controle Interno
+                                                            </h4>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                {selectedRequest.solicitante_nome && (
+                                                                    <div>
+                                                                        <Label className="text-sm font-medium text-gray-600">Nome do Solicitante</Label>
+                                                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_nome}</p>
+                                                                    </div>
+                                                                )}
+                                                                {selectedRequest.solicitante_funcao && (
+                                                                    <div>
+                                                                        <Label className="text-sm font-medium text-gray-600">Função/Contrato do Solicitante</Label>
+                                                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_funcao}</p>
+                                                                    </div>
+                                                                )}
+                                                                {selectedRequest.tipo_solicitacao && (
+                                                                    <div>
+                                                                        <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
+                                                                        <p className="text-sm text-gray-800 mt-1">
+                                                                            {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                {selectedRequest.nome_substituido && (
+                                                                    <div>
+                                                                        <Label className="text-sm font-medium text-gray-600">Nome da Pessoa que Saiu</Label>
+                                                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.nome_substituido}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {selectedRequest.observacoes_internas && (
+                                                                <div className="mt-4">
+                                                                    <Label className="text-sm font-medium text-gray-600">Observações Internas</Label>
+                                                                    <p className="text-sm text-gray-800 mt-1">{selectedRequest.observacoes_internas}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
                                                         {selectedRequest.requirements.length > 0 && (
                                                             <div>
                                                                 <Label className="text-sm font-medium">Requisitos</Label>

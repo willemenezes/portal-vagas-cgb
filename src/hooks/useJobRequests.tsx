@@ -26,6 +26,11 @@ export interface JobRequest {
     approved_by?: string;
     approved_at?: string;
     job_created?: boolean;
+    solicitante_nome?: string; // Nome do solicitante para controle interno
+    solicitante_funcao?: string; // Função/contrato do solicitante para controle interno
+    observacoes_internas?: string; // Observações internas para controle
+    tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
+    nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
     created_at: string;
     updated_at: string;
 }
@@ -45,6 +50,8 @@ export interface CreateJobRequestData {
     solicitante_nome?: string; // Nome do solicitante para controle interno
     solicitante_funcao?: string; // Função/contrato do solicitante para controle interno
     observacoes_internas?: string; // Observações internas para controle
+    tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
+    nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
 }
 
 export const useJobRequests = () => {

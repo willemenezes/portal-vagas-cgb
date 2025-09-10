@@ -64,7 +64,9 @@ export default function JobRequestManagement() {
         quantity: 1,
         solicitante_nome: "",
         solicitante_funcao: "",
-        observacoes_internas: ""
+        observacoes_internas: "",
+        tipo_solicitacao: "aumento_quadro",
+        nome_substituido: ""
     });
     const { toast } = useToast();
 
@@ -451,6 +453,46 @@ export default function JobRequestManagement() {
                                     ℹ️ Estas informações são apenas para controle interno
                                 </p>
                             </div>
+
+                            {/* Tipo de Solicitação */}
+                            <div className="space-y-2 mt-4">
+                                <Label htmlFor="tipo_solicitacao">Tipo de Solicitação *</Label>
+                                <Select
+                                    value={newRequest.tipo_solicitacao}
+                                    onValueChange={(value) => setNewRequest({
+                                        ...newRequest,
+                                        tipo_solicitacao: value,
+                                        nome_substituido: value === "substituicao" ? newRequest.nome_substituido : ""
+                                    })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o tipo de solicitação" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="aumento_quadro">Aumento de Quadro</SelectItem>
+                                        <SelectItem value="substituicao">Substituição</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-gray-500">
+                                    ℹ️ Selecione se é para aumentar o quadro ou substituir alguém
+                                </p>
+                            </div>
+
+                            {/* Campo condicional para substituição */}
+                            {newRequest.tipo_solicitacao === "substituicao" && (
+                                <div className="space-y-2 mt-4">
+                                    <Label htmlFor="nome_substituido">Nome da Pessoa que Saiu *</Label>
+                                    <Input
+                                        id="nome_substituido"
+                                        value={newRequest.nome_substituido}
+                                        onChange={(e) => setNewRequest({ ...newRequest, nome_substituido: e.target.value })}
+                                        placeholder="Ex: Maria Santos"
+                                    />
+                                    <p className="text-xs text-gray-500">
+                                        ℹ️ Nome da pessoa que está sendo substituída
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
