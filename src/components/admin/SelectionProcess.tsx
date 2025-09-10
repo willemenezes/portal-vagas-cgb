@@ -103,9 +103,29 @@ const SelectionProcess = () => {
         if (!rhProfile || rhProfile.is_admin) return allJobs;
 
         return allJobs.filter(job => {
-            const hasStateAccess = rhProfile?.assigned_states?.includes(job.state);
-            const hasCityAccess = rhProfile?.assigned_cities?.includes(job.city);
-            return hasStateAccess || hasCityAccess;
+            // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
+            if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+                const hasState = rhProfile.assigned_states.includes(job.state);
+                
+                // Se tem o estado, verificar se tem cidades específicas
+                if (hasState) {
+                    // Se tem cidades específicas, verificar se inclui a cidade da vaga
+                    if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+                        return rhProfile.assigned_cities.includes(job.city);
+                    } else {
+                        // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+                        return true;
+                    }
+                }
+                return false; // Não tem o estado
+            }
+            
+            // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+            if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+                return rhProfile.assigned_cities.includes(job.city);
+            }
+            
+            return true; // Sem restrições
         });
     }, [allJobs, rhProfile, isRhProfileLoading]);
 

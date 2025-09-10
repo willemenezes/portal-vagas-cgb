@@ -60,10 +60,25 @@ const JobManagement = () => {
     if (!rhProfile || !job) return true;
     if (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) return true;
     if (typeof rhProfile === 'object') {
-      if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states)) {
-        return rhProfile.assigned_states.includes(job.state);
+      // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
+      if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states) && rhProfile.assigned_states.length > 0) {
+        const hasState = rhProfile.assigned_states.includes(job.state);
+        
+        // Se tem o estado, verificar se tem cidades específicas
+        if (hasState) {
+          // Se tem cidades específicas, verificar se inclui a cidade da vaga
+          if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
+            return rhProfile.assigned_cities.includes(job.city);
+          } else {
+            // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+            return true;
+          }
+        }
+        return false; // Não tem o estado
       }
-      if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities)) {
+      
+      // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+      if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
         return rhProfile.assigned_cities.includes(job.city);
       }
     }
