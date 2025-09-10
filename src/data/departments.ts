@@ -45,7 +45,8 @@ export const departments = [
   "Representante Técnico de Vendas",
   
   // Departamentos Específicos Solicitados
-  "Leitura e Cobrança",
+  "LEITURA",
+  "COBRANÇA",
   "Atendimento",
   "SESMT",
   "QSMS", 
