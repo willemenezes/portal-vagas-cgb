@@ -119,135 +119,136 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
     }
 
     return (
-        <Card className="bg-green-50 border-green-200">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-800">
-                    <CheckCircle className="w-5 h-5" />
-                    Solicitações Aprovadas para Criação
-                    <Badge variant="secondary" className="ml-2">
-                        {approvedRequests.length}
-                    </Badge>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {approvedRequests.map((request) => (
-                    <div key={request.id} className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-semibold text-gray-900">{request.title}</h3>
-                                    <Badge variant="outline" className="text-green-700 border-green-300">
-                                        Aprovado
-                                    </Badge>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
-                                    <div className="flex items-center gap-1">
-                                        <Building className="w-4 h-4" />
-                                        <span>{request.department}</span>
+        <>
+            <Card className="bg-green-50 border-green-200">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-800">
+                        <CheckCircle className="w-5 h-5" />
+                        Solicitações Aprovadas para Criação
+                        <Badge variant="secondary" className="ml-2">
+                            {approvedRequests.length}
+                        </Badge>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {approvedRequests.map((request) => (
+                        <div key={request.id} className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h3 className="font-semibold text-gray-900">{request.title}</h3>
+                                        <Badge variant="outline" className="text-green-700 border-green-300">
+                                            Aprovado
+                                        </Badge>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <MapPin className="w-4 h-4" />
-                                        <span>{request.city}, {request.state}</span>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                                        <div className="flex items-center gap-1">
+                                            <Building className="w-4 h-4" />
+                                            <span>{request.department}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <MapPin className="w-4 h-4" />
+                                            <span>{request.city}, {request.state}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-4 h-4" />
+                                            <span>{request.workload}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Calendar className="w-4 h-4" />
+                                            <span>
+                                                Aprovado {formatDistanceToNow(new Date(request.approved_at), { 
+                                                    addSuffix: true, 
+                                                    locale: ptBR 
+                                                })}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-4 h-4" />
-                                        <span>{request.workload}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Calendar className="w-4 h-4" />
-                                        <span>
-                                            Aprovado {formatDistanceToNow(new Date(request.approved_at), { 
-                                                addSuffix: true, 
-                                                locale: ptBR 
-                                            })}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                <div className="text-sm text-gray-600 mb-3">
-                                    <p className="font-medium mb-1">Aprovado por:</p>
-                                    <p className="text-gray-500">{request.approved_by}</p>
-                                    {request.notes && (
-                                        <>
-                                            <p className="font-medium mb-1 mt-2">Observações:</p>
-                                            <p className="text-gray-500">{request.notes}</p>
-                                        </>
-                                    )}
-                                </div>
+                                    <div className="text-sm text-gray-600 mb-3">
+                                        <p className="font-medium mb-1">Aprovado por:</p>
+                                        <p className="text-gray-500">{request.approved_by}</p>
+                                        {request.notes && (
+                                            <>
+                                                <p className="font-medium mb-1 mt-2">Observações:</p>
+                                                <p className="text-gray-500">{request.notes}</p>
+                                            </>
+                                        )}
+                                    </div>
 
-                                {/* Campos de Controle Interno */}
-                                {(request.solicitante_nome || request.solicitante_funcao || request.observacoes_internas || request.tipo_solicitacao || request.nome_substituido) && (
-                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
-                                        <h4 className="text-sm font-medium text-gray-800 mb-2 flex items-center gap-2">
-                                            📋 Controle Interno
-                                        </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                            {request.solicitante_nome && (
-                                                <div>
-                                                    <span className="font-medium text-gray-600">Nome do Solicitante:</span>
-                                                    <p className="text-gray-800">{request.solicitante_nome}</p>
-                                                </div>
-                                            )}
-                                            {request.solicitante_funcao && (
-                                                <div>
-                                                    <span className="font-medium text-gray-600">Função/Contrato:</span>
-                                                    <p className="text-gray-800">{request.solicitante_funcao}</p>
-                                                </div>
-                                            )}
-                                            {request.tipo_solicitacao && (
-                                                <div>
-                                                    <span className="font-medium text-gray-600">Tipo de Solicitação:</span>
-                                                    <p className="text-gray-800">
-                                                        {request.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {request.nome_substituido && (
-                                                <div>
-                                                    <span className="font-medium text-gray-600">Nome da Pessoa que Saiu:</span>
-                                                    <p className="text-gray-800">{request.nome_substituido}</p>
+                                    {/* Campos de Controle Interno */}
+                                    {(request.solicitante_nome || request.solicitante_funcao || request.observacoes_internas || request.tipo_solicitacao || request.nome_substituido) && (
+                                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                                            <h4 className="text-sm font-medium text-gray-800 mb-2 flex items-center gap-2">
+                                                📋 Controle Interno
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                {request.solicitante_nome && (
+                                                    <div>
+                                                        <span className="font-medium text-gray-600">Nome do Solicitante:</span>
+                                                        <p className="text-gray-800">{request.solicitante_nome}</p>
+                                                    </div>
+                                                )}
+                                                {request.solicitante_funcao && (
+                                                    <div>
+                                                        <span className="font-medium text-gray-600">Função/Contrato:</span>
+                                                        <p className="text-gray-800">{request.solicitante_funcao}</p>
+                                                    </div>
+                                                )}
+                                                {request.tipo_solicitacao && (
+                                                    <div>
+                                                        <span className="font-medium text-gray-600">Tipo de Solicitação:</span>
+                                                        <p className="text-gray-800">
+                                                            {request.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {request.nome_substituido && (
+                                                    <div>
+                                                        <span className="font-medium text-gray-600">Nome da Pessoa que Saiu:</span>
+                                                        <p className="text-gray-800">{request.nome_substituido}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {request.observacoes_internas && (
+                                                <div className="mt-3">
+                                                    <span className="font-medium text-gray-600">Observações Internas:</span>
+                                                    <p className="text-gray-800 mt-1">{request.observacoes_internas}</p>
                                                 </div>
                                             )}
                                         </div>
-                                        {request.observacoes_internas && (
-                                            <div className="mt-3">
-                                                <span className="font-medium text-gray-600">Observações Internas:</span>
-                                                <p className="text-gray-800 mt-1">{request.observacoes_internas}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
 
-                            <div className="flex gap-2 ml-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleViewDetails(request)}
-                                    className="flex items-center gap-1"
-                                >
-                                    <Eye className="w-4 h-4" />
-                                    Ver Detalhes
-                                </Button>
-                                
-                                <Button
-                                    size="sm"
-                                    onClick={() => handleCreateJob(request.id)}
-                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-                                    disabled={createJobFromRequest.isPending}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Criar Vaga
-                                </Button>
+                                <div className="flex gap-2 ml-4">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleViewDetails(request)}
+                                        className="flex items-center gap-1"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        Ver Detalhes
+                                    </Button>
+                                    
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleCreateJob(request.id)}
+                                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                                        disabled={createJobFromRequest.isPending}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Criar Vaga
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </CardContent>
-        </Card>
+                    ))}
+                </CardContent>
+            </Card>
 
-        {/* Modal de Detalhes */}
+            {/* Modal de Detalhes */}
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
@@ -394,6 +395,7 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                 </div>
             </DialogContent>
         </Dialog>
+        </>
     );
 };
 
