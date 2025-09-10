@@ -34,6 +34,18 @@ import {
     Trash2
 } from "lucide-react";
 
+// Interfaces para API do IBGE
+interface State {
+    id: number;
+    sigla: string;
+    nome: string;
+}
+
+interface City {
+    id: number;
+    nome: string;
+}
+
 export default function JobRequestManagement() {
     const { user } = useAuth();
     const { data: rhProfile } = useRHProfile(user?.id);
@@ -70,31 +82,75 @@ export default function JobRequestManagement() {
     });
     const { toast } = useToast();
 
-    // Criar lista de cidades para o combobox (filtrada por região se necessário)
-    const allCities = Object.entries(CITIES_BY_STATE).flatMap(([state, cities]) => {
-        // Se o usuário tem restrições regionais, filtrar estados
-        if (rhProfile && !rhProfile.is_admin && rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-            if (!rhProfile.assigned_states.includes(state)) {
-                return [];
-            }
-        }
+    // Estados para busca dinâmica de cidades
+    const [states, setStates] = useState<State[]>([]);
+    const [cities, setCities] = useState<City[]>([]);
+    const [loadingStates, setLoadingStates] = useState(true);
+    const [loadingCities, setLoadingCities] = useState(false);
 
-        return cities.map(city => ({
-            value: city,
-            label: `${city} - ${state}`,
-            state: state
-        }));
-    });
-
-    // Auto-corrigir estado quando cidade é alterada
+    // Buscar estados do IBGE
     useEffect(() => {
-        if (newRequest.city) {
-            const correctState = getStateByCity(newRequest.city);
-            if (correctState && correctState !== newRequest.state) {
-                setNewRequest(prev => ({ ...prev, state: correctState }));
+        const fetchStates = async () => {
+            try {
+                setLoadingStates(true);
+                const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+                let data = await response.json();
+
+                // Filtrar estados se o usuário tem restrições regionais
+                if (rhProfile && !rhProfile.is_admin && rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+                    data = data.filter((state: State) => rhProfile.assigned_states.includes(state.sigla));
+                }
+
+                setStates(data);
+            } catch (error) {
+                console.error("Erro ao buscar estados:", error);
+            } finally {
+                setLoadingStates(false);
             }
+        };
+        fetchStates();
+    }, [rhProfile]);
+
+    // Buscar cidades quando estado é selecionado
+    useEffect(() => {
+        if (!newRequest.state) {
+            setCities([]);
+            return;
         }
-    }, [newRequest.city]);
+        
+        const fetchCities = async () => {
+            try {
+                setLoadingCities(true);
+
+                // Primeiro buscar o ID do estado pela sigla
+                const stateResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${newRequest.state}`);
+                const stateData = await stateResponse.json();
+
+                if (stateData && stateData.id) {
+                    // Agora buscar as cidades usando o ID do estado
+                    const citiesResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateData.id}/municipios?orderBy=nome`);
+                    const citiesData = await citiesResponse.json();
+                    setCities(citiesData);
+                } else {
+                    console.error("Estado não encontrado:", newRequest.state);
+                    setCities([]);
+                }
+            } catch (error) {
+                console.error("Erro ao buscar cidades:", error);
+                setCities([]);
+            } finally {
+                setLoadingCities(false);
+            }
+        };
+        fetchCities();
+    }, [newRequest.state]);
+
+    // Criar lista de cidades para o combobox
+    const allCities = cities.map(city => ({
+        value: city.nome,
+        label: `${city.nome} - ${newRequest.state}`,
+        state: newRequest.state
+    }));
 
     const handleCreateRequest = async () => {
         if (!newRequest.title || !newRequest.department || !newRequest.city || !newRequest.description || !newRequest.justification) {
@@ -106,15 +162,7 @@ export default function JobRequestManagement() {
             return;
         }
 
-        // Validar se cidade e estado são compatíveis
-        if (newRequest.city && newRequest.state && !validateCityState(newRequest.city, newRequest.state)) {
-            toast({
-                title: "Cidade e Estado incompatíveis",
-                description: `A cidade ${newRequest.city} não pertence ao estado selecionado.`,
-                variant: "destructive"
-            });
-            return;
-        }
+        // Validação não é mais necessária pois usamos API do IBGE que garante compatibilidade
 
         const requestData: CreateJobRequestData = {
             title: newRequest.title,
@@ -259,10 +307,18 @@ export default function JobRequestManagement() {
                                             role="combobox"
                                             aria-expanded={cityComboOpen}
                                             className="w-full justify-between"
+                                            disabled={!newRequest.state || loadingCities}
                                         >
-                                            {newRequest.city
-                                                ? allCities.find((city) => city.value === newRequest.city)?.label
-                                                : "Selecione a cidade..."}
+                                            {loadingCities ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Carregando cidades...
+                                                </>
+                                            ) : newRequest.city ? (
+                                                allCities.find((city) => city.value === newRequest.city)?.label
+                                            ) : (
+                                                "Selecione a cidade..."
+                                            )}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
@@ -270,60 +326,74 @@ export default function JobRequestManagement() {
                                         <Command>
                                             <CommandInput placeholder="Pesquisar cidade..." />
                                             <CommandList>
-                                                <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {allCities.map((city) => (
-                                                        <CommandItem
-                                                            key={city.value}
-                                                            value={city.label}
-                                                            onSelect={() => {
-                                                                setNewRequest({ ...newRequest, city: city.value });
-                                                                setCityComboOpen(false);
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={`mr-2 h-4 w-4 ${newRequest.city === city.value ? "opacity-100" : "opacity-0"
-                                                                    }`}
-                                                            />
-                                                            {city.label}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
+                                                {loadingCities ? (
+                                                    <CommandEmpty>
+                                                        <div className="flex items-center justify-center py-4">
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            Carregando cidades...
+                                                        </div>
+                                                    </CommandEmpty>
+                                                ) : (
+                                                    <>
+                                                        <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {allCities.map((city) => (
+                                                                <CommandItem
+                                                                    key={city.value}
+                                                                    value={city.label}
+                                                                    onSelect={() => {
+                                                                        setNewRequest({ ...newRequest, city: city.value });
+                                                                        setCityComboOpen(false);
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={`mr-2 h-4 w-4 ${newRequest.city === city.value ? "opacity-100" : "opacity-0"
+                                                                            }`}
+                                                                    />
+                                                                    {city.label}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </>
+                                                )}
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                <p className="text-xs text-gray-500">
-                                    O estado será selecionado automaticamente
-                                </p>
+                                {!newRequest.state && (
+                                    <p className="text-xs text-gray-500">
+                                        Selecione primeiro o estado
+                                    </p>
+                                )}
+                                {loadingCities && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Carregando cidades do estado {newRequest.state}...
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="state">Estado *</Label>
                                 <Select
                                     value={newRequest.state}
-                                    onValueChange={(value) => setNewRequest({ ...newRequest, state: value })}
-                                    disabled={!!newRequest.city} // Desabilitado quando cidade é selecionada
+                                    onValueChange={(value) => setNewRequest({ ...newRequest, state: value, city: "" })}
+                                    disabled={loadingStates}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="UF" />
+                                        <SelectValue placeholder={loadingStates ? "Carregando estados..." : "Selecione o estado"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {STATES.filter(state => {
-                                            // Se o usuário tem restrições regionais, filtrar estados
-                                            if (rhProfile && !rhProfile.is_admin && rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-                                                return rhProfile.assigned_states.includes(state.code);
-                                            }
-                                            return true;
-                                        }).map(state => (
-                                            <SelectItem key={state.code} value={state.code}>
-                                                {state.name}
+                                        {states.map(state => (
+                                            <SelectItem key={state.sigla} value={state.sigla}>
+                                                {state.nome}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {newRequest.city && (
-                                    <p className="text-xs text-green-600">
-                                        ✓ Estado selecionado automaticamente
+                                {loadingStates && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Carregando estados...
                                     </p>
                                 )}
                             </div>
