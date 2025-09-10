@@ -61,7 +61,10 @@ export default function JobRequestManagement() {
         benefits: "",
         workload: "40h/semana",
         justification: "",
-        quantity: 1
+        quantity: 1,
+        solicitante_nome: "",
+        solicitante_funcao: "",
+        observacoes_internas: ""
     });
     const { toast } = useToast();
 
@@ -404,6 +407,50 @@ export default function JobRequestManagement() {
                             <p className="text-xs text-blue-600">
                                 ℹ️ Esta justificativa será vista apenas pela gerência durante a aprovação
                             </p>
+                        </div>
+
+                        {/* Campos de Controle Interno */}
+                        <div className="border-t pt-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">📋 Controle Interno</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="solicitante_nome">Nome do Solicitante</Label>
+                                    <Input
+                                        id="solicitante_nome"
+                                        value={newRequest.solicitante_nome}
+                                        onChange={(e) => setNewRequest({ ...newRequest, solicitante_nome: e.target.value })}
+                                        placeholder="Ex: João Silva"
+                                    />
+                                    <p className="text-xs text-gray-500">
+                                        ℹ️ Para controle interno - quem está solicitando esta vaga
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="solicitante_funcao">Função/Contrato do Solicitante</Label>
+                                    <Input
+                                        id="solicitante_funcao"
+                                        value={newRequest.solicitante_funcao}
+                                        onChange={(e) => setNewRequest({ ...newRequest, solicitante_funcao: e.target.value })}
+                                        placeholder="Ex: Gerente de TI - CLT"
+                                    />
+                                    <p className="text-xs text-gray-500">
+                                        ℹ️ Para controle interno - função e tipo de contrato
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="space-y-2 mt-4">
+                                <Label htmlFor="observacoes_internas">Observações Internas</Label>
+                                <Textarea
+                                    id="observacoes_internas"
+                                    value={newRequest.observacoes_internas}
+                                    onChange={(e) => setNewRequest({ ...newRequest, observacoes_internas: e.target.value })}
+                                    placeholder="Observações adicionais para controle interno..."
+                                    rows={2}
+                                />
+                                <p className="text-xs text-gray-500">
+                                    ℹ️ Estas informações são apenas para controle interno
+                                </p>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

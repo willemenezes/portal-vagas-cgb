@@ -42,6 +42,9 @@ export interface CreateJobRequestData {
     workload: string;
     justification?: string; // Justificativa da criação da vaga
     quantity?: number; // Quantidade de vagas solicitadas
+    solicitante_nome?: string; // Nome do solicitante para controle interno
+    solicitante_funcao?: string; // Função/contrato do solicitante para controle interno
+    observacoes_internas?: string; // Observações internas para controle
 }
 
 export const useJobRequests = () => {
@@ -66,9 +69,9 @@ export const useJobRequests = () => {
                 },
                 (payload) => {
                     console.log('🔄 [useJobRequests] Mudança detectada na tabela job_requests:', payload);
-                    
+
                     // Invalidar todas as queries de job-requests para sincronizar
-                    queryClient.invalidateQueries({ 
+                    queryClient.invalidateQueries({
                         queryKey: ['job-requests'],
                         exact: false
                     });
@@ -161,7 +164,7 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: async (data) => {
-            queryClient.invalidateQueries({ 
+            queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false
             });
@@ -256,7 +259,7 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: async (data) => {
-            queryClient.invalidateQueries({ 
+            queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false
             });
@@ -344,7 +347,7 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ 
+            queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false
             });
@@ -388,7 +391,7 @@ export const useJobRequests = () => {
             return data;
         },
         onSuccess: async (data, variables) => {
-            queryClient.invalidateQueries({ 
+            queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false
             });
@@ -445,12 +448,12 @@ export const useJobRequests = () => {
 
     // Atualizar solicitação de vaga completa (para edição)
     const updateJobRequest = useMutation({
-        mutationFn: async ({ 
-            id, 
-            data 
-        }: { 
-            id: string; 
-            data: Partial<CreateJobRequestData> 
+        mutationFn: async ({
+            id,
+            data
+        }: {
+            id: string;
+            data: Partial<CreateJobRequestData>
         }) => {
             if (!user) throw new Error('Usuário não autenticado');
 
@@ -472,7 +475,7 @@ export const useJobRequests = () => {
             return updatedData;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ 
+            queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false
             });
@@ -517,7 +520,7 @@ export const useJobRequests = () => {
         },
         onSuccess: async ({ requestId, requestData }) => {
             // Invalidar TODAS as queries de job-requests para sincronizar todos os usuários
-            queryClient.invalidateQueries({ 
+            queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false // Invalida todas as queries que começam com 'job-requests'
             });
