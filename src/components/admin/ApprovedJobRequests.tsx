@@ -173,6 +173,49 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                                         </>
                                     )}
                                 </div>
+
+                                {/* Campos de Controle Interno */}
+                                {(request.solicitante_nome || request.solicitante_funcao || request.observacoes_internas || request.tipo_solicitacao || request.nome_substituido) && (
+                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                                        <h4 className="text-sm font-medium text-gray-800 mb-2 flex items-center gap-2">
+                                            📋 Controle Interno
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                            {request.solicitante_nome && (
+                                                <div>
+                                                    <span className="font-medium text-gray-600">Nome do Solicitante:</span>
+                                                    <p className="text-gray-800">{request.solicitante_nome}</p>
+                                                </div>
+                                            )}
+                                            {request.solicitante_funcao && (
+                                                <div>
+                                                    <span className="font-medium text-gray-600">Função/Contrato:</span>
+                                                    <p className="text-gray-800">{request.solicitante_funcao}</p>
+                                                </div>
+                                            )}
+                                            {request.tipo_solicitacao && (
+                                                <div>
+                                                    <span className="font-medium text-gray-600">Tipo de Solicitação:</span>
+                                                    <p className="text-gray-800">
+                                                        {request.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {request.nome_substituido && (
+                                                <div>
+                                                    <span className="font-medium text-gray-600">Nome da Pessoa que Saiu:</span>
+                                                    <p className="text-gray-800">{request.nome_substituido}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {request.observacoes_internas && (
+                                            <div className="mt-3">
+                                                <span className="font-medium text-gray-600">Observações Internas:</span>
+                                                <p className="text-gray-800 mt-1">{request.observacoes_internas}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex gap-2 ml-4">
