@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useJobRequests } from '@/hooks/useJobRequests';
 import { 
@@ -244,6 +246,154 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                 ))}
             </CardContent>
         </Card>
+
+        {/* Modal de Detalhes */}
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{selectedRequest?.title}</DialogTitle>
+                    <DialogDescription>
+                        {selectedRequest?.requested_by_name ?
+                            `Solicitação de ${selectedRequest.requested_by_name}` :
+                            'Detalhes da solicitação'
+                        }
+                    </DialogDescription>
+                </DialogHeader>
+
+                {selectedRequest && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label className="text-sm font-medium">Departamento</Label>
+                                <p className="text-sm text-gray-700">{selectedRequest.department}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium">Localização</Label>
+                                <p className="text-sm text-gray-700">{selectedRequest.city}, {selectedRequest.state}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium">Tipo</Label>
+                                <p className="text-sm text-gray-700">{selectedRequest.type}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium">Carga Horária</Label>
+                                <p className="text-sm text-gray-700">{selectedRequest.workload}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label className="text-sm font-medium">Descrição</Label>
+                            <p className="text-sm text-gray-700 mt-1">{selectedRequest.description}</p>
+                        </div>
+
+                        {selectedRequest.justification && (
+                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                <Label className="text-sm font-medium text-blue-800">Justificativa da Criação</Label>
+                                <p className="text-sm text-blue-700 mt-1">{selectedRequest.justification}</p>
+                            </div>
+                        )}
+
+                        {/* Campos de Controle Interno */}
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
+                                📋 Controle Interno
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {selectedRequest.solicitante_nome && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Nome do Solicitante</Label>
+                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_nome}</p>
+                                    </div>
+                                )}
+                                {selectedRequest.solicitante_funcao && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Função/Contrato do Solicitante</Label>
+                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_funcao}</p>
+                                    </div>
+                                )}
+                                {selectedRequest.tipo_solicitacao && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
+                                        <p className="text-sm text-gray-800 mt-1">
+                                            {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
+                                        </p>
+                                    </div>
+                                )}
+                                {selectedRequest.nome_substituido && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Nome da Pessoa que Saiu</Label>
+                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.nome_substituido}</p>
+                                    </div>
+                                )}
+                            </div>
+                            {selectedRequest.observacoes_internas && (
+                                <div className="mt-4">
+                                    <Label className="text-sm font-medium text-gray-600">Observações Internas</Label>
+                                    <p className="text-sm text-gray-800 mt-1">{selectedRequest.observacoes_internas}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {selectedRequest.requirements.length > 0 && (
+                            <div>
+                                <Label className="text-sm font-medium">Requisitos</Label>
+                                <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+                                    {selectedRequest.requirements.map((req, index) => (
+                                        <li key={index}>{req}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {selectedRequest.benefits.length > 0 && (
+                            <div>
+                                <Label className="text-sm font-medium">Benefícios</Label>
+                                <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+                                    {selectedRequest.benefits.map((benefit, index) => (
+                                        <li key={index}>{benefit}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                            <Label className="text-sm font-medium text-green-800">Status da Aprovação</Label>
+                            <div className="mt-2 space-y-1">
+                                <p className="text-sm text-green-700">
+                                    <strong>Aprovado por:</strong> {selectedRequest.approved_by}
+                                </p>
+                                <p className="text-sm text-green-700">
+                                    <strong>Data da aprovação:</strong> {new Date(selectedRequest.approved_at).toLocaleDateString('pt-BR')}
+                                </p>
+                                {selectedRequest.notes && (
+                                    <p className="text-sm text-green-700">
+                                        <strong>Observações do aprovador:</strong> {selectedRequest.notes}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsDetailsOpen(false)}
+                    >
+                        Fechar
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setIsDetailsOpen(false);
+                            handleCreateJob(selectedRequest.id);
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                    >
+                        Criar Vaga
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
