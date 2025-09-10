@@ -65,29 +65,51 @@ export const useJobRequests = () => {
     useEffect(() => {
         if (!user) return;
 
-        const channel = supabase
-            .channel('job_requests_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*', // Escuta INSERT, UPDATE, DELETE
-                    schema: 'public',
-                    table: 'job_requests'
-                },
-                (payload) => {
-                    console.log('🔄 [useJobRequests] Mudança detectada na tabela job_requests:', payload);
+        let channel: any = null;
 
-                    // Invalidar todas as queries de job-requests para sincronizar
-                    queryClient.invalidateQueries({
-                        queryKey: ['job-requests'],
-                        exact: false
-                    });
-                }
-            )
-            .subscribe();
+        try {
+            // Verificar se já existe uma subscrição ativa para evitar múltiplas subscrições
+            const existingChannel = supabase.getChannels().find(ch => ch.topic === 'job_requests_changes');
+            if (existingChannel) {
+                console.log('🔄 [useJobRequests] Subscrição já existe, reutilizando...');
+                return;
+            }
+
+            channel = supabase
+                .channel('job_requests_changes')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*', // Escuta INSERT, UPDATE, DELETE
+                        schema: 'public',
+                        table: 'job_requests'
+                    },
+                    (payload) => {
+                        console.log('🔄 [useJobRequests] Mudança detectada na tabela job_requests:', payload);
+
+                        // Invalidar todas as queries de job-requests para sincronizar
+                        queryClient.invalidateQueries({
+                            queryKey: ['job-requests'],
+                            exact: false
+                        });
+                    }
+                )
+                .subscribe();
+
+            console.log('🔄 [useJobRequests] Subscrição criada com sucesso');
+        } catch (error) {
+            console.error('❌ [useJobRequests] Erro ao criar subscrição:', error);
+        }
 
         return () => {
-            supabase.removeChannel(channel);
+            if (channel) {
+                try {
+                    console.log('🔄 [useJobRequests] Removendo subscrição...');
+                    supabase.removeChannel(channel);
+                } catch (error) {
+                    console.error('❌ [useJobRequests] Erro ao remover subscrição:', error);
+                }
+            }
         };
     }, [user, queryClient]);
 
