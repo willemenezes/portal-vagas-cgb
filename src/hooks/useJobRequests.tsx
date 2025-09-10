@@ -68,15 +68,17 @@ export const useJobRequests = () => {
         let channel: any = null;
 
         try {
-            // Verificar se já existe uma subscrição ativa para evitar múltiplas subscrições
-            const existingChannel = supabase.getChannels().find(ch => ch.topic === 'job_requests_changes');
-            if (existingChannel) {
-                console.log('🔄 [useJobRequests] Subscrição já existe, reutilizando...');
-                return;
-            }
+            // Remover subscrições existentes para garantir sincronização
+            const existingChannels = supabase.getChannels().filter(ch => ch.topic === 'job_requests_changes');
+            existingChannels.forEach(ch => {
+                console.log('🔄 [useJobRequests] Removendo subscrição existente...');
+                supabase.removeChannel(ch);
+            });
 
+            // Criar nova subscrição com ID único para evitar conflitos
+            const channelId = `job_requests_changes_${Date.now()}`;
             channel = supabase
-                .channel('job_requests_changes')
+                .channel(channelId)
                 .on(
                     'postgres_changes',
                     {
@@ -87,16 +89,22 @@ export const useJobRequests = () => {
                     (payload) => {
                         console.log('🔄 [useJobRequests] Mudança detectada na tabela job_requests:', payload);
 
-                        // Invalidar todas as queries de job-requests para sincronizar
+                        // Invalidar todas as queries de job-requests para sincronizar TODOS os usuários
                         queryClient.invalidateQueries({
                             queryKey: ['job-requests'],
+                            exact: false
+                        });
+
+                        // Também invalidar queries específicas por usuário
+                        queryClient.invalidateQueries({
+                            queryKey: ['job-requests', user?.id],
                             exact: false
                         });
                     }
                 )
                 .subscribe();
 
-            console.log('🔄 [useJobRequests] Subscrição criada com sucesso');
+            console.log('🔄 [useJobRequests] Subscrição criada com sucesso:', channelId);
         } catch (error) {
             console.error('❌ [useJobRequests] Erro ao criar subscrição:', error);
         }
@@ -548,11 +556,27 @@ export const useJobRequests = () => {
             return { requestId, requestData };
         },
         onSuccess: async ({ requestId, requestData }) => {
+            console.log('🗑️ [useJobRequests] Solicitação excluída com sucesso:', requestId);
+
             // Invalidar TODAS as queries de job-requests para sincronizar todos os usuários
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
                 queryKey: ['job-requests'],
                 exact: false // Invalida todas as queries que começam com 'job-requests'
             });
+
+            // Invalidar também queries específicas por usuário
+            await queryClient.invalidateQueries({
+                queryKey: ['job-requests', user?.id],
+                exact: false
+            });
+
+            // Forçar refetch de todas as queries relacionadas
+            await queryClient.refetchQueries({
+                queryKey: ['job-requests'],
+                exact: false
+            });
+
+            console.log('🔄 [useJobRequests] Queries invalidadas e refetchadas');
 
             // Enviar notificação para o solicitador se os dados estiverem disponíveis
             if (requestData) {
