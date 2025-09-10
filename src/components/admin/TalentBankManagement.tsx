@@ -278,19 +278,19 @@ const TalentBankManagement = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="relative mt-4 md:mt-0">
+                    </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-grow">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <Input
                                 placeholder="Buscar por nome, e-mail, cargo ou habilidade..."
-                                className="pl-10 w-full md:w-80"
+                                className="pl-10"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                    </div>
-
-                    {/* Controles de Filtro */}
-                    <div className="flex flex-col md:flex-row gap-4 pt-4">
                         <Select value={filters.position} onValueChange={value => setFilters(prev => ({ ...prev, position: value }))}>
                             <SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.position === 'all' ? 'Todos os Cargos' : filters.position}</span></SelectTrigger>
                             <SelectContent>
@@ -323,8 +323,6 @@ const TalentBankManagement = () => {
                             />
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent>
                     <div className="border rounded-lg overflow-hidden">
                         <Table>
                             <TableHeader>
