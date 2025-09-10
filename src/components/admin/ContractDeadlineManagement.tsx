@@ -50,7 +50,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                 return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
             })()) ||
             (statusFilter === 'active' && job.status === 'active') ||
-            (statusFilter === 'completed' && (job.status === 'completed' || job.approval_status === 'concluido'));
+            (statusFilter === 'completed' && job.approval_status === 'concluido');
 
         return matchesSearch && matchesStatus;
     });
@@ -314,15 +314,15 @@ export const ContractDeadlineManagement: React.FC = () => {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <Button 
-                                                    variant="ghost" 
+                                                <Button
+                                                    variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleViewJob(job)}
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Button>
-                                                <Button 
-                                                    variant="ghost" 
+                                                <Button
+                                                    variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleEditJob(job)}
                                                 >
@@ -376,7 +376,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                                 <div>
                                     <label className="text-sm font-medium text-gray-500">Data de Expiração</label>
                                     <p className="text-sm">
-                                        {selectedJob.expires_at 
+                                        {selectedJob.expires_at
                                             ? new Date(selectedJob.expires_at).toLocaleDateString('pt-BR')
                                             : 'Não definido'
                                         }
@@ -434,13 +434,13 @@ export const ContractDeadlineManagement: React.FC = () => {
                                 </p>
                             </div>
                             <div className="flex justify-end gap-2 pt-4">
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     onClick={() => setIsEditModalOpen(false)}
                                 >
                                     Cancelar
                                 </Button>
-                                <Button 
+                                <Button
                                     onClick={handleSaveEdit}
                                     disabled={updateJobMutation.isPending}
                                 >

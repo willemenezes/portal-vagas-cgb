@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileDown, Users, UserCheck, Archive, Loader2, LayoutDashboard, ThumbsUp, UserX, CheckCircle } from "lucide-react";
+import { FileDown, Users, UserCheck, Archive, Loader2, LayoutDashboard, ThumbsUp, UserX } from "lucide-react";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useResumes } from "@/hooks/useResumes";
 import { useAllJobs } from "@/hooks/useJobs";
@@ -31,7 +31,7 @@ const ReportsManagement = () => {
         toast({ title: "Exportação Concluída!", description: `${filename} foi baixado com sucesso.` });
     };
 
-    const handleExport = (type: 'candidates' | 'hired' | 'talentBank' | 'dashboard' | 'approvedJobs' | 'rejectedCandidates' | 'completedJobs') => {
+    const handleExport = (type: 'candidates' | 'hired' | 'talentBank' | 'dashboard' | 'approvedJobs' | 'rejectedCandidates') => {
         if (isLoading) {
             toast({ title: "Aguarde", description: "Os dados ainda estão sendo carregados.", variant: "destructive" });
             return;
@@ -168,35 +168,6 @@ const ReportsManagement = () => {
                 filename = "relatorio_candidatos_reprovados.csv";
                 break;
 
-            case 'completedJobs':
-                headers = ['Título da Vaga', 'Departamento', 'Localização', 'Quantidade Total', 'Quantidade Preenchida', 'Data de Criação', 'Data de Conclusão', 'Tempo para Conclusão (dias)', 'Candidatos Contratados'];
-                const completedJobs = jobs.filter(j => j.status === 'completed' || j.approval_status === 'concluido');
-                
-                rows = completedJobs.map(job => {
-                    const createdDate = new Date(job.created_at);
-                    const completedDate = new Date(job.updated_at);
-                    const daysToComplete = Math.ceil((completedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-                    
-                    // Buscar candidatos contratados para esta vaga
-                    const hiredCandidates = candidates
-                        .filter(c => c.job_id === job.id && (c.status === 'Contratado' || c.status === 'Aprovado'))
-                        .map(c => c.name)
-                        .join('; ');
-                    
-                    return [
-                        job.title || '',
-                        job.department || '',
-                        `${job.city}, ${job.state}`,
-                        String(job.quantity || 1),
-                        String(job.quantity_filled || job.hired_count || 0),
-                        format(createdDate, "dd/MM/yyyy", { locale: ptBR }),
-                        format(completedDate, "dd/MM/yyyy", { locale: ptBR }),
-                        String(daysToComplete),
-                        hiredCandidates || 'N/A'
-                    ];
-                });
-                filename = "relatorio_vagas_finalizadas.csv";
-                break;
         }
 
         if (type !== 'dashboard') {
@@ -304,27 +275,6 @@ const ReportsManagement = () => {
                     <CardContent />
                     <CardFooter>
                         <Button onClick={() => handleExport('rejectedCandidates')} disabled={isLoading} className="w-full bg-red-600 hover:bg-red-700">
-                            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
-                        </Button>
-                    </CardFooter>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><CheckCircle className="w-6 h-6 text-green-600" /><span>Vagas Finalizadas</span></CardTitle>
-                        <CardDescription>Exporte relatório completo das vagas que foram concluídas com todos os candidatos contratados e métricas de tempo.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-sm text-gray-600 space-y-1">
-                            <p>• Vagas com todas as posições preenchidas</p>
-                            <p>• Tempo para conclusão de cada vaga</p>
-                            <p>• Lista dos candidatos contratados</p>
-                            <p>• Métricas de eficiência do processo</p>
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={() => handleExport('completedJobs')} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                             Exportar CSV
                         </Button>

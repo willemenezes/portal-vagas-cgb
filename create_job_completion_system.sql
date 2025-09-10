@@ -17,7 +17,7 @@ BEGIN
         -- Verificar se todas as posições foram preenchidas
         UPDATE public.jobs 
         SET 
-            status = 'completed',
+            status = 'closed',
             approval_status = 'concluido',
             updated_at = NOW()
         WHERE id = NEW.job_id 
@@ -41,7 +41,7 @@ BEGIN
             approval_status = 'ativo',
             updated_at = NOW()
         WHERE id = NEW.job_id 
-        AND status = 'completed'
+        AND approval_status = 'concluido'
         AND COALESCE(quantity_filled, 0) < COALESCE(quantity, 1);
         
         RAISE NOTICE 'Contagem revertida: job_id=%, candidato=%, status_anterior=%', NEW.job_id, NEW.name, OLD.status;
@@ -59,23 +59,9 @@ CREATE TRIGGER trigger_update_job_completion
     WHEN (NEW.job_id IS NOT NULL)
     EXECUTE FUNCTION update_job_filled_count();
 
--- 3. Adicionar novos status para jobs se não existirem
+-- 3. Adicionar 'concluido' ao enum approval_status se não existir
 DO $$ 
 BEGIN
-    -- Verificar se o tipo job_status existe
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'job_status') THEN
-        CREATE TYPE job_status AS ENUM ('draft', 'active', 'completed', 'expired', 'cancelled');
-    ELSE
-        -- Adicionar novos valores ao enum existente se necessário
-        BEGIN
-            ALTER TYPE job_status ADD VALUE IF NOT EXISTS 'completed';
-            ALTER TYPE job_status ADD VALUE IF NOT EXISTS 'expired';
-            ALTER TYPE job_status ADD VALUE IF NOT EXISTS 'cancelled';
-        EXCEPTION WHEN others THEN
-            RAISE NOTICE 'Valores já existem no enum job_status';
-        END;
-    END IF;
-    
     -- Verificar se o tipo approval_status existe e adicionar 'concluido'
     IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'approval_status') THEN
         BEGIN
@@ -103,14 +89,14 @@ BEGIN
     UPDATE public.jobs 
     SET 
         status = CASE 
-            WHEN COALESCE(quantity_filled, 0) >= COALESCE(quantity, 1) THEN 'completed'
+            WHEN COALESCE(quantity_filled, 0) >= COALESCE(quantity, 1) THEN 'closed'
             ELSE 'active'
         END,
         approval_status = CASE 
             WHEN COALESCE(quantity_filled, 0) >= COALESCE(quantity, 1) THEN 'concluido'
             ELSE 'ativo'
         END
-    WHERE status IN ('active', 'completed');
+    WHERE status IN ('active', 'closed') OR approval_status IN ('ativo', 'concluido');
     
     RAISE NOTICE 'Recálculo de vagas concluído';
 END;
