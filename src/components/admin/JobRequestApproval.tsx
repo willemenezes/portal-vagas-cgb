@@ -467,10 +467,10 @@ export default function JobRequestApproval() {
                                                                     <div>
                                                                         <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
                                                                         <p className="text-sm text-gray-800 mt-1">
-                                                                            {(() => {
-                                                                                console.log('🔍 [DEBUG] tipo_solicitacao:', selectedRequest.tipo_solicitacao);
-                                                                                return selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição';
-                                                                            })()}
+                                                                            {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 
+                                             selectedRequest.tipo_solicitacao === 'substituicao' ? 'Substituição' :
+                                             selectedRequest.tipo_solicitacao === 'substituição' ? 'Substituição' :
+                                             selectedRequest.tipo_solicitacao || 'Não informado'}
                                                                         </p>
                                                                     </div>
                                                                 )}

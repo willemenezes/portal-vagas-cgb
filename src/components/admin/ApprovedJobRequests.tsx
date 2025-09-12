@@ -200,7 +200,10 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                                                     <div>
                                                         <span className="font-medium text-gray-600">Tipo de Solicitação:</span>
                                                         <p className="text-gray-800">
-                                                            {request.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
+                                                            {request.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 
+                                                             request.tipo_solicitacao === 'substituicao' ? 'Substituição' :
+                                                             request.tipo_solicitacao === 'substituição' ? 'Substituição' :
+                                                             request.tipo_solicitacao || 'Não informado'}
                                                         </p>
                                                     </div>
                                                 )}
@@ -316,7 +319,10 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                                     <div>
                                         <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
                                         <p className="text-sm text-gray-800 mt-1">
-                                            {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 'Substituição'}
+                                            {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 
+                                             selectedRequest.tipo_solicitacao === 'substituicao' ? 'Substituição' :
+                                             selectedRequest.tipo_solicitacao === 'substituição' ? 'Substituição' :
+                                             selectedRequest.tipo_solicitacao || 'Não informado'}
                                         </p>
                                     </div>
                                 )}
