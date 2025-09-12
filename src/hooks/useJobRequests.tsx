@@ -161,6 +161,14 @@ export const useJobRequests = () => {
                 throw error;
             }
 
+            // Debug: verificar dados de tipo_solicitacao
+            console.log('🔍 [DEBUG] Dados recuperados do banco:', data?.map(req => ({
+                id: req.id,
+                title: req.title,
+                tipo_solicitacao: req.tipo_solicitacao,
+                solicitante_nome: req.solicitante_nome
+            })));
+
             return data as JobRequest[];
         },
         enabled: !!user && !!rhProfile,
