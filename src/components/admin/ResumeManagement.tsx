@@ -84,7 +84,9 @@ const ResumeManagement = () => {
           return rhProfile.assigned_cities.includes(c.city);
         }
 
-        return true; // Se não tem restrições, vê todos
+        // Se chegou aqui, o usuário não tem atribuições específicas
+        // Recrutadores sem atribuições NÃO devem ver nenhum currículo
+        return false;
       })
       .filter(candidate => {
         if (!candidate) return false;

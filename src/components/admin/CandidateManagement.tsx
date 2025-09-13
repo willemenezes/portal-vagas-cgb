@@ -60,7 +60,9 @@ const CandidateManagement = () => {
           return rhProfile.assigned_cities.includes(candidateCity);
         }
         
-        return true; // Sem restrições
+        // Se chegou aqui, o usuário não tem atribuições específicas
+        // Recrutadores sem atribuições NÃO devem ver nenhum candidato
+        return false;
       })
       .filter(c => {
         if (!c) return false;

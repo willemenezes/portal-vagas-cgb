@@ -81,6 +81,10 @@ const JobManagement = () => {
       if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
         return rhProfile.assigned_cities.includes(job.city);
       }
+      
+      // Se chegou aqui, o usuário não tem atribuições específicas
+      // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
+      return false;
     }
     return true;
   });

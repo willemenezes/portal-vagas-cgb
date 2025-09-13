@@ -125,7 +125,9 @@ const SelectionProcess = () => {
                 return rhProfile.assigned_cities.includes(job.city);
             }
             
-            return true; // Sem restrições
+            // Se chegou aqui, o usuário não tem atribuições específicas
+            // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
+            return false;
         });
     }, [allJobs, rhProfile, isRhProfileLoading]);
 

@@ -73,7 +73,9 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
             if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
                 return hasCity && rhProfile.assigned_cities.includes(candidate.city as string);
             }
-            return false; // Se não for admin e não tiver região, não mostra nada
+            // Se chegou aqui, o usuário não tem atribuições específicas
+            // Recrutadores sem atribuições NÃO devem ver dados no dashboard
+            return false;
         });
     }
 
