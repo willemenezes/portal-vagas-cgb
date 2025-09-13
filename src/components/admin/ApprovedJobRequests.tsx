@@ -37,10 +37,43 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     // Filtrar apenas job requests aprovadas que ainda não foram convertidas em vagas
-    const approvedRequests = jobRequests?.filter(request => 
-        request.status === 'aprovado' && 
-        !request.job_created // Assumindo que existe um campo para marcar se já foi criada a vaga
-    ) || [];
+    const approvedRequests = jobRequests?.filter(request => {
+        // Primeiro filtro: deve estar aprovada e não ter vaga criada
+        if (request.status !== 'aprovado' || request.job_created) {
+            return false;
+        }
+
+        // Segundo filtro: aplicar filtro de região para recrutadores (não-admin)
+        if (!rhProfile || rhProfile.is_admin) {
+            return true; // Admin vê todas
+        }
+
+        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da solicitação
+        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+            const hasState = rhProfile.assigned_states.includes(request.state);
+            
+            // Se tem o estado, verificar se tem cidades específicas
+            if (hasState) {
+                // Se tem cidades específicas, verificar se inclui a cidade da solicitação
+                if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+                    return rhProfile.assigned_cities.includes(request.city);
+                } else {
+                    // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+                    return true;
+                }
+            }
+            return false; // Não tem o estado
+        }
+
+        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            return rhProfile.assigned_cities.includes(request.city);
+        }
+
+        // Se chegou aqui, o usuário não tem atribuições específicas
+        // Recrutadores sem atribuições NÃO devem ver nenhuma solicitação
+        return false;
+    }) || [];
 
     const handleCreateJob = async (requestId: string) => {
         try {
