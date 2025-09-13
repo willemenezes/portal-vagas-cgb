@@ -175,7 +175,12 @@ export default function JobRequestManagement() {
             benefits: newRequest.benefits.split('\n').filter(b => b.trim() !== ''),
             workload: newRequest.workload,
             justification: newRequest.justification,
-            quantity: newRequest.quantity
+            quantity: newRequest.quantity,
+            solicitante_nome: newRequest.solicitante_nome,
+            solicitante_funcao: newRequest.solicitante_funcao,
+            observacoes_internas: newRequest.observacoes_internas,
+            tipo_solicitacao: newRequest.tipo_solicitacao,
+            nome_substituido: newRequest.nome_substituido
         };
 
         // Debug: verificar se justificativa está sendo enviada
