@@ -348,55 +348,73 @@ const JobApplication = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="state">Estado *</Label>
-                      <Select
-                        value={formData.state}
-                        onValueChange={(value) => setFormData({ ...formData, state: value, city: "" })}
-                        required
-                        disabled={!!jobIdFromUrl || loadingStates}
-                      >
-                        <SelectTrigger id="state">
-                          <SelectValue placeholder="Selecione o estado" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {loadingStates ? (
-                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                          ) : (
-                            states.map((s) => (
-                              <SelectItem key={s.id} value={s.sigla}>
-                                {s.nome}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                      {jobIdFromUrl ? (
+                        <div className="flex items-center h-10 px-3 py-2 text-sm border border-input bg-muted rounded-md">
+                          <span className="text-foreground font-medium">
+                            {states.find(s => s.sigla === formData.state)?.nome || formData.state}
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">(Pré-selecionado pela vaga)</span>
+                        </div>
+                      ) : (
+                        <Select
+                          value={formData.state}
+                          onValueChange={(value) => setFormData({ ...formData, state: value, city: "" })}
+                          required
+                          disabled={loadingStates}
+                        >
+                          <SelectTrigger id="state">
+                            <SelectValue placeholder="Selecione o estado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {loadingStates ? (
+                              <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                            ) : (
+                              states.map((s) => (
+                                <SelectItem key={s.id} value={s.sigla}>
+                                  {s.nome}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="city">Cidade *</Label>
-                      <Select
-                        value={formData.city}
-                        onValueChange={(value) => setFormData({ ...formData, city: value })}
-                        required
-                        disabled={!!jobIdFromUrl || !formData.state || loadingCities}
-                      >
-                        <SelectTrigger id="city">
-                          <SelectValue placeholder="Selecione a cidade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {loadingCities ? (
-                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                          ) : cities.length > 0 ? (
-                            cities.map((c) => (
-                              <SelectItem key={c.id} value={c.nome}>
-                                {c.nome}
+                      {jobIdFromUrl ? (
+                        <div className="flex items-center h-10 px-3 py-2 text-sm border border-input bg-muted rounded-md">
+                          <span className="text-foreground font-medium">
+                            {formData.city}
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">(Pré-selecionada pela vaga)</span>
+                        </div>
+                      ) : (
+                        <Select
+                          value={formData.city}
+                          onValueChange={(value) => setFormData({ ...formData, city: value })}
+                          required
+                          disabled={!formData.state || loadingCities}
+                        >
+                          <SelectTrigger id="city">
+                            <SelectValue placeholder="Selecione a cidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {loadingCities ? (
+                              <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                            ) : cities.length > 0 ? (
+                              cities.map((c) => (
+                                <SelectItem key={c.id} value={c.nome}>
+                                  {c.nome}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-cities" disabled>
+                                Selecione um estado primeiro
                               </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no-cities" disabled>
-                              Selecione um estado primeiro
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   </div>
 
@@ -548,24 +566,33 @@ const JobApplication = () => {
 
                   <div>
                     <Label htmlFor="desiredJob">Vaga que deseja concorrer *</Label>
-                    <Select
-                      value={formData.desiredJob}
-                      onValueChange={value => setFormData({ ...formData, desiredJob: value })}
-                      required
-                      disabled={!!job && !!job.title}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={jobsLoading ? "Carregando vagas..." : "Selecione a vaga"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {jobs && jobs.length > 0 && (
-                          jobs.map((job) => (
-                            <SelectItem key={job.id} value={job.title}>{job.title} - {job.city}, {job.state}</SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {jobs && jobs.length === 0 && (
+                    {jobIdFromUrl && job ? (
+                      <div className="flex items-center h-10 px-3 py-2 text-sm border border-input bg-muted rounded-md">
+                        <span className="text-foreground font-medium">
+                          {job.title} - {job.city}, {job.state}
+                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground">(Pré-selecionada)</span>
+                      </div>
+                    ) : (
+                      <Select
+                        value={formData.desiredJob}
+                        onValueChange={value => setFormData({ ...formData, desiredJob: value })}
+                        required
+                        disabled={jobsLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={jobsLoading ? "Carregando vagas..." : "Selecione a vaga"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {jobs && jobs.length > 0 && (
+                            jobs.map((job) => (
+                              <SelectItem key={job.id} value={job.title}>{job.title} - {job.city}, {job.state}</SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {jobs && jobs.length === 0 && !jobIdFromUrl && (
                       <div style={{ color: 'red', marginTop: 8 }}>Nenhuma vaga disponível</div>
                     )}
                   </div>
