@@ -101,10 +101,33 @@ const JobManagement = () => {
   const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<JobRequest | null>(null);
 
   // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
-  const approvedRequests = jobRequests?.filter(request =>
-    request.status === 'aprovado' &&
-    !request.job_created
-  ) || [];
+  // e aplicar filtro de região para usuários não-admin (recrutadores)
+  const approvedRequests = (jobRequests?.filter((request) => {
+    if (request.status !== 'aprovado' || request.job_created) return false;
+
+    // Admin vê todas as solicitações aprovadas
+    if (!rhProfile || rhProfile.is_admin) return true;
+
+    // PRIORIDADE 1: filtro por estados atribuídos
+    if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+      const hasState = rhProfile.assigned_states.includes(request.state);
+      if (hasState) {
+        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+          return rhProfile.assigned_cities.includes(request.city);
+        }
+        return true; // tem o estado e não há cidades específicas
+      }
+      return false;
+    }
+
+    // PRIORIDADE 2: filtro por cidades atribuídas
+    if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+      return rhProfile.assigned_cities.includes(request.city);
+    }
+
+    // Sem atribuições específicas: não exibir
+    return false;
+  })) || [];
 
   const talentBankJobExists = jobs.some(job => job.title === "Banco de Talentos");
 
@@ -379,8 +402,8 @@ const JobManagement = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Seção de Job Requests Aprovadas (apenas para RH Admin/Admin) - LAYOUT MELHORADO */}
-        {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && approvedRequests.length > 0 && (
+        {/* Seção de Job Requests Aprovadas - visível para Admin e Recrutadores da região */}
+        {approvedRequests.length > 0 && (
           <div className="mb-6">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
               <CardHeader className="pb-4">
