@@ -117,7 +117,7 @@ export default function JobRequestManagement() {
             setCities([]);
             return;
         }
-        
+
         const fetchCities = async () => {
             try {
                 setLoadingCities(true);
