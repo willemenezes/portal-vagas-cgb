@@ -35,11 +35,12 @@ export const useJobs = () => {
     queryKey: ['jobs'],
     queryFn: async () => {
       try {
-        // Primeiro buscar as vagas ativas
+        // Primeiro buscar as vagas ativas e aprovadas
         const { data: jobs, error: jobsError } = await supabase
           .from('jobs')
           .select('*')
           .eq('status', 'active')
+          .eq('approval_status', 'active')
           .order('created_at', { ascending: false });
 
         if (jobsError) {
