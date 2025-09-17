@@ -58,6 +58,8 @@ const JobManagement = () => {
   // Filtrar vagas por região se não for admin
   const jobs = allJobs.filter(job => {
     if (!rhProfile || !job) return true;
+    // Sempre incluir Banco de Talentos independentemente da região/perfil
+    if (job.title === 'Banco de Talentos') return true;
     if (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) return true;
     if (typeof rhProfile === 'object') {
       // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
@@ -81,13 +83,26 @@ const JobManagement = () => {
       if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
         return rhProfile.assigned_cities.includes(job.city);
       }
-      
+
       // Se chegou aqui, o usuário não tem atribuições específicas
       // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
       return false;
     }
     return true;
   });
+
+  // Deduplicar "Banco de Talentos": manter apenas 1 (preferir ativo; senão, o mais recente)
+  const jobsDeduped = React.useMemo(() => {
+    const normalizedTitle = (t: string | undefined) => (t || '').trim().toLowerCase();
+    const talentJobs = jobs
+      .filter(j => normalizedTitle(j.title) === 'banco de talentos')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    const chosenTalent = talentJobs.find(j => j.approval_status === 'active' || j.status === 'active') || talentJobs[0];
+
+    const others = jobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos');
+    return chosenTalent ? [chosenTalent, ...others] : others;
+  }, [jobs]);
 
   const [formData, setFormData] = useState<Job | null>(null);
   const [requirementsText, setRequirementsText] = useState('');
@@ -129,7 +144,7 @@ const JobManagement = () => {
     return false;
   })) || [];
 
-  const talentBankJobExists = jobs.some(job => job.title === "Banco de Talentos");
+  const talentBankJobExists = jobsDeduped.some(job => job.title === "Banco de Talentos");
 
   // Debug da autenticação
   React.useEffect(() => {
@@ -551,7 +566,7 @@ const JobManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {jobs.map((job) => {
+                {jobsDeduped.map((job) => {
                   const statusKey = (job.approval_status || 'draft') as keyof typeof approvalStatusConfig;
                   const statusInfo = approvalStatusConfig[statusKey] || { text: job.approval_status || job.status || 'N/D', variant: 'secondary' as const };
                   return (
@@ -1096,7 +1111,14 @@ const JobRequestEditForm = ({
     requirements: Array.isArray(request.requirements) ? request.requirements : [],
     benefits: Array.isArray(request.benefits) ? request.benefits : [],
     workload: request.workload || '40h/semana',
-    justification: request.justification || ''
+    justification: request.justification || '',
+    // Campos adicionais para completar a vaga
+    solicitante_nome: request.solicitante_nome || '',
+    solicitante_funcao: request.solicitante_funcao || '',
+    observacoes_internas: request.observacoes_internas || '',
+    tipo_solicitacao: request.tipo_solicitacao || 'aumento_quadro',
+    nome_substituido: request.nome_substituido || '',
+    quantity: request.quantity || 1
   });
 
   const handleChange = (field: string, value: any) => {
@@ -1193,6 +1215,109 @@ const JobRequestEditForm = ({
           rows={3}
           placeholder="Justifique a necessidade desta vaga..."
         />
+      </div>
+
+      {/* Campos adicionais para completar a vaga */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="requirements">Requisitos (um por linha)</Label>
+          <Textarea
+            id="requirements"
+            value={Array.isArray(formData.requirements) ? formData.requirements.join('\n') : ''}
+            onChange={(e) => handleChange('requirements', e.target.value.split('\n').filter(r => r.trim()))}
+            rows={5}
+            placeholder="Digite os requisitos da vaga..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="benefits">Benefícios (um por linha)</Label>
+          <Textarea
+            id="benefits"
+            value={Array.isArray(formData.benefits) ? formData.benefits.join('\n') : ''}
+            onChange={(e) => handleChange('benefits', e.target.value.split('\n').filter(b => b.trim()))}
+            rows={5}
+            placeholder="Digite os benefícios oferecidos..."
+          />
+        </div>
+      </div>
+
+      {/* Campos de Controle Interno */}
+      <div className="border-t pt-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">📋 Controle Interno</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="solicitante_nome">Nome do Solicitante</Label>
+            <Input
+              id="solicitante_nome"
+              value={formData.solicitante_nome || ''}
+              onChange={(e) => handleChange('solicitante_nome', e.target.value)}
+              placeholder="Ex: João Silva"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="solicitante_funcao">Função/Contrato do Solicitante</Label>
+            <Input
+              id="solicitante_funcao"
+              value={formData.solicitante_funcao || ''}
+              onChange={(e) => handleChange('solicitante_funcao', e.target.value)}
+              placeholder="Ex: Gerente de TI - CLT"
+            />
+          </div>
+        </div>
+        <div className="space-y-2 mt-4">
+          <Label htmlFor="observacoes_internas">Observações Internas</Label>
+          <Textarea
+            id="observacoes_internas"
+            value={formData.observacoes_internas || ''}
+            onChange={(e) => handleChange('observacoes_internas', e.target.value)}
+            placeholder="Observações adicionais para controle interno..."
+            rows={2}
+          />
+        </div>
+
+        {/* Tipo de Solicitação */}
+        <div className="space-y-2 mt-4">
+          <Label htmlFor="tipo_solicitacao">Tipo de Solicitação</Label>
+          <Select
+            value={formData.tipo_solicitacao || 'aumento_quadro'}
+            onValueChange={(value) => handleChange('tipo_solicitacao', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo de solicitação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="aumento_quadro">Aumento de Quadro</SelectItem>
+              <SelectItem value="substituicao">Substituição</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Campo condicional para substituição */}
+        {formData.tipo_solicitacao === "substituicao" && (
+          <div className="space-y-2 mt-4">
+            <Label htmlFor="nome_substituido">Nome da Pessoa que Saiu</Label>
+            <Input
+              id="nome_substituido"
+              value={formData.nome_substituido || ''}
+              onChange={(e) => handleChange('nome_substituido', e.target.value)}
+              placeholder="Ex: Maria Santos"
+            />
+          </div>
+        )}
+
+        {/* Quantidade de vagas */}
+        <div className="space-y-2 mt-4">
+          <Label htmlFor="quantity">Quantidade de Vagas</Label>
+          <Input
+            id="quantity"
+            type="number"
+            min="1"
+            max="50"
+            value={formData.quantity || 1}
+            onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 1)}
+            placeholder="1"
+          />
+        </div>
       </div>
 
       <div className="flex gap-3 justify-end pt-4 border-t">

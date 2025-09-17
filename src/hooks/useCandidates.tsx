@@ -22,6 +22,13 @@ export interface Candidate {
   resume_file_name?: string | null;
   cnh?: string | null;
   vehicle?: string | null;
+  // Campos adicionais do formulário de candidatura
+  workedAtCGB?: string | null;
+  pcd?: string | null;
+  travel?: string | null;
+  age?: string | null;
+  whatsapp?: string | null;
+  desiredJob?: string | null;
   job?: {
     title: string;
     city: string;

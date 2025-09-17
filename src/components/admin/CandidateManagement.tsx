@@ -31,56 +31,107 @@ const CandidateManagement = () => {
 
   const filteredCandidates = useMemo(() => {
     if (!Array.isArray(candidates)) return [];
-    return candidates
-      .filter(c => filters.jobId === 'all' ? c.job_id !== talentBankJobId : true)
-      .filter(c => {
-        if (!rhProfile || rhProfile.is_admin) return true;
-        const candidateState = c.state || c.job?.state;
-        const candidateCity = c.city || c.job?.city;
-        
-        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado do candidato
-        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-          const hasState = rhProfile.assigned_states.includes(candidateState);
-          
-          // Se tem o estado, verificar se tem cidades específicas
-          if (hasState) {
-            // Se tem cidades específicas, verificar se inclui a cidade do candidato
-            if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-              return rhProfile.assigned_cities.includes(candidateCity);
-            } else {
-              // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
-              return true;
-            }
+
+    let result = candidates;
+
+    // 1. Filtrar Banco de Talentos se necessário
+    if (filters.jobId === 'all') {
+      result = result.filter(c => c.job_id !== talentBankJobId);
+    }
+
+    // 2. Filtro de região (RH)
+    result = result.filter(c => {
+      if (!rhProfile || rhProfile.is_admin) return true;
+
+      const candidateState = c.state || c.job?.state;
+      const candidateCity = c.city || c.job?.city;
+
+      // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado do candidato
+      if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+        const hasState = rhProfile.assigned_states.includes(candidateState);
+
+        // Se tem o estado, verificar se tem cidades específicas
+        if (hasState) {
+          // Se tem cidades específicas, verificar se inclui a cidade do candidato
+          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            return rhProfile.assigned_cities.includes(candidateCity);
+          } else {
+            // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+            return true;
           }
-          return false; // Não tem o estado
         }
-        
-        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
-        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-          return rhProfile.assigned_cities.includes(candidateCity);
-        }
-        
-        // Se chegou aqui, o usuário não tem atribuições específicas
-        // Recrutadores sem atribuições NÃO devem ver nenhum candidato
-        return false;
-      })
-      .filter(c => {
+        return false; // Não tem o estado
+      }
+
+      // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+      if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+        return rhProfile.assigned_cities.includes(candidateCity);
+      }
+
+      // Se chegou aqui, o usuário não tem atribuições específicas
+      return true;
+    });
+
+    // 3. Filtro de busca por texto
+    if (searchTerm.trim()) {
+      result = result.filter(c => {
         if (!c) return false;
         const searchLower = searchTerm.toLowerCase();
-        return (c.name || '').toLowerCase().includes(searchLower) ||
-          (c.email || '').toLowerCase().includes(searchLower) ||
-          (c.job?.title || '').toLowerCase().includes(searchLower);
-      })
-      .filter(c => filters.status !== 'all' ? c.status === filters.status : true)
-      .filter(c => filters.jobId !== 'all' ? c.job_id === filters.jobId : true)
-      .filter(c => filters.state !== 'all' ? (c.state || c.job?.state) === filters.state : true)
-      .filter(c => filters.cnh === 'all' ? true : (c.cnh && c.cnh.toLowerCase() !== 'não possuo') === (filters.cnh === 'sim'))
-      .filter(c => {
-        if (filters.vehicle === 'all') return true;
-        const vehicleValue = c.vehicle?.toLowerCase() || '';
-        if (filters.vehicle === 'nao') return vehicleValue === 'não possuo';
+        const matchName = (c.name || '').toLowerCase().includes(searchLower);
+        const matchEmail = (c.email || '').toLowerCase().includes(searchLower);
+        const matchJob = (c.job?.title || '').toLowerCase().includes(searchLower);
+        return matchName || matchEmail || matchJob;
+      });
+    }
+
+    // 4. Filtro por status
+    if (filters.status !== 'all') {
+      result = result.filter(c => c.status === filters.status);
+    }
+
+    // 5. Filtro por vaga
+    if (filters.jobId !== 'all') {
+      result = result.filter(c => c.job_id === filters.jobId);
+    }
+
+    // 6. Filtro por estado
+    if (filters.state !== 'all') {
+      result = result.filter(c => (c.state || c.job?.state) === filters.state);
+    }
+
+    // 7. Filtro CNH
+    if (filters.cnh !== 'all') {
+      result = result.filter(c => {
+        const cnhVal = (c.cnh || '').toLowerCase().trim();
+
+        // Valores que indicam "não possui CNH"
+        const naoPossui = !c.cnh || c.cnh === null || cnhVal === '' || cnhVal === 'não possui' || cnhVal === 'nao possui' || cnhVal === 'não possuo' || cnhVal === 'nao possuo';
+
+        if (filters.cnh === 'sim') {
+          // Tem CNH: qualquer valor que não seja vazio ou "não possui"
+          return !naoPossui;
+        } else if (filters.cnh === 'não') {
+          // Não tem CNH: valores vazios ou "não possui"
+          return naoPossui;
+        }
+        return true;
+      });
+    }
+
+    // 8. Filtro Veículo
+    if (filters.vehicle !== 'all') {
+      result = result.filter(c => {
+        const vehicleValue = (c.vehicle || '').toLowerCase().trim();
+
+        if (filters.vehicle === 'nao') {
+          return !c.vehicle || vehicleValue === '' || vehicleValue === 'não possuo' || vehicleValue === 'nao possuo';
+        }
+
         return vehicleValue === filters.vehicle;
       });
+    }
+
+    return result;
   }, [candidates, searchTerm, filters, talentBankJobId, rhProfile]);
 
   const jobsForFilter = useMemo(() => jobs.filter(job => job.id !== talentBankJobId), [jobs, talentBankJobId]);
@@ -152,9 +203,9 @@ const CandidateManagement = () => {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><Input placeholder="Buscar por nome, e-mail ou cargo..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
             <Select value={filters.jobId} onValueChange={value => setFilters(prev => ({ ...prev, jobId: value }))}><SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.jobId === 'all' ? 'Todas as Vagas' : (() => {
-                const selectedJob = jobs.find(j => j.id === filters.jobId);
-                return selectedJob ? `${selectedJob.title} - ${selectedJob.city}, ${selectedJob.state}` : 'Vaga';
-              })()}</span></SelectTrigger><SelectContent><SelectItem value="all">Todas as Vagas</SelectItem>{jobsForFilter.map(job => <SelectItem key={job.id} value={job.id}>{job.title} - {job.city}, {job.state}</SelectItem>)}</SelectContent></Select>
+              const selectedJob = jobs.find(j => j.id === filters.jobId);
+              return selectedJob ? `${selectedJob.title} - ${selectedJob.city}, ${selectedJob.state}` : 'Vaga';
+            })()}</span></SelectTrigger><SelectContent><SelectItem value="all">Todas as Vagas</SelectItem>{jobsForFilter.map(job => <SelectItem key={job.id} value={job.id}>{job.title} - {job.city}, {job.state}</SelectItem>)}</SelectContent></Select>
             <Select value={filters.status} onValueChange={value => setFilters(prev => ({ ...prev, status: value }))}><SelectTrigger><span>{filters.status === 'all' ? 'Todos os Status' : filters.status}</span></SelectTrigger><SelectContent><SelectItem value="all">Todos os Status</SelectItem>{SELECTION_STATUSES.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent></Select>
             <Select value={filters.state} onValueChange={value => setFilters(prev => ({ ...prev, state: value }))}><SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.state === 'all' ? 'Todos os Estados' : filters.state}</span></SelectTrigger><SelectContent><SelectItem value="all">Todos os Estados</SelectItem>{uniqueStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}</SelectContent></Select>
             <Select value={filters.cnh} onValueChange={value => setFilters(prev => ({ ...prev, cnh: value }))}><SelectTrigger><span>Possui CNH?</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="sim">Sim</SelectItem><SelectItem value="não">Não</SelectItem></SelectContent></Select>
@@ -164,13 +215,13 @@ const CandidateManagement = () => {
             <Table>
               <TableHeader><TableRow><TableHead>Candidato</TableHead><TableHead>Vaga Aplicada</TableHead><TableHead>Localização</TableHead><TableHead>Currículo</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
               <TableBody>
-                {filteredCandidates.length > 0 ? (
-                  filteredCandidates.map(candidate => {
+                {filteredCandidates && filteredCandidates.length > 0 ? (
+                  filteredCandidates.map((candidate, index) => {
                     if (!candidate) return null;
                     const currentStatus = (candidate.status && SELECTION_STATUSES.includes(candidate.status as any)) ? candidate.status as SelectionStatus : 'Cadastrado';
                     const statusColor = STATUS_COLORS[currentStatus] || "bg-gray-200 text-gray-800";
                     return (
-                      <TableRow key={candidate.id}>
+                      <TableRow key={`candidate-${candidate.id || index}`}>
                         <TableCell><div className="font-medium">{candidate.name || 'Nome não informado'}</div><div className="text-sm text-gray-500">{candidate.email || 'E-mail não informado'}</div></TableCell>
                         <TableCell>{candidate.job?.title || candidate.desiredJob || 'N/A'}</TableCell>
                         <TableCell>{`${candidate.city || candidate.job?.city || 'Cidade não informada'}, ${candidate.state || candidate.job?.state || ''}`}</TableCell>
@@ -189,7 +240,9 @@ const CandidateManagement = () => {
                     );
                   })
                 ) : (
-                  <TableRow><TableCell colSpan={6} className="text-center h-24">Nenhum candidato encontrado com os filtros selecionados.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center h-24">
+                    Nenhum candidato encontrado com os filtros selecionados.
+                  </TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

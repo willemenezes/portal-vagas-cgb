@@ -81,7 +81,18 @@ export const useJobs = () => {
           })
         );
 
-        return jobsWithApplicants;
+        // Garantir que apenas um "Banco de Talentos" apareça na administração
+        // Preferimos o que está ativo; se não houver ativo, mantemos o mais recente
+        const nonTalentJobs = jobsWithApplicants.filter(j => j.title !== 'Banco de Talentos');
+        const talentJobs = jobsWithApplicants.filter(j => j.title === 'Banco de Talentos');
+
+        let chosenTalentJob: typeof jobsWithApplicants[number] | undefined =
+          talentJobs.find(j => (j.approval_status === 'active' || j.status === 'active')) ||
+          talentJobs[0];
+
+        const dedupedJobs = chosenTalentJob ? [chosenTalentJob, ...nonTalentJobs] : nonTalentJobs;
+
+        return dedupedJobs;
       } catch (error) {
         console.error('Erro geral ao buscar vagas:', error);
         throw error;
@@ -301,9 +312,17 @@ export const useUpdateJob = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...job }: Partial<Job> & { id: string }) => {
+      // Filtrar campos que não existem na tabela 'jobs'
+      const {
+        applicants,
+        posted,
+        hired_count,
+        ...validJobFields
+      } = job;
+
       const { data, error } = await supabase
         .from('jobs')
-        .update(job)
+        .update(validJobFields)
         .eq('id', id)
         .select()
         .single();

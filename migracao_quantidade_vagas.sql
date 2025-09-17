@@ -90,3 +90,8 @@ COMMENT ON COLUMN public.jobs.quantity_filled IS 'Quantidade de vagas já preenc
 COMMENT ON COLUMN public.jobs.expires_at IS 'Data de expiração da vaga (20 dias corridos)';
 
 
+
+
+
+
+

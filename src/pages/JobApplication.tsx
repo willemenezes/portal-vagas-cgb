@@ -188,6 +188,9 @@ const JobApplication = () => {
         state: formData.state,
         job_id: targetJobId,
         status: 'pending' as const,
+        // Persistir informações críticas para filtros e decisões
+        cnh: formData.cnh || null,
+        vehicle: formData.vehicle || null,
         resume_file_url: resumeFileUrl || null,
         resume_file_name: resumeFileName || null
       });

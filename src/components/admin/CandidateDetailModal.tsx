@@ -24,6 +24,9 @@ import { useLegalData, useSaveLegalData } from '@/hooks/useLegalData';
 import { useRHProfile } from '@/hooks/useRH';
 import { Card, CardContent } from '@/components/ui/card';
 import { maskCPF, maskRG } from '@/utils/legal-validation';
+import { useCandidateReport } from '@/hooks/useCandidateReport';
+import { generateCandidateReportPDF } from '@/utils/pdf';
+import { useCandidateReports, useSaveCandidateReport } from '@/hooks/useReports';
 
 // Props do componente
 interface CandidateDetailModalProps {
@@ -52,9 +55,9 @@ const ModalHeader = ({ candidate, onClose }: { candidate: Candidate, onClose: ()
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <ResumeButton 
-                candidate={candidate} 
-                iconType="download" 
+            <ResumeButton
+                candidate={candidate}
+                iconType="download"
                 className="bg-white hover:bg-gray-50"
             >
                 Ver Currículo
@@ -298,6 +301,9 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
     const { data: rhProfile } = useRHProfile(user?.id);
     const { data: legalData, isLoading: isLoadingLegal } = useLegalData(candidate.id);
     const saveLegalData = useSaveLegalData();
+    const { data: reportData } = useCandidateReport(candidate.id);
+    const { data: existingReports = [] } = useCandidateReports(candidate.id);
+    const saveReport = useSaveCandidateReport();
     const [showLegalForm, setShowLegalForm] = useState(false);
     const { toast } = useToast();
 
@@ -312,6 +318,39 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
     const handleSaveLegalData = async (data: any) => {
         await saveLegalData.mutateAsync({ candidateId: candidate.id, data });
         setShowLegalForm(false);
+    };
+
+    const canExportPDF = rhProfile && ['admin', 'recruiter', 'manager'].includes(rhProfile.role) && candidate.status === 'Aprovado';
+
+    const handleGeneratePDF = async () => {
+        if (!reportData) return;
+        try {
+            const { blob, fileName } = await generateCandidateReportPDF(reportData);
+
+            // 1) Baixar localmente sempre (garantir teste local mesmo sem migração aplicada)
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName; a.click();
+            window.URL.revokeObjectURL(url);
+
+            // 2) Tentar salvar no Storage + registrar URL (pode falhar até aplicar migrações)
+            try {
+                await saveReport.mutateAsync({
+                    candidateId: candidate.id,
+                    jobId: candidate.job_id,
+                    file: blob,
+                    fileName,
+                    metadata: { template: 'v1' }
+                });
+                toast({ title: 'Relatório salvo', description: 'URL registrada no histórico do candidato.' });
+            } catch (uploadErr: any) {
+                console.warn('Falha ao salvar relatório (provável falta de migração/bucket):', uploadErr);
+                toast({ title: 'Relatório baixado', description: 'Para salvar no histórico, aplicaremos a migração do bucket/tabela.', variant: 'default' });
+            }
+        } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
+            toast({ title: 'Erro ao gerar PDF', description: 'Tente novamente.', variant: 'destructive' });
+        }
     };
 
     const getLegalStatusBadge = () => {
@@ -344,6 +383,186 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
                     <div className="flex items-center gap-3"><Briefcase className="w-5 h-5 text-gray-400" /> <span>{candidate.job?.title}</span></div>
                     <div className="flex items-center gap-3"><Activity className="w-5 h-5 text-gray-400" /> <span>Status: {candidate.status}</span></div>
+                </div>
+                {canExportPDF && (
+                    <div className="mt-4">
+                        <Button onClick={handleGeneratePDF} disabled={saveReport.isPending}>
+                            {saveReport.isPending ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 h-4 w-4" />} Gerar Relatório PDF
+                        </Button>
+                    </div>
+                )}
+                {existingReports.length > 0 && (
+                    <div className="mt-4 text-sm text-gray-600">
+                        <p className="font-medium mb-1">Relatórios anteriores:</p>
+                        <ul className="list-disc ml-5 space-y-1">
+                            {existingReports.slice(0, 3).map(r => (
+                                <li key={r.id}><a className="text-cgb-primary underline" href={r.report_url} target="_blank" rel="noreferrer">{r.report_file_name}</a> <span className="text-xs text-gray-500">({new Date(r.generated_at).toLocaleString('pt-BR')})</span></li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+
+            {/* Nova seção: Informações do Formulário */}
+            <div>
+                <h3 className="text-lg font-semibold text-gray-700">Informações da Candidatura</h3>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+                    {/* CNH */}
+                    <div className="flex items-center gap-3">
+                        <Shield className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>CNH:</strong> {
+                                candidate.cnh ? (
+                                    <span className="text-green-600 font-medium ml-2">{candidate.cnh}</span>
+                                ) : (
+                                    <span className="text-red-500 ml-2">Não informado</span>
+                                )
+                            }
+                        </span>
+                    </div>
+
+                    {/* Veículo */}
+                    <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Veículo:</strong> {
+                                candidate.vehicle ? (
+                                    <span className="text-green-600 font-medium ml-2">{candidate.vehicle}</span>
+                                ) : (
+                                    <span className="text-red-500 ml-2">Não informado</span>
+                                )
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                {/* Complementos do formulário para apoio ao RH */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+                    <div className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>WhatsApp:</strong>
+                            <span className="ml-2">{candidate.phone || 'Não informado'}</span>
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <Gavel className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Já trabalhou na CGB?</strong>
+                            <span className="ml-2">{(legalData && typeof legalData.is_former_employee === 'boolean') ? (legalData.is_former_employee ? 'Sim' : 'Não') : 'Não informado'}</span>
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <Briefcase className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Vaga desejada:</strong>
+                            <span className="ml-2">{(candidate as any).desiredJob || candidate.job?.title || 'Não informado'}</span>
+                        </span>
+                    </div>
+                </div>
+
+                {/* Últimas experiências (do formulário jurídico) */}
+                {Array.isArray(legalData?.work_history) && legalData!.work_history.length > 0 && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2 mb-2 text-gray-700">
+                            <List className="w-5 h-5" />
+                            <span className="font-medium">Experiências recentes</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {(() => {
+                                const wh = legalData!.work_history || [];
+                                const recent = wh.slice(-2).reverse();
+                                return recent.map((w, idx) => (
+                                    <div key={idx} className="text-sm text-gray-700">
+                                        <div className="flex items-center gap-2">
+                                            <Briefcase className="w-4 h-4 text-gray-400" />
+                                            <span className="font-medium">{w.company || 'Empresa não informada'}</span>
+                                        </div>
+                                        {w.position && (
+                                            <div className="ml-6 text-gray-600">{w.position}</div>
+                                        )}
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+                )}
+
+                {/* Informações adicionais em cards destacados */}
+                <div className="mt-4 space-y-3">
+                    {candidate.workedAtCGB && candidate.workedAtCGB !== 'Não' && (
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-3 text-blue-700">
+                                <Info className="w-5 h-5" />
+                                <span><strong>Experiência anterior na CGB:</strong> <span className="ml-1 font-medium">{candidate.workedAtCGB}</span></span>
+                            </div>
+                        </div>
+                    )}
+
+                    {candidate.pcd && candidate.pcd !== 'Não' && (
+                        <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <div className="flex items-center gap-3 text-purple-700">
+                                <User className="w-5 h-5" />
+                                <span><strong>PCD:</strong> <span className="ml-1 font-medium">{candidate.pcd}</span></span>
+                            </div>
+                        </div>
+                    )}
+
+                    {candidate.travel && candidate.travel !== 'Não' && (
+                        <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                            <div className="flex items-center gap-3 text-amber-700">
+                                <MapPin className="w-5 h-5" />
+                                <span><strong>Disponibilidade para viagem:</strong> <span className="ml-1 font-medium">{candidate.travel}</span></span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Informações críticas para decisão rápida */}
+                    {(!candidate.cnh || candidate.cnh === 'NÃO POSSUI') && (
+                        <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                            <div className="flex items-center gap-3 text-red-700">
+                                <AlertTriangle className="w-5 h-5" />
+                                <span><strong>⚠️ Não possui CNH</strong> - Verificar se é requisito para a vaga</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {candidate.vehicle === 'Não possuo' && (
+                        <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div className="flex items-center gap-3 text-orange-700">
+                                <AlertTriangle className="w-5 h-5" />
+                                <span><strong>⚠️ Não possui veículo</strong> - Verificar se é requisito para a vaga</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Dados pessoais essenciais preenchidos na candidatura/jurídico */}
+                    <div className="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2 mb-2 text-gray-700">
+                            <User className="w-5 h-5" />
+                            <span className="font-medium">Dados pessoais informados</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                            <div>
+                                <p className="text-sm text-gray-500">Nome da Mãe</p>
+                                <p className="font-medium">{legalData?.mother_name || 'Não informado'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Nome do Pai</p>
+                                <p className="font-medium">{legalData?.father_name || 'Não informado'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Cidade onde nasceu</p>
+                                <p className="font-medium">{legalData?.birth_city || 'Não informado'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Estado onde nasceu</p>
+                                <p className="font-medium">{legalData?.birth_state || 'Não informado'}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

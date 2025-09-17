@@ -37,8 +37,18 @@ export const ContractDeadlineManagement: React.FC = () => {
         expires_at: ''
     });
 
+    // Deduplicar Banco de Talentos (preferir ativo; senão, o mais recente)
+    const normalizedTitle = (t: string | undefined) => (t || '').trim().toLowerCase();
+    const talentJobs = allJobs
+        .filter(j => normalizedTitle(j.title) === 'banco de talentos')
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const chosenTalent = talentJobs.find(j => j.approval_status === 'active' || j.status === 'active') || talentJobs[0];
+    const jobsDeduped = chosenTalent
+        ? [chosenTalent, ...allJobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos')]
+        : allJobs;
+
     // Filtrar vagas por busca e status
-    const filteredJobs = allJobs.filter(job => {
+    const filteredJobs = jobsDeduped.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.city.toLowerCase().includes(searchTerm.toLowerCase());
@@ -55,16 +65,16 @@ export const ContractDeadlineManagement: React.FC = () => {
         return matchesSearch && matchesStatus;
     });
 
-    // Calcular estatísticas
+    // Calcular estatísticas (sobre lista deduplicada)
     const stats = {
-        total: allJobs.length,
-        expired: allJobs.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
-        expiring_soon: allJobs.filter(job => {
+        total: jobsDeduped.length,
+        expired: jobsDeduped.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
+        expiring_soon: jobsDeduped.filter(job => {
             if (!job.expires_at) return false;
             const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
         }).length,
-        active: allJobs.filter(job => job.expires_at && new Date(job.expires_at) > new Date()).length
+        active: jobsDeduped.filter(job => job.expires_at && new Date(job.expires_at) > new Date()).length
     };
 
     // Função para calcular dias até expiração
@@ -321,13 +331,15 @@ export const ContractDeadlineManagement: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleEditJob(job)}
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Button>
+                                                {job.title !== 'Banco de Talentos' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleEditJob(job)}
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
