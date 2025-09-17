@@ -461,6 +461,22 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                             <span className="ml-2">{(candidate as any).desiredJob || candidate.job?.title || 'Não informado'}</span>
                         </span>
                     </div>
+                    {/* Modelo do veículo */}
+                    <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Modelo do veículo:</strong>
+                            <span className="ml-2">{(candidate as any).vehicle_model || 'Não informado'}</span>
+                        </span>
+                    </div>
+                    {/* Ano do veículo */}
+                    <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Ano do veículo:</strong>
+                            <span className="ml-2">{(candidate as any).vehicle_year || 'Não informado'}</span>
+                        </span>
+                    </div>
                 </div>
 
                 {/* Últimas experiências (do formulário jurídico) */}

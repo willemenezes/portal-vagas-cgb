@@ -191,6 +191,8 @@ const JobApplication = () => {
         // Persistir informações críticas para filtros e decisões
         cnh: formData.cnh || null,
         vehicle: formData.vehicle || null,
+        vehicle_model: formData.vehicleModel || null,
+        vehicle_year: formData.vehicleYear || null,
         resume_file_url: resumeFileUrl || null,
         resume_file_name: resumeFileName || null
       });
