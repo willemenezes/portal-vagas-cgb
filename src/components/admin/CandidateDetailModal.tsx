@@ -477,6 +477,30 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                             <span className="ml-2">{(candidate as any).vehicle_year || 'Não informado'}</span>
                         </span>
                     </div>
+                    {/* PCD */}
+                    <div className="flex items-center gap-3">
+                        <User className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>PCD:</strong>
+                            <span className="ml-2">{(candidate as any).pcd || (legalData && legalData.is_pcd !== undefined ? (legalData.is_pcd ? 'Sim' : 'Não') : 'Não informado')}</span>
+                        </span>
+                    </div>
+                    {/* Disponibilidade para viagens */}
+                    <div className="flex items-center gap-3">
+                        <MapPin className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Disponibilidade para viagens:</strong>
+                            <span className="ml-2">{(candidate as any).travel || 'Não informado'}</span>
+                        </span>
+                    </div>
+                    {/* Idade */}
+                    <div className="flex items-center gap-3">
+                        <Info className="w-5 h-5 text-gray-400" />
+                        <span>
+                            <strong>Idade:</strong>
+                            <span className="ml-2">{(candidate as any).age || 'Não informado'}</span>
+                        </span>
+                    </div>
                 </div>
 
                 {/* Últimas experiências (do formulário jurídico) */}

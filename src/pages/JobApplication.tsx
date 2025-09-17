@@ -189,6 +189,9 @@ const JobApplication = () => {
         job_id: targetJobId,
         status: 'pending' as const,
         // Persistir informações críticas para filtros e decisões
+        pcd: formData.pcd || null,
+        travel: formData.travel || null,
+        age: formData.age || null,
         cnh: formData.cnh || null,
         vehicle: formData.vehicle || null,
         vehicle_model: formData.vehicleModel || null,
