@@ -167,6 +167,7 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             const locationMap = new Map<string, JobLocation>();
             const citiesToGeocode = new Set<string>();
             // Limpar cache de geocodificação para forçar nova busca com estado correto
+            localStorage.removeItem('geocodedCities'); // Força limpeza total
             const geocodedCache: Record<string, [number, number]> = {};
 
             for (const job of jobs) {
@@ -175,6 +176,12 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                 }
 
                 let coordinates = CITY_COORDINATES[job.city] || geocodedCache[job.city];
+
+                // Se não encontrou coordenadas e é uma cidade do Pará, usar coordenadas aproximadas de Belém
+                if (!coordinates && job.state === 'PA') {
+                    console.log(`⚠️ Cidade ${job.city}, PA não mapeada - usando coordenadas de Belém`);
+                    coordinates = CITY_COORDINATES['Belém']; // [-1.4558, -48.5044]
+                }
 
                 if (!coordinates) {
                     citiesToGeocode.add(job.city);
@@ -194,14 +201,23 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             }
 
             if (citiesToGeocode.size > 0) {
+                // Criar mapeamento cidade -> estado para geocodificação
+                const cityToState: Record<string, string> = {};
+                jobs.forEach(job => {
+                    if (job.city && job.state && citiesToGeocode.has(job.city)) {
+                        cityToState[job.city] = job.state;
+                    }
+                });
+
                 const promises = Array.from(citiesToGeocode).map(async (city) => {
                     try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&state=${encodeURIComponent(job.state)}&country=Brazil&format=json&limit=1`);
+                        const state = cityToState[city] || 'PA'; // Default para PA se não encontrar
+                        const response = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}&country=Brazil&format=json&limit=1`);
                         const data = await response.json();
                         if (data && data.length > 0) {
                             const { lat, lon, display_name } = data[0];
                             const coords: [number, number] = [parseFloat(lat), parseFloat(lon)];
-                            console.log(`🗺️ Geocodificação: ${city}, ${job.state} -> ${display_name} (${coords[0]}, ${coords[1]})`);
+                            console.log(`🗺️ Geocodificação: ${city}, ${state} -> ${display_name} (${coords[0]}, ${coords[1]})`);
                             geocodedCache[city] = coords;
                             return { city, coords };
                         }
