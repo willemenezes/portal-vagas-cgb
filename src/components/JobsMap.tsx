@@ -50,6 +50,32 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Cametá': [-2.2441, -49.4956],
     'Bragança': [-1.0539, -46.7656],
     'Altamira': [-3.2039, -52.2089],
+    'Abaetetuba': [-1.7217, -48.8819],
+    'Anajás': [-0.9889, -49.9406],
+    'Placas': [-3.8681, -54.2125],
+    'Medicilândia': [-3.4464, -52.8881],
+    'Almeirim': [-1.5231, -52.5819],
+    'Redenção': [-8.0256, -50.0319],
+    'Tucuruí': [-3.7658, -49.6719],
+    'Abaetetuba': [-1.7217, -48.8819],
+    'Barcarena': [-1.5058, -48.6256],
+    'Breves': [-1.6819, -50.4781],
+    'Capanema': [-1.1958, -47.1819],
+    'Conceição do Araguaia': [-8.2581, -49.2656],
+    'Eldorado dos Carajás': [-6.1039, -49.3556],
+    'Itaituba': [-4.2761, -55.9836],
+    'Jacundá': [-4.4469, -49.1156],
+    'Marituba': [-1.3431, -48.3419],
+    'Moju': [-1.8831, -48.7681],
+    'Oriximiná': [-1.7658, -55.8669],
+    'Paragominas': [-3.0019, -47.3519],
+    'Rondon do Pará': [-4.7769, -48.0656],
+    'Salinópolis': [-0.6281, -47.3569],
+    'Tailândia': [-2.9469, -48.9519],
+    'Tucumã': [-6.7469, -51.1619],
+    'Uruará': [-3.7158, -53.7381],
+    'Vigia': [-0.8581, -48.1419],
+    'Xinguara': [-7.0919, -49.9431],
 
     // Cidades do Amapá
     'Laranjal do Jari': [-0.4578, -52.4825],
@@ -140,7 +166,8 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             setIsLoadingLocations(true);
             const locationMap = new Map<string, JobLocation>();
             const citiesToGeocode = new Set<string>();
-            const geocodedCache: Record<string, [number, number]> = JSON.parse(localStorage.getItem('geocodedCities') || '{}');
+            // Limpar cache de geocodificação para forçar nova busca com estado correto
+            const geocodedCache: Record<string, [number, number]> = {};
 
             for (const job of jobs) {
                 if (!job.city || !job.state || job.city.toLowerCase() === 'remoto' || job.title === 'Banco de Talentos') {
@@ -169,11 +196,12 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             if (citiesToGeocode.size > 0) {
                 const promises = Array.from(citiesToGeocode).map(async (city) => {
                     try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&country=Brazil&format=json&limit=1`);
+                        const response = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&state=${encodeURIComponent(job.state)}&country=Brazil&format=json&limit=1`);
                         const data = await response.json();
                         if (data && data.length > 0) {
-                            const { lat, lon } = data[0];
+                            const { lat, lon, display_name } = data[0];
                             const coords: [number, number] = [parseFloat(lat), parseFloat(lon)];
+                            console.log(`🗺️ Geocodificação: ${city}, ${job.state} -> ${display_name} (${coords[0]}, ${coords[1]})`);
                             geocodedCache[city] = coords;
                             return { city, coords };
                         }
