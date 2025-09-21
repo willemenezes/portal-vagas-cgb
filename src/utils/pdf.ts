@@ -130,3 +130,6 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
 
 
 
+
+
+
