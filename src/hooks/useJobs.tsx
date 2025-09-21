@@ -238,9 +238,18 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
       // Aplica filtro de região apenas para gerentes (ADMIN vê todas)
       if (rhProfile && rhProfile.role === 'manager') {
         console.log('🔧 [usePendingJobs] Aplicando filtro de região para GERENTE');
+        
+        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
         if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
           query = query.in('state', rhProfile.assigned_states);
-        } else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+          
+          // Se tem o estado E tem cidades específicas, também filtrar por cidade
+          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            query = query.in('city', rhProfile.assigned_cities);
+          }
+        } 
+        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+        else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
           query = query.in('city', rhProfile.assigned_cities);
         }
       } else {
