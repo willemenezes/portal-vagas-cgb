@@ -92,7 +92,6 @@ const JobCard = ({ job, isTalentBank = false }: JobCardProps) => {
     )
   }
 
-  const isUrgent = job.applicants < 5;
   const isPopular = job.applicants > 20;
 
   return (
@@ -101,15 +100,7 @@ const JobCard = ({ job, isTalentBank = false }: JobCardProps) => {
       <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${getDepartmentColor(job.department)}`}></div>
 
       {/* Status badges */}
-      {isUrgent && (
-        <div className="absolute top-4 right-4 z-10">
-          <Badge className="bg-red-100 text-red-700 border-red-200 px-2 py-1 text-xs font-medium">
-            Urgente
-          </Badge>
-        </div>
-      )}
-
-      {isPopular && !isUrgent && (
+      {isPopular && (
         <div className="absolute top-4 right-4 z-10">
           <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 px-2 py-1 text-xs font-medium">
             Popular
