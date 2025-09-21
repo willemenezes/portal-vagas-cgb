@@ -3,6 +3,20 @@ import autoTable from 'jspdf-autotable';
 
 import { CandidateReportData } from '@/hooks/useCandidateReport';
 
+// Função para traduzir status jurídico
+const translateLegalStatus = (status: string | null | undefined): string => {
+    if (!status) return 'Pendente';
+    
+    const statusMap: Record<string, string> = {
+        'pending': 'Pendente',
+        'approved': 'Aprovado',
+        'rejected': 'Reprovado',
+        'request_changes': 'Solicitar Alterações'
+    };
+    
+    return statusMap[status] || status;
+};
+
 export async function generateCandidateReportPDF(report: CandidateReportData) {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
 
@@ -63,7 +77,7 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
                 ['RG', report.legalData.rg || ''],
                 ['Nascimento', report.legalData.birth_date ? new Date(report.legalData.birth_date).toLocaleDateString('pt-BR') : ''],
                 ['Naturalidade', `${report.legalData.birth_city || ''}/${report.legalData.birth_state || ''}`],
-                ['Status Jurídico', report.legalData.review_status || 'pendente'],
+                ['Status Jurídico', translateLegalStatus(report.legalData.review_status)],
                 ['Observações', report.legalData.review_notes || '']
             ],
             styles: { fontSize: 10 },
