@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useCandidates, useDeleteCandidate, Candidate } from '@/hooks/useCandidates';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useRHProfile } from '@/hooks/useRH';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
