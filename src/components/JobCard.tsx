@@ -92,21 +92,12 @@ const JobCard = ({ job, isTalentBank = false }: JobCardProps) => {
     )
   }
 
-  const isPopular = job.applicants > 20;
 
   return (
     <Card className="group relative bg-white hover:bg-gray-50 border border-gray-200 hover:border-cgb-primary/20 rounded-xl hover:shadow-lg transition-all duration-200 overflow-hidden">
       {/* Category indicator */}
       <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${getDepartmentColor(job.department)}`}></div>
 
-      {/* Status badges */}
-      {isPopular && (
-        <div className="absolute top-4 right-4 z-10">
-          <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 px-2 py-1 text-xs font-medium">
-            Popular
-          </Badge>
-        </div>
-      )}
 
       <CardContent className="p-6">
         {/* Job Header */}
