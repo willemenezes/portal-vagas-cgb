@@ -15,7 +15,8 @@ import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/consta
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const CandidateManagement = () => {
-  const { data: rhProfile } = useRHProfile();
+  const { user } = useAuth();
+  const { data: rhProfile } = useRHProfile(user?.id);
   const { data: candidates = [], isLoading, error } = useCandidates();
   const { data: jobs = [] } = useAllJobs();
   const deleteCandidate = useDeleteCandidate();
@@ -69,7 +70,8 @@ const CandidateManagement = () => {
       }
 
       // Se chegou aqui, o usuário não tem atribuições específicas
-      return true;
+      // Para recrutadores sem atribuições, não mostrar nenhum candidato
+      return false;
     });
 
     // 3. Filtro de busca por texto
