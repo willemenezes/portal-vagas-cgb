@@ -22,8 +22,12 @@ import { useAllJobs } from '@/hooks/useJobs';
 import { useUpdateJob } from '@/hooks/useJobs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { useRHProfile } from '@/hooks/useRH';
 
 export const ContractDeadlineManagement: React.FC = () => {
+    const { user } = useAuth();
+    const { data: rhProfile } = useRHProfile(user?.id);
     const { data: allJobs = [], isLoading } = useAllJobs();
     const updateJobMutation = useUpdateJob();
     const { toast } = useToast();
@@ -47,8 +51,44 @@ export const ContractDeadlineManagement: React.FC = () => {
         ? [chosenTalent, ...allJobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos')]
         : allJobs;
 
+    // Aplicar filtro de região para recrutadores (não-admin)
+    const jobsFilteredByRegion = jobsDeduped.filter(job => {
+        if (!rhProfile || !job) return true;
+        // Sempre incluir Banco de Talentos independentemente da região/perfil
+        if (job.title === 'Banco de Talentos') return true;
+        if (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) return true;
+        if (typeof rhProfile === 'object') {
+            // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
+            if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states) && rhProfile.assigned_states.length > 0) {
+                const hasState = rhProfile.assigned_states.includes(job.state);
+
+                // Se tem o estado, verificar se tem cidades específicas
+                if (hasState) {
+                    // Se tem cidades específicas, verificar se inclui a cidade da vaga
+                    if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
+                        return rhProfile.assigned_cities.includes(job.city);
+                    } else {
+                        // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
+                        return true;
+                    }
+                }
+                return false; // Não tem o estado
+            }
+
+            // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+            if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
+                return rhProfile.assigned_cities.includes(job.city);
+            }
+
+            // Se chegou aqui, o usuário não tem atribuições específicas
+            // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
+            return false;
+        }
+        return true;
+    });
+
     // Filtrar vagas por busca e status
-    const filteredJobs = jobsDeduped.filter(job => {
+    const filteredJobs = jobsFilteredByRegion.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.city.toLowerCase().includes(searchTerm.toLowerCase());
@@ -65,16 +105,16 @@ export const ContractDeadlineManagement: React.FC = () => {
         return matchesSearch && matchesStatus;
     });
 
-    // Calcular estatísticas (sobre lista deduplicada)
+    // Calcular estatísticas (sobre lista filtrada por região)
     const stats = {
-        total: jobsDeduped.length,
-        expired: jobsDeduped.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
-        expiring_soon: jobsDeduped.filter(job => {
+        total: jobsFilteredByRegion.length,
+        expired: jobsFilteredByRegion.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
+        expiring_soon: jobsFilteredByRegion.filter(job => {
             if (!job.expires_at) return false;
             const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
         }).length,
-        active: jobsDeduped.filter(job => job.expires_at && new Date(job.expires_at) > new Date()).length
+        active: jobsFilteredByRegion.filter(job => job.expires_at && new Date(job.expires_at) > new Date()).length
     };
 
     // Função para calcular dias até expiração

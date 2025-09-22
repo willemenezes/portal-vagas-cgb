@@ -101,3 +101,4 @@ COMMENT ON COLUMN public.jobs.expires_at IS 'Data de expiração da vaga (20 dia
 
 
 
+
