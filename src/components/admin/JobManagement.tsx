@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle
 } from "lucide-react";
 import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +45,10 @@ const JobManagement = () => {
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
   const { toast } = useToast();
+
+  // Estados para busca e filtro
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Hook para job requests (apenas para RH Admin/Admin)
   const {
@@ -104,6 +108,43 @@ const JobManagement = () => {
     const others = jobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos');
     return chosenTalent ? [chosenTalent, ...others] : others;
   }, [jobs]);
+
+  // Filtrar vagas por busca e status
+  const filteredJobs = React.useMemo(() => {
+    return jobsDeduped.filter(job => {
+      const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.city.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus = statusFilter === 'all' ||
+        (statusFilter === 'expired' && job.expires_at && new Date(job.expires_at) < new Date()) ||
+        (statusFilter === 'expiring_soon' && job.expires_at && (() => {
+          const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
+        })()) ||
+        (statusFilter === 'active' && job.flow_status === 'ativa') ||
+        (statusFilter === 'completed' && job.flow_status === 'concluida') ||
+        (statusFilter === 'congelada' && job.flow_status === 'congelada');
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [jobsDeduped, searchTerm, statusFilter]);
+
+  // Calcular estatísticas
+  const stats = React.useMemo(() => {
+    return {
+      total: jobsDeduped.length,
+      expired: jobsDeduped.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
+      expiring_soon: jobsDeduped.filter(job => {
+        if (!job.expires_at) return false;
+        const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
+      }).length,
+      active: jobsDeduped.filter(job => job.flow_status === 'ativa').length,
+      completed: jobsDeduped.filter(job => job.flow_status === 'concluida').length,
+      congelada: jobsDeduped.filter(job => job.flow_status === 'congelada').length
+    };
+  }, [jobsDeduped]);
 
   const [formData, setFormData] = useState<Job | null>(null);
   const [requirementsText, setRequirementsText] = useState('');
@@ -425,6 +466,115 @@ const JobManagement = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total de Vagas</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                </div>
+                <Users className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-red-600">Expiradas</p>
+                  <p className="text-2xl font-bold text-red-700">{stats.expired}</p>
+                </div>
+                <AlertTriangle className="w-8 h-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-yellow-600">Expirando em Breve</p>
+                  <p className="text-2xl font-bold text-yellow-700">{stats.expiring_soon}</p>
+                </div>
+                <Clock className="w-8 h-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-600">Ativas</p>
+                  <p className="text-2xl font-bold text-green-700">{stats.active}</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">Concluídas</p>
+                  <p className="text-2xl font-bold text-blue-700">{stats.completed}</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-600">Congeladas</p>
+                  <p className="text-2xl font-bold text-orange-700">{stats.congelada}</p>
+                </div>
+                <Clock className="w-8 h-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Buscar por título, departamento ou cidade..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filtrar por status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as vagas</SelectItem>
+                    <SelectItem value="expired">Expiradas</SelectItem>
+                    <SelectItem value="expiring_soon">Expirando em breve</SelectItem>
+                    <SelectItem value="active">Ativas</SelectItem>
+                    <SelectItem value="completed">Concluídas</SelectItem>
+                    <SelectItem value="congelada">Congeladas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Seção de Job Requests Aprovadas - visível para Admin e Recrutadores da região */}
         {approvedRequests.length > 0 && (
           <div className="mb-6">
@@ -574,7 +724,7 @@ const JobManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {jobsDeduped.map((job) => {
+                {filteredJobs.map((job) => {
                   const statusKey = (job.approval_status || 'draft') as keyof typeof approvalStatusConfig;
                   const statusInfo = approvalStatusConfig[statusKey] || { text: job.approval_status || job.status || 'N/D', variant: 'secondary' as const };
                   return (
