@@ -48,7 +48,7 @@ BEGIN
         request_data.department,
         request_data.city, 
         request_data.state,
-        request_data.type,
+        request_data.type::contract_type, -- Cast para o tipo ENUM correto
         request_data.description,
         request_data.requirements,
         request_data.benefits,
@@ -58,7 +58,7 @@ BEGIN
         request_data.approved_by,
         COALESCE(request_data.quantity, 1), -- Usar quantidade da solicitação ou padrão 1
         request_data.expires_at, -- Usar data de expiração da solicitação
-        COALESCE(request_data.flow_status, 'ativa'), -- Usar flow_status da solicitação ou padrão 'ativa'
+        COALESCE(request_data.flow_status::job_flow_status, 'ativa'::job_flow_status), -- Cast para job_flow_status
         request_data.solicitante_nome,
         request_data.solicitante_funcao,
         request_data.observacoes_internas,

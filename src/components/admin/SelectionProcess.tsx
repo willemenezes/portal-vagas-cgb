@@ -104,9 +104,13 @@ const SelectionProcess = () => {
 
     const jobsForSelection = useMemo(() => {
         if (isRhProfileLoading) return [];
-        if (!rhProfile || rhProfile.is_admin) return allJobs;
+        
+        // Filtrar apenas vagas ativas (flow_status = 'ativa')
+        const activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
+        
+        if (!rhProfile || rhProfile.is_admin) return activeJobs;
 
-        return allJobs.filter(job => {
+        return activeJobs.filter(job => {
             // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
             if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
                 const hasState = rhProfile.assigned_states.includes(job.state);
