@@ -375,7 +375,7 @@ export const useJobRequests = () => {
             if (!user) throw new Error('Usuário não autenticado');
 
             const { data, error } = await supabase.rpc('create_job_from_request', {
-                request_id: requestId.toString()
+                request_id: requestId
             });
 
             if (error) {
