@@ -23,6 +23,7 @@ import { departments } from "@/data/departments";
 import { WORKLOAD_OPTIONS } from "@/data/workload-options";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import JobQuantityBadge from "./JobQuantityBadge";
+import JobFlowStatusBadge from "./JobFlowStatusBadge";
 
 // Mapeamento de status para aparência do Badge (chaves em inglês, texto em português)
 const approvalStatusConfig = {
@@ -225,6 +226,7 @@ const JobManagement = () => {
       description: "", requirements: [], benefits: [], workload: "40h semanais",
       status: "draft",
       approval_status: "draft", // Alterado para o valor em inglês
+      flow_status: "ativa", // Status de visibilidade padrão
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -258,6 +260,12 @@ const JobManagement = () => {
       delete jobDataClean.posted;
       delete jobDataClean.created_at;
       delete jobDataClean.updated_at;
+      delete jobDataClean.hired_count;
+
+      // Garantir que flow_status tenha um valor válido
+      if (!jobDataClean.flow_status) {
+        jobDataClean.flow_status = 'ativa';
+      }
 
       if (!jobToSave.id) {
         delete jobDataClean.id;
@@ -585,25 +593,28 @@ const JobManagement = () => {
                       <TableCell>{job.city}, {job.state}</TableCell>
                       <TableCell>{job.applicants || 0}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
-                          {statusKey === 'rejected' && job.rejection_reason && (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6">
-                                  <MessageSquare className="w-4 h-4 text-gray-500" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium leading-none">Motivo da Rejeição</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {job.rejection_reason}
-                                  </p>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          )}
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+                            {statusKey === 'rejected' && job.rejection_reason && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                                    <MessageSquare className="w-4 h-4 text-gray-500" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Motivo da Rejeição</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {job.rejection_reason}
+                                    </p>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </div>
+                          <JobFlowStatusBadge flowStatus={job.flow_status} />
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -1045,20 +1056,44 @@ const JobForm = ({
             <Textarea name="benefits" value={benefitsText} onChange={(e) => onBenefitsChange(e.target.value)} rows={5} />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="workload">Carga Horária</Label>
-          <Select name="workload" value={job.workload} onValueChange={(value) => onSelectChange("workload", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a carga horária" />
-            </SelectTrigger>
-            <SelectContent>
-              {WORKLOAD_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="workload">Carga Horária</Label>
+            <Select name="workload" value={job.workload} onValueChange={(value) => onSelectChange("workload", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a carga horária" />
+              </SelectTrigger>
+              <SelectContent>
+                {WORKLOAD_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {job.id && (
+            <div className="space-y-2">
+              <Label htmlFor="flow_status">Status de Visibilidade *</Label>
+              <Select
+                name="flow_status"
+                value={job.flow_status || 'ativa'}
+                onValueChange={(value) => onSelectChange("flow_status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativa">✓ Ativa (visível no site)</SelectItem>
+                  <SelectItem value="concluida">✓ Concluída (não visível)</SelectItem>
+                  <SelectItem value="congelada">⏸ Congelada (não visível)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                ℹ️ Apenas vagas "Ativas" aparecem no site público
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-4 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={!!isSubmitting}>Cancelar</Button>

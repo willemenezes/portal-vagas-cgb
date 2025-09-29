@@ -17,6 +17,7 @@ export interface JobSimple {
     updated_at: string;
     applicants?: number;
     posted?: string;
+    flow_status?: 'ativa' | 'concluida' | 'congelada';
 }
 
 export const useJobsSimple = () => {
@@ -31,6 +32,7 @@ export const useJobsSimple = () => {
                     .from('jobs')
                     .select('*')
                     .eq('status', 'active')
+                    .eq('flow_status', 'ativa')
                     .order('created_at', { ascending: false });
 
                 console.log('📊 Resultado da query:', { data, error });

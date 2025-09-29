@@ -28,6 +28,7 @@ export interface Job {
   observacoes_internas?: string; // Observações internas para controle
   tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
   nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
+  flow_status?: 'ativa' | 'concluida' | 'congelada'; // Status do fluxo da vaga (controla visibilidade)
 }
 
 export const useJobs = () => {
@@ -35,12 +36,13 @@ export const useJobs = () => {
     queryKey: ['jobs'],
     queryFn: async () => {
       try {
-        // Primeiro buscar as vagas ativas e aprovadas
+        // Primeiro buscar as vagas ativas e aprovadas COM flow_status = 'ativa'
         const { data: jobs, error: jobsError } = await supabase
           .from('jobs')
           .select('*')
           .eq('status', 'active')
           .eq('approval_status', 'active')
+          .eq('flow_status', 'ativa')
           .order('created_at', { ascending: false });
 
         if (jobsError) {
@@ -238,16 +240,16 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
       // Aplica filtro de região apenas para gerentes (ADMIN vê todas)
       if (rhProfile && rhProfile.role === 'manager') {
         console.log('🔧 [usePendingJobs] Aplicando filtro de região para GERENTE');
-        
+
         // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
         if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
           query = query.in('state', rhProfile.assigned_states);
-          
+
           // Se tem o estado E tem cidades específicas, também filtrar por cidade
           if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
             query = query.in('city', rhProfile.assigned_cities);
           }
-        } 
+        }
         // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
         else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
           query = query.in('city', rhProfile.assigned_cities);
@@ -358,6 +360,28 @@ export const useDeleteJob = () => {
         .eq('id', id);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+    },
+  });
+};
+
+export const useUpdateJobFlowStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ jobId, flowStatus }: { jobId: string; flowStatus: 'ativa' | 'concluida' | 'congelada' }) => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .update({ flow_status: flowStatus })
+        .eq('id', jobId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });

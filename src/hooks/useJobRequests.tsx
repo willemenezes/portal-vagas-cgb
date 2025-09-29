@@ -31,6 +31,8 @@ export interface JobRequest {
     observacoes_internas?: string; // Observações internas para controle
     tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
     nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
+    flow_status?: 'ativa' | 'concluida' | 'congelada'; // Status do fluxo da vaga
+    quantity?: number; // Quantidade de vagas
     created_at: string;
     updated_at: string;
 }

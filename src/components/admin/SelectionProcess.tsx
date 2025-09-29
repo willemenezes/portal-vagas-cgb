@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAllJobs, Job } from '@/hooks/useJobs';
+import { useAllJobs, Job, useUpdateJobFlowStatus } from '@/hooks/useJobs';
 import { useCandidates, Candidate, useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { SELECTION_STATUSES, SelectionStatus, STATUS_COLORS } from '@/lib/constants';
 import { Loader2, PlusCircle, Linkedin, Gavel, Grid3X3, ArrowRightLeft } from 'lucide-react';
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { differenceInDays, parseISO, isValid } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
+import { JobStatusUpdateModal } from './JobStatusUpdateModal';
 
 // Helper para obter iniciais do nome
 const getInitials = (name: string) => {
@@ -85,6 +86,7 @@ const SelectionProcess = () => {
     const { data: allJobs = [], isLoading: isLoadingJobs } = useAllJobs();
     const { data: candidates = [], isLoading: isLoadingCandidates } = useCandidates();
     const updateStatus = useUpdateCandidateStatus();
+    const updateJobFlowStatus = useUpdateJobFlowStatus();
     const createNote = useCreateCandidateNote();
     const { user } = useAuth();
     const { data: rhProfile, isLoading: isRhProfileLoading } = useRHProfile(user?.id);
@@ -97,6 +99,8 @@ const SelectionProcess = () => {
     const { data: rejectionNotes = [] } = useAllRejectionNotes();
     const [activeTab, setActiveTab] = useState("ativos");
     const [layoutMode, setLayoutMode] = useState<'grid' | 'horizontal'>('grid');
+    const [showJobStatusModal, setShowJobStatusModal] = useState(false);
+    const [pendingApproval, setPendingApproval] = useState<{ candidate: Candidate; job: Job } | null>(null);
 
     const jobsForSelection = useMemo(() => {
         if (isRhProfileLoading) return [];
@@ -106,7 +110,7 @@ const SelectionProcess = () => {
             // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
             if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
                 const hasState = rhProfile.assigned_states.includes(job.state);
-                
+
                 // Se tem o estado, verificar se tem cidades específicas
                 if (hasState) {
                     // Se tem cidades específicas, verificar se inclui a cidade da vaga
@@ -119,12 +123,12 @@ const SelectionProcess = () => {
                 }
                 return false; // Não tem o estado
             }
-            
+
             // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
             if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
                 return rhProfile.assigned_cities.includes(job.city);
             }
-            
+
             // Se chegou aqui, o usuário não tem atribuições específicas
             // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
             return false;
@@ -303,6 +307,27 @@ const SelectionProcess = () => {
 
         if (newStatus === 'Reprovado') {
             setCandidateToReject(candidate);
+        } else if (newStatus === 'Aprovado') {
+            // Quando mover para Aprovado, mostrar modal para atualizar status da vaga
+            const job = allJobs.find(j => j.id === candidate.job_id);
+            if (job) {
+                setPendingApproval({ candidate, job });
+                setShowJobStatusModal(true);
+            } else {
+                // Se não encontrar a vaga, apenas atualiza o status normalmente
+                updateStatus.mutate({ id: draggableId, status: newStatus }, {
+                    onSuccess: () => {
+                        toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
+                        if (user) createNote.mutate({
+                            candidate_id: draggableId,
+                            author_id: user.id,
+                            note: `Status alterado para "${newStatus}"`,
+                            activity_type: 'Mudança de Status'
+                        });
+                    },
+                    onError: (error) => toast({ title: "Erro ao atualizar", description: `Não foi possível mover o candidato. ${error.message}`, variant: "destructive" })
+                });
+            }
         } else {
             // Verificar se o candidato está sendo movido PARA "Validação TJ"
             const shouldResetLegalStatus = newStatus === 'Validação TJ';
@@ -375,6 +400,50 @@ const SelectionProcess = () => {
         } finally {
             setCandidateToReject(null);
             setRejectionReason("");
+        }
+    };
+
+    const handleConfirmJobStatus = async (flowStatus: 'ativa' | 'concluida' | 'congelada') => {
+        if (!pendingApproval) return;
+
+        const { candidate, job } = pendingApproval;
+
+        try {
+            // 1. Atualizar status do candidato para Aprovado
+            await updateStatus.mutateAsync({ id: candidate.id, status: 'Aprovado' });
+
+            // 2. Atualizar flow_status da vaga
+            await updateJobFlowStatus.mutateAsync({ jobId: job.id, flowStatus });
+
+            // 3. Criar nota sobre a aprovação
+            if (user) {
+                await createNote.mutateAsync({
+                    candidate_id: candidate.id,
+                    author_id: user.id,
+                    note: `Candidato aprovado. Status da vaga atualizado para: ${flowStatus === 'ativa' ? 'Ativa' : flowStatus === 'concluida' ? 'Concluída' : 'Congelada'}`,
+                    activity_type: 'Aprovação'
+                });
+            }
+
+            const statusLabels = {
+                'ativa': 'Ativa',
+                'concluida': 'Concluída',
+                'congelada': 'Congelada'
+            };
+
+            toast({
+                title: "Candidato Aprovado!",
+                description: `${candidate.name} foi aprovado e a vaga foi marcada como ${statusLabels[flowStatus]}.`,
+            });
+        } catch (error: any) {
+            toast({
+                title: "Erro ao aprovar",
+                description: `Não foi possível concluir a ação: ${error.message}`,
+                variant: "destructive"
+            });
+        } finally {
+            setShowJobStatusModal(false);
+            setPendingApproval(null);
         }
     };
 
@@ -572,6 +641,19 @@ const SelectionProcess = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Modal para atualizar status da vaga quando candidato é aprovado */}
+            <JobStatusUpdateModal
+                open={showJobStatusModal}
+                onClose={() => {
+                    setShowJobStatusModal(false);
+                    setPendingApproval(null);
+                }}
+                onConfirm={handleConfirmJobStatus}
+                job={pendingApproval?.job || null}
+                candidateName={pendingApproval?.candidate?.name || ''}
+                isLoading={updateStatus.isPending || updateJobFlowStatus.isPending}
+            />
         </div>
     );
 };

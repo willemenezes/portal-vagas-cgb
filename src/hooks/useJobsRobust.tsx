@@ -17,18 +17,20 @@ export interface Job {
     updated_at: string;
     applicants?: number;
     posted?: string;
+    flow_status?: 'ativa' | 'concluida' | 'congelada';
 }
 
 export const useJobsRobust = () => {
     return useQuery({
         queryKey: ['jobs-robust'],
         queryFn: async (): Promise<Job[]> => {
-            // Buscar vagas ativas e aprovadas
+            // Buscar vagas ativas e aprovadas COM flow_status = 'ativa'
             const { data, error } = await supabase
                 .from('jobs')
                 .select('*')
                 .eq('status', 'active')
                 .eq('approval_status', 'active')
+                .eq('flow_status', 'ativa')
                 .order('created_at', { ascending: false });
 
             if (error) {
