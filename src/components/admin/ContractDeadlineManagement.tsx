@@ -99,8 +99,9 @@ export const ContractDeadlineManagement: React.FC = () => {
                 const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                 return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
             })()) ||
-            (statusFilter === 'active' && job.status === 'active') ||
-            (statusFilter === 'completed' && job.approval_status === 'concluido');
+            (statusFilter === 'active' && job.flow_status === 'ativa') ||
+            (statusFilter === 'completed' && job.flow_status === 'concluida') ||
+            (statusFilter === 'congelada' && job.flow_status === 'congelada');
 
         return matchesSearch && matchesStatus;
     });
@@ -114,7 +115,9 @@ export const ContractDeadlineManagement: React.FC = () => {
             const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
         }).length,
-        active: jobsFilteredByRegion.filter(job => job.expires_at && new Date(job.expires_at) > new Date()).length
+        active: jobsFilteredByRegion.filter(job => job.flow_status === 'ativa').length,
+        completed: jobsFilteredByRegion.filter(job => job.flow_status === 'concluida').length,
+        congelada: jobsFilteredByRegion.filter(job => job.flow_status === 'congelada').length
     };
 
     // Função para calcular dias até expiração
@@ -203,7 +206,7 @@ export const ContractDeadlineManagement: React.FC = () => {
             </div>
 
             {/* Estatísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <Card>
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -251,6 +254,30 @@ export const ContractDeadlineManagement: React.FC = () => {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-blue-600">Concluídas</p>
+                                <p className="text-2xl font-bold text-blue-700">{stats.completed}</p>
+                            </div>
+                            <CheckCircle className="w-8 h-8 text-blue-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 bg-orange-50">
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-orange-600">Congeladas</p>
+                                <p className="text-2xl font-bold text-orange-700">{stats.congelada}</p>
+                            </div>
+                            <Clock className="w-8 h-8 text-orange-500" />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Filtros */}
@@ -279,6 +306,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                                     <SelectItem value="expiring_soon">Expirando em breve</SelectItem>
                                     <SelectItem value="active">Ativas</SelectItem>
                                     <SelectItem value="completed">Concluídas</SelectItem>
+                                    <SelectItem value="congelada">Congeladas</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
