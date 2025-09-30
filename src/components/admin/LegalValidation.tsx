@@ -19,7 +19,7 @@ import { useLegalData, useReviewLegalData, useMyApprovedValidations, useCandidat
 import { useRHProfile } from '@/hooks/useRH';
 import { useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { maskCPF, maskRG } from '@/utils/legal-validation';
-import { format, isValid, parseISO } from 'date-fns';
+import { format, isValid, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ApprovedLegalValidations from './ApprovedLegalValidations';
@@ -37,6 +37,35 @@ const safeFormatDate = (dateString: string | null | undefined, formatString: str
     } catch (error) {
         console.warn('Erro ao formatar data:', dateString, error);
         return 'Data inválida';
+    }
+};
+
+// Função helper para calcular tempo decorrido e status do prazo (48h)
+const getTimeElapsed = (startDate: string | null | undefined): { text: string; isOverdue: boolean; hours: number } => {
+    if (!startDate) return { text: 'Sem registro', isOverdue: false, hours: 0 };
+
+    try {
+        const start = typeof startDate === 'string' ? parseISO(startDate) : new Date(startDate);
+        if (!isValid(start)) return { text: 'Data inválida', isOverdue: false, hours: 0 };
+
+        const now = new Date();
+        const hours = differenceInHours(now, start);
+        const minutes = differenceInMinutes(now, start) % 60;
+        
+        const isOverdue = hours >= 48;
+        
+        if (hours < 1) {
+            return { text: `${minutes} min`, isOverdue: false, hours: 0 };
+        } else if (hours < 24) {
+            return { text: `${hours}h ${minutes}min`, isOverdue, hours };
+        } else {
+            const days = Math.floor(hours / 24);
+            const remainingHours = hours % 24;
+            return { text: `${days}d ${remainingHours}h`, isOverdue, hours };
+        }
+    } catch (error) {
+        console.warn('Erro ao calcular tempo:', startDate, error);
+        return { text: 'Erro no cálculo', isOverdue: false, hours: 0 };
     }
 };
 
@@ -94,6 +123,17 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                     <Building className="w-4 h-4" />
                                     <span>{candidate.job?.department}</span>
                                 </div>
+                                {candidate.tj_validation_started_at && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Clock className="w-4 h-4" />
+                                        <span className="font-medium">
+                                            Aguardando há: {getTimeElapsed(candidate.tj_validation_started_at).text}
+                                        </span>
+                                        {getTimeElapsed(candidate.tj_validation_started_at).isOverdue && (
+                                            <Badge variant="destructive" className="ml-1">Prazo excedido (48h)</Badge>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="flex flex-col gap-2 ml-4">
@@ -188,6 +228,29 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                 <div><span className="font-medium">Carga Horária:</span> {candidate.job?.workload}</div>
                             </div>
                         </div>
+
+                        {/* Informações de Prazo de Validação */}
+                        {candidate.tj_validation_started_at && (
+                            <div className={`rounded-lg p-4 ${getTimeElapsed(candidate.tj_validation_started_at).isOverdue ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-200'}`}>
+                                <h4 className={`font-semibold mb-3 flex items-center gap-2 ${getTimeElapsed(candidate.tj_validation_started_at).isOverdue ? 'text-red-900' : 'text-blue-900'}`}>
+                                    <Clock className="w-4 h-4" />
+                                    Prazo de Validação (48h)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="font-medium">Chegou em:</span> {safeFormatDate(candidate.tj_validation_started_at, 'dd/MM/yyyy HH:mm')}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">Tempo decorrido:</span> {getTimeElapsed(candidate.tj_validation_started_at).text}
+                                    </div>
+                                    {getTimeElapsed(candidate.tj_validation_started_at).isOverdue && (
+                                        <div className="col-span-2">
+                                            <Badge variant="destructive">⚠️ Prazo de 48h excedido</Badge>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Dados Jurídicos */}
                         {isLoadingLegal ? (
