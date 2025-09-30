@@ -29,7 +29,7 @@ type LegalStatus = 'aprovado' | 'reprovado' | 'aprovado_com_restricao';
 // Função helper para formatação segura de datas
 const safeFormatDate = (dateString: string | null | undefined, formatString: string = 'dd/MM/yyyy'): string => {
     if (!dateString) return 'Não informado';
-    
+
     try {
         const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
         if (!isValid(date)) return 'Data inválida';
@@ -54,15 +54,15 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
     const handleLegalReview = async (status: 'approved' | 'rejected' | 'request_changes', notes?: string) => {
         try {
             await reviewLegalData.mutateAsync({ candidateId: candidate.id, status, notes });
-            toast({ 
-                title: 'Dados revisados com sucesso!', 
+            toast({
+                title: 'Dados revisados com sucesso!',
                 description: `Os dados jurídicos foram ${status === 'approved' ? 'aprovados' : 'rejeitados'}.`
             });
         } catch (error) {
-            toast({ 
-                title: 'Erro ao revisar dados', 
-                description: 'Não foi possível salvar a revisão dos dados jurídicos.', 
-                variant: 'destructive' 
+            toast({
+                title: 'Erro ao revisar dados',
+                description: 'Não foi possível salvar a revisão dos dados jurídicos.',
+                variant: 'destructive'
             });
         }
     };
@@ -74,46 +74,46 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
     return (
         <>
             <Card className="w-full hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                    <div className="flex-1">
+                <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                        <div className="flex-1">
                             <CardTitle className="text-xl mb-2 flex items-center gap-2">
                                 <User className="w-5 h-5" />
                                 {candidate.name}
                             </CardTitle>
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Briefcase className="w-4 h-4" /> 
+                                    <Briefcase className="w-4 h-4" />
                                     <span>{candidate.job?.title || 'Vaga não especificada'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <MapPin className="w-4 h-4" /> 
+                                    <MapPin className="w-4 h-4" />
                                     <span>{candidate.job?.city} - {candidate.job?.state}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Building className="w-4 h-4" /> 
+                                    <Building className="w-4 h-4" />
                                     <span>{candidate.job?.department}</span>
                                 </div>
                             </div>
                         </div>
                         <div className="flex flex-col gap-2 ml-4">
                             <Badge variant={
-                                legalData?.review_status === 'approved' ? 'default' : 
-                                legalData?.review_status === 'pending' ? 'secondary' : 
-                                'destructive'
+                                legalData?.review_status === 'approved' ? 'default' :
+                                    legalData?.review_status === 'pending' ? 'secondary' :
+                                        'destructive'
                             }>
-                                {legalData?.review_status === 'approved' ? 'Dados Aprovados' : 
-                                 legalData?.review_status === 'pending' ? 'Aguardando Revisão' : 
-                                 'Dados Pendentes'}
+                                {legalData?.review_status === 'approved' ? 'Dados Aprovados' :
+                                    legalData?.review_status === 'pending' ? 'Aguardando Revisão' :
+                                        'Dados Pendentes'}
                             </Badge>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="pt-0">
                     <div className="flex gap-2 mb-4">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={openDetailsModal}
                             className="flex-1"
                         >
@@ -121,42 +121,42 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                             Ver Detalhes Completos
                         </Button>
                     </div>
-                    
-                        {legalData?.review_status !== 'approved' && (
+
+                    {legalData?.review_status !== 'approved' && (
                         <Alert className="mb-4">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertDescription>
-                                <strong>Atenção:</strong> Revise os dados jurídicos antes de aprovar o candidato.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                                <strong>Atenção:</strong> Revise dados do candidato antes de aprovar.
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                     <div className="flex gap-2">
-                        <Button 
-                            size="sm" 
-                            onClick={() => onAction(candidate, 'aprovado')} 
-                            disabled={legalData?.review_status !== 'approved'} 
+                        <Button
+                            size="sm"
+                            onClick={() => onAction(candidate, 'aprovado')}
+                            disabled={legalData?.review_status !== 'approved'}
                             className="bg-green-600 hover:bg-green-700 flex-1"
                         >
-                            <ThumbsUp className="w-4 h-4 mr-1" /> 
+                            <ThumbsUp className="w-4 h-4 mr-1" />
                             Aprovar Candidato
                         </Button>
-                        <Button 
-                            size="sm" 
-                            onClick={() => onAction(candidate, 'aprovado_com_restricao')} 
-                            disabled={legalData?.review_status !== 'approved'} 
+                        <Button
+                            size="sm"
+                            onClick={() => onAction(candidate, 'aprovado_com_restricao')}
+                            disabled={legalData?.review_status !== 'approved'}
                             className="bg-yellow-600 hover:bg-yellow-700 flex-1"
                         >
-                            <AlertTriangle className="w-4 h-4 mr-1" /> 
+                            <AlertTriangle className="w-4 h-4 mr-1" />
                             Aprovar com Restrições
                         </Button>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => onAction(candidate, 'reprovado')} 
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onAction(candidate, 'reprovado')}
                             className="text-red-600 border-red-200 hover:bg-red-50 flex-1"
                         >
-                            <ThumbsDown className="w-4 h-4 mr-1" /> 
+                            <ThumbsDown className="w-4 h-4 mr-1" />
                             Reprovar Candidato
                         </Button>
                     </div>
@@ -172,7 +172,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                             Detalhes do Candidato - {candidate.name}
                         </DialogTitle>
                     </DialogHeader>
-                    
+
                     <div className="space-y-6">
                         {/* Informações da Vaga */}
                         <div className="bg-gray-50 rounded-lg p-4">
@@ -193,14 +193,14 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                         {isLoadingLegal ? (
                             <div className="flex justify-center py-8">
                                 <Loader2 className="w-8 h-8 animate-spin" />
-                </div>
+                            </div>
                         ) : legalData ? (
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
                                     <Shield className="w-4 h-4" />
-                                    Dados para Validação Jurídica
+                                    Validação de candidato
                                 </h4>
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
                                     {/* Dados Pessoais */}
                                     <div className="space-y-3">
@@ -238,37 +238,37 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                             <div><span className="font-medium">Responsável:</span> {legalData.responsible_name}</div>
                                         )}
                                     </div>
-                                    </div>
+                                </div>
 
-                                    {/* Histórico Profissional */}
-                                    {legalData.work_history && legalData.work_history.length > 0 && (
+                                {/* Histórico Profissional */}
+                                {legalData.work_history && legalData.work_history.length > 0 && (
                                     <div className="mt-6 space-y-3">
                                         <h5 className="font-medium text-blue-800 uppercase text-xs border-b border-blue-200 pb-1">
                                             Histórico Profissional
                                         </h5>
                                         <div className="grid gap-3">
-                                                {legalData.work_history.map((work, index) => (
+                                            {legalData.work_history.map((work, index) => (
                                                 <div key={index} className="bg-white rounded-lg p-3 border border-blue-100">
                                                     <div className="font-medium text-gray-900">{work.position}</div>
                                                     <div className="text-gray-600">{work.company}</div>
                                                     <div className="text-xs text-gray-500 mt-1">
                                                         {safeFormatDate(work.start_date, 'MM/yyyy')} -
                                                         {work.is_current ? ' Atual' : ` ${safeFormatDate(work.end_date, 'MM/yyyy')}`}
-                                                        </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    )}
+                                    </div>
+                                )}
 
                                 {/* Ações de Revisão dos Dados */}
                                 {legalData.review_status === 'pending' && (
                                     <div className="mt-6 pt-4 border-t border-blue-200">
-                                        <h5 className="font-medium text-blue-800 mb-3">Revisão dos Dados Jurídicos</h5>
+                                        <h5 className="font-medium text-blue-800 mb-3">Revisão de Dados de Candidatos</h5>
                                         <div className="flex gap-3">
-                                            <Button 
-                                                size="sm" 
-                                                onClick={() => handleLegalReview('approved')} 
+                                            <Button
+                                                size="sm"
+                                                onClick={() => handleLegalReview('approved')}
                                                 className="bg-green-600 hover:bg-green-700"
                                                 disabled={reviewLegalData.isPending}
                                             >
@@ -278,20 +278,20 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                                     <CheckCircle className="w-4 h-4 mr-1" />
                                                 )}
                                                 Aprovar Dados
-                                        </Button>
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
-                                                onClick={() => { 
-                                                    const notes = prompt('Motivo da rejeição dos dados:'); 
-                                                    if (notes) handleLegalReview('rejected', notes); 
-                                                }} 
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const notes = prompt('Motivo da rejeição dos dados:');
+                                                    if (notes) handleLegalReview('rejected', notes);
+                                                }}
                                                 className="text-red-600 border-red-200 hover:bg-red-50"
                                                 disabled={reviewLegalData.isPending}
                                             >
-                                                <XCircle className="w-4 h-4 mr-1" /> 
+                                                <XCircle className="w-4 h-4 mr-1" />
                                                 Rejeitar Dados
-                                        </Button>
+                                            </Button>
                                         </div>
                                     </div>
                                 )}
@@ -337,10 +337,10 @@ const LegalValidation = () => {
     const [selectedCandidate, setSelectedCandidate] = useState<ExtendedCandidate | null>(null);
 
     // Log de debug para investigar problemas
-    console.log('🔍 [LegalValidation] Estado:', { 
-        candidates: candidates?.length, 
-        isLoading, 
-        error: error?.message 
+    console.log('🔍 [LegalValidation] Estado:', {
+        candidates: candidates?.length,
+        isLoading,
+        error: error?.message
     });
     const [action, setAction] = useState<LegalStatus | null>(null);
     const [comments, setComments] = useState('');
@@ -353,15 +353,15 @@ const LegalValidation = () => {
 
     const handleConfirm = async () => {
         if (!selectedCandidate || !action) return;
-        
+
         // Validação de campos obrigatórios
         if ((action === 'aprovado_com_restricao' || action === 'reprovado') && !comments.trim()) {
-            toast({ 
-                title: 'Campo obrigatório', 
-                description: action === 'aprovado_com_restricao' 
+            toast({
+                title: 'Campo obrigatório',
+                description: action === 'aprovado_com_restricao'
                     ? 'Por favor, descreva as restrições para aprovação.'
                     : 'Por favor, descreva o motivo da reprovação.',
-                variant: 'destructive' 
+                variant: 'destructive'
             });
             return;
         }
@@ -377,7 +377,7 @@ const LegalValidation = () => {
                 break;
             case 'aprovado_com_restricao':
                 // CORREÇÃO: Candidato fica desbloqueado para RH decidir
-                newStatus = 'Validação Frota'; 
+                newStatus = 'Validação Frota';
                 successMessage = 'Candidato aprovado com restrições! RH pode revisar.';
                 break;
             case 'reprovado':
@@ -389,46 +389,46 @@ const LegalValidation = () => {
         }
 
         // Preparar dados para atualização
-    // Atualizar status do candidato com comentário
-    const updateData = {
-      id: selectedCandidate.id,
-      status: newStatus as any,
-      legal_validation_comment: comments.trim() || null
-    };
+        // Atualizar status do candidato com comentário
+        const updateData = {
+            id: selectedCandidate.id,
+            status: newStatus as any,
+            legal_validation_comment: comments.trim() || null
+        };
 
-    updateCandidateStatus.mutate(updateData, {
-      onSuccess: async () => {
-        // Atualizar também os dados jurídicos para manter consistência
-        if (comments.trim()) {
-          try {
-            await supabase
-              .from('candidate_legal_data')
-              .update({
-                review_status: action === 'aprovado' ? 'approved' : action === 'reprovado' ? 'rejected' : 'approved_with_restrictions',
-                review_notes: comments.trim(),
-                reviewed_at: new Date().toISOString()
-              })
-              .eq('candidate_id', selectedCandidate.id);
-          } catch (error) {
-            console.warn('Erro ao salvar comentários nos dados jurídicos:', error);
-          }
-        }
+        updateCandidateStatus.mutate(updateData, {
+            onSuccess: async () => {
+                // Atualizar também os dados jurídicos para manter consistência
+                if (comments.trim()) {
+                    try {
+                        await supabase
+                            .from('candidate_legal_data')
+                            .update({
+                                review_status: action === 'aprovado' ? 'approved' : action === 'reprovado' ? 'rejected' : 'approved_with_restrictions',
+                                review_notes: comments.trim(),
+                                reviewed_at: new Date().toISOString()
+                            })
+                            .eq('candidate_id', selectedCandidate.id);
+                    } catch (error) {
+                        console.warn('Erro ao salvar comentários nos dados jurídicos:', error);
+                    }
+                }
 
-                toast({ 
-                    title: 'Validação realizada!', 
+                toast({
+                    title: 'Validação realizada!',
                     description: successMessage,
                     variant: action === 'reprovado' ? 'destructive' : 'default'
                 });
-                    setSelectedCandidate(null);
-                    setAction(null);
+                setSelectedCandidate(null);
+                setAction(null);
                 setComments('');
-                    queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
-                },
+                queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
+            },
             onError: (error: any) => {
-                toast({ 
-                    title: 'Erro ao salvar validação', 
-                    description: error.message || 'Tente novamente mais tarde.', 
-                    variant: 'destructive' 
+                toast({
+                    title: 'Erro ao salvar validação',
+                    description: error.message || 'Tente novamente mais tarde.',
+                    variant: 'destructive'
                 });
             }
         });
@@ -459,7 +459,7 @@ const LegalValidation = () => {
             <TabsContent value="pending" className="mt-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Validação Legal de Candidatos</CardTitle>
+                        <CardTitle>Validação de candidato</CardTitle>
                         <CardDescription>Aprove ou reprove os candidatos na etapa de Validação TJ.</CardDescription>
                     </CardHeader>
                 </Card>
@@ -492,7 +492,7 @@ const LegalValidation = () => {
                             {action === 'aprovado' && <CheckCircle className="w-5 h-5 text-green-600" />}
                             {action === 'aprovado_com_restricao' && <AlertTriangle className="w-5 h-5 text-yellow-600" />}
                             {action === 'reprovado' && <XCircle className="w-5 h-5 text-red-600" />}
-                            Confirmar Validação Jurídica
+                            Confirmar Validação
                         </DialogTitle>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
@@ -534,19 +534,19 @@ const LegalValidation = () => {
                                     {action === 'aprovado_com_restricao' ? 'Restrições e Observações:' : 'Motivo da Reprovação:'}
                                     <span className="text-red-500 ml-1">*</span>
                                 </label>
-                                <Textarea 
+                                <Textarea
                                     placeholder={
-                                        action === 'aprovado_com_restricao' 
+                                        action === 'aprovado_com_restricao'
                                             ? "Descreva as restrições ou condições para aprovação..."
                                             : "Descreva o motivo da reprovação..."
                                     }
-                                    value={comments} 
+                                    value={comments}
                                     onChange={(e) => setComments(e.target.value)}
                                     rows={4}
                                     className="resize-none"
                                 />
                                 <p className="text-xs text-gray-500">
-                                    {action === 'aprovado_com_restricao' 
+                                    {action === 'aprovado_com_restricao'
                                         ? "Ex: Aprovado condicionado à apresentação de documentos adicionais, treinamento específico, etc."
                                         : "Este motivo será registrado no histórico do candidato."}
                                 </p>
@@ -557,13 +557,13 @@ const LegalValidation = () => {
                         <Button variant="outline" onClick={() => setSelectedCandidate(null)}>
                             Cancelar
                         </Button>
-                        <Button 
-                            onClick={handleConfirm} 
+                        <Button
+                            onClick={handleConfirm}
                             disabled={updateCandidateStatus.isPending}
                             className={
                                 action === 'aprovado' ? 'bg-green-600 hover:bg-green-700' :
-                                action === 'aprovado_com_restricao' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                                'bg-red-600 hover:bg-red-700'
+                                    action === 'aprovado_com_restricao' ? 'bg-yellow-600 hover:bg-yellow-700' :
+                                        'bg-red-600 hover:bg-red-700'
                             }
                         >
                             {updateCandidateStatus.isPending ? (

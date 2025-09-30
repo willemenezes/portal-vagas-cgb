@@ -204,7 +204,7 @@ export const LegalDataForm = ({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Shield className="w-5 h-5 text-blue-600" />
-                        Dados para Validação Jurídica
+                        Validação de candidato
                     </DialogTitle>
                     <DialogDescription>
                         Preencha os dados do candidato <strong>{candidateName}</strong> para análise jurídica.
