@@ -81,17 +81,35 @@ export const useCandidateReport = (candidateId: string | null) => {
                     created_at: n.created_at,
                     author: userMap.get(n.author_id) || null
                 })),
-                ...(validationsRes.data || []).map((v: any) => ({
-                    id: v.id,
-                    type: 'legal_validation',
-                    content: v.status,
-                    activity_type: 'Validação Legal',
-                    created_at: v.created_at,
-                    author: userMap.get(v.validator_id) || null,
-                    legal_status: v.status,
-                    comments: v.comments
-                }))
+                ...(validationsRes.data || []).map((v: any) => {
+                    const validator = userMap.get(v.validator_id);
+                    return {
+                        id: v.id,
+                        type: 'legal_validation',
+                        content: v.comments || v.status,
+                        activity_type: 'Validação Legal',
+                        created_at: v.created_at,
+                        author: validator || null,
+                        legal_status: v.status,
+                        legal_status_translated: translateLegalStatus(v.status),
+                        validator_name: validator?.full_name || 'Sistema',
+                        comments: v.comments
+                    };
+                })
             ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            // Helper para traduzir status jurídico
+            function translateLegalStatus(status: string | null | undefined): string {
+                if (!status) return 'Pendente';
+                const statusMap: Record<string, string> = {
+                    'pending': 'Pendente',
+                    'approved': 'Aprovado',
+                    'rejected': 'Reprovado',
+                    'request_changes': 'Solicitar Alterações',
+                    'approved_with_restrictions': 'Aprovado com Restrições'
+                };
+                return statusMap[status] || status;
+            }
 
             // 4) Aprovações da vaga (se vinculada a job request via notas/approved_by em job_requests)
             let request = null;

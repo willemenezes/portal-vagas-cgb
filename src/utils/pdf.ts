@@ -52,14 +52,30 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
     cursorY = (doc as any).lastAutoTable.finalY + 20;
 
     // Seção: Vaga
+    const jobBody: any[] = [
+        ['Vaga', report.job?.title || 'N/A'],
+        ['Departamento', report.job?.department || 'N/A'],
+        ['Localização da Vaga', `${report.job?.city || ''} - ${report.job?.state || ''}`]
+    ];
+
+    // Adicionar dados do solicitante se existirem
+    if (report.job?.solicitante_nome) {
+        jobBody.push(['Solicitante', report.job.solicitante_nome]);
+    }
+    if (report.job?.solicitante_funcao) {
+        jobBody.push(['Função/Contrato do Solicitante', report.job.solicitante_funcao]);
+    }
+    if (report.job?.tipo_solicitacao) {
+        jobBody.push(['Tipo de Solicitação', report.job.tipo_solicitacao]);
+    }
+    if (report.job?.nome_substituido) {
+        jobBody.push(['Nome do Substituído', report.job.nome_substituido]);
+    }
+
     autoTable(doc, {
         startY: cursorY,
         head: [['Campo', 'Valor']],
-        body: [
-            ['Vaga', report.job?.title || 'N/A'],
-            ['Departamento', report.job?.department || 'N/A'],
-            ['Localização da Vaga', `${report.job?.city || ''} - ${report.job?.state || ''}`]
-        ],
+        body: jobBody,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [106, 11, 39] },
         theme: 'grid',
@@ -113,8 +129,8 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
         const rows = report.history.map((h) => [
             new Date(h.created_at).toLocaleString('pt-BR'),
             h.activity_type,
-            h.type === 'legal_validation' ? (h.legal_status || '') : '',
-            h.author?.full_name || 'Sistema',
+            h.type === 'legal_validation' ? (h.legal_status_translated || translateLegalStatus(h.legal_status) || '') : '',
+            h.type === 'legal_validation' ? (h.validator_name || h.author?.full_name || 'Sistema') : (h.author?.full_name || 'Sistema'),
             h.content || ''
         ]);
 
