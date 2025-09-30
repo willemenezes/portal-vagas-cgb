@@ -223,8 +223,8 @@ const SelectionProcess = () => {
 
             // Lógica de filtro por aba
             if (activeTab === "ativos") {
-                // Na aba ativos, mostra todos exceto contratados e aprovados (mantém reprovados em suas colunas)
-                if (status !== 'Contratado' && status !== 'Aprovado') {
+                // Na aba ativos, mostra todos exceto contratados (mantém reprovados e aprovados em suas colunas)
+                if (status !== 'Contratado') {
                     if (initialCols[status]) {
                         initialCols[status].push(candidate);
                     }
@@ -262,9 +262,8 @@ const SelectionProcess = () => {
                 }
             });
         } else if (activeTab === 'ativos') {
-            // Na aba ativos, remove as colunas "Contratado" e "Aprovado" (mantém "Reprovado")
+            // Na aba ativos, remove a coluna "Contratado" (mantém "Reprovado" e "Aprovado")
             delete initialCols['Contratado'];
-            delete initialCols['Aprovado'];
         }
         // Na aba "ativos", mantém todas as colunas exceto "Contratado"
 
