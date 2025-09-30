@@ -355,12 +355,10 @@ const LegalValidation = () => {
         if (!selectedCandidate || !action) return;
 
         // Validação de campos obrigatórios
-        if ((action === 'aprovado_com_restricao' || action === 'reprovado') && !comments.trim()) {
+        if ((action === 'aprovado_com_restricao') && !comments.trim()) {
             toast({
                 title: 'Campo obrigatório',
-                description: action === 'aprovado_com_restricao'
-                    ? 'Por favor, descreva as restrições para aprovação.'
-                    : 'Por favor, descreva o motivo da reprovação.',
+                description: 'Por favor, descreva as restrições para aprovação.',
                 variant: 'destructive'
             });
             return;
@@ -528,27 +526,21 @@ const LegalValidation = () => {
                             )}
                         </div>
 
-                        {(action === 'aprovado_com_restricao' || action === 'reprovado') && (
+                        {(action === 'aprovado_com_restricao') && (
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700">
-                                    {action === 'aprovado_com_restricao' ? 'Restrições e Observações:' : 'Motivo da Reprovação:'}
+                                    Restrições e Observações:
                                     <span className="text-red-500 ml-1">*</span>
                                 </label>
                                 <Textarea
-                                    placeholder={
-                                        action === 'aprovado_com_restricao'
-                                            ? "Descreva as restrições ou condições para aprovação..."
-                                            : "Descreva o motivo da reprovação..."
-                                    }
+                                    placeholder={"Descreva as restrições ou condições para aprovação..."}
                                     value={comments}
                                     onChange={(e) => setComments(e.target.value)}
                                     rows={4}
                                     className="resize-none"
                                 />
                                 <p className="text-xs text-gray-500">
-                                    {action === 'aprovado_com_restricao'
-                                        ? "Ex: Aprovado condicionado à apresentação de documentos adicionais, treinamento específico, etc."
-                                        : "Este motivo será registrado no histórico do candidato."}
+                                    Ex: Aprovado condicionado à apresentação de documentos adicionais, treinamento específico, etc.
                                 </p>
                             </div>
                         )}
