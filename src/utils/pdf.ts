@@ -129,22 +129,20 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
         const rows = report.history.map((h) => [
             new Date(h.created_at).toLocaleString('pt-BR'),
             h.activity_type,
-            h.type === 'legal_validation' ? (h.legal_status_translated || translateLegalStatus(h.legal_status) || '') : '',
             h.type === 'legal_validation' ? (h.validator_name || h.author?.full_name || 'Sistema') : (h.author?.full_name || 'Sistema'),
             h.content || ''
         ]);
 
         autoTable(doc, {
             startY: cursorY,
-            head: [['Data', 'Atividade', 'Status Jurídico', 'Autor', 'Detalhes']],
+            head: [['Data', 'Atividade', 'Autor', 'Detalhes']],
             body: rows,
             styles: { fontSize: 9, cellWidth: 'wrap' },
             columnStyles: {
                 0: { cellWidth: 110 },
                 1: { cellWidth: 120 },
                 2: { cellWidth: 120 },
-                3: { cellWidth: 120 },
-                4: { cellWidth: 'auto' },
+                3: { cellWidth: 'auto' },
             },
             headStyles: { fillColor: [106, 11, 39] },
             theme: 'grid',
