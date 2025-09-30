@@ -223,8 +223,8 @@ const SelectionProcess = () => {
 
             // Lógica de filtro por aba
             if (activeTab === "ativos") {
-                // Na aba ativos, mostra todos exceto contratados (mantém reprovados em suas colunas)
-                if (status !== 'Contratado') {
+                // Na aba ativos, mostra todos exceto contratados e aprovados (mantém reprovados em suas colunas)
+                if (status !== 'Contratado' && status !== 'Aprovado') {
                     if (initialCols[status]) {
                         initialCols[status].push(candidate);
                     }
@@ -236,9 +236,9 @@ const SelectionProcess = () => {
                         initialCols[status].push(candidate);
                     }
                 }
-            } else if (activeTab === "contratados") {
-                // Na aba contratados, mostra apenas contratados
-                if (status === 'Contratado') {
+            } else if (activeTab === "aprovados") {
+                // Na aba aprovados, mostra apenas aprovados
+                if (status === 'Aprovado') {
                     if (initialCols[status]) {
                         initialCols[status].push(candidate);
                     }
@@ -254,16 +254,17 @@ const SelectionProcess = () => {
                     delete initialCols[key as SelectionStatus];
                 }
             });
-        } else if (activeTab === 'contratados') {
-            // Na aba contratados, remove todas as colunas exceto "Contratado"
+        } else if (activeTab === 'aprovados') {
+            // Na aba aprovados, remove todas as colunas exceto "Aprovado"
             Object.keys(initialCols).forEach(key => {
-                if (key !== 'Contratado') {
+                if (key !== 'Aprovado') {
                     delete initialCols[key as SelectionStatus];
                 }
             });
         } else if (activeTab === 'ativos') {
-            // Na aba ativos, remove a coluna "Contratado" (mantém "Reprovado")
+            // Na aba ativos, remove as colunas "Contratado" e "Aprovado" (mantém "Reprovado")
             delete initialCols['Contratado'];
+            delete initialCols['Aprovado'];
         }
         // Na aba "ativos", mantém todas as colunas exceto "Contratado"
 
@@ -501,7 +502,7 @@ const SelectionProcess = () => {
                 <TabsList>
                     <TabsTrigger value="ativos">Ativos</TabsTrigger>
                     <TabsTrigger value="reprovados">Reprovados</TabsTrigger>
-                    <TabsTrigger value="contratados">Contratados</TabsTrigger>
+                    <TabsTrigger value="aprovados">Aprovados</TabsTrigger>
                 </TabsList>
             </Tabs>
 
@@ -512,6 +513,14 @@ const SelectionProcess = () => {
                             <p className="text-sm text-blue-700">
                                 <strong>📊 Estatística:</strong> Total de candidatos reprovados nesta vaga: {filteredCandidates.filter(c => c.status === 'Reprovado').length} |
                                 Total no sistema: {candidates.filter(c => c.status === 'Reprovado').length}
+                            </p>
+                        </div>
+                    )}
+                    {activeTab === 'aprovados' && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                            <p className="text-sm text-green-700">
+                                <strong>📊 Estatística:</strong> Total de candidatos aprovados nesta vaga: {filteredCandidates.filter(c => c.status === 'Aprovado').length} |
+                                Total no sistema: {candidates.filter(c => c.status === 'Aprovado').length}
                             </p>
                         </div>
                     )}
