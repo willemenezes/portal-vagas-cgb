@@ -354,15 +354,7 @@ const LegalValidation = () => {
     const handleConfirm = async () => {
         if (!selectedCandidate || !action) return;
 
-        // Validação de campos obrigatórios
-        if ((action === 'aprovado_com_restricao') && !comments.trim()) {
-            toast({
-                title: 'Campo obrigatório',
-                description: 'Por favor, descreva as restrições para aprovação.',
-                variant: 'destructive'
-            });
-            return;
-        }
+        // Validação de campos obrigatórios removida - campo de restrições agora é opcional
 
         // Definir o próximo status baseado na ação
         let newStatus: string;
@@ -530,7 +522,6 @@ const LegalValidation = () => {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700">
                                     Restrições e Observações:
-                                    <span className="text-red-500 ml-1">*</span>
                                 </label>
                                 <Textarea
                                     placeholder={"Descreva as restrições ou condições para aprovação..."}
