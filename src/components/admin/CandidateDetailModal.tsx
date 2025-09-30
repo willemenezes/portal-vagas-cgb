@@ -626,27 +626,7 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                     ) : legalData ? (
                         <Card>
                             <CardContent className="p-6 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-500">CPF</p>
-                                        <p className="font-medium">{maskCPF(legalData.cpf)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500">RG</p>
-                                        <p className="font-medium">{maskRG(legalData.rg)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500">Data de Nascimento</p>
-                                        <p className="font-medium">
-                                            {format(new Date(legalData.birth_date), 'dd/MM/yyyy')}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500">Naturalidade</p>
-                                        <p className="font-medium">{legalData.birth_city}/{legalData.birth_state}</p>
-                                    </div>
-                                </div>
-
+                                {/* Dados detalhados ocultos - mantendo apenas status */}
                                 {legalData.review_notes && (
                                     <div className="pt-4 border-t">
                                         <p className="text-sm text-gray-500 mb-1">Observações da Revisão</p>
