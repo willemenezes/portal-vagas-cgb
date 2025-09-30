@@ -56,7 +56,13 @@ export const ContractDeadlineManagement: React.FC = () => {
         if (!rhProfile || !job) return true;
         // Sempre incluir Banco de Talentos independentemente da região/perfil
         if (job.title === 'Banco de Talentos') return true;
-        if (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) return true;
+        // Usuários sem restrição regional: admin, juridico e manager (mesma regra do dashboard)
+        if (
+            (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) ||
+            (typeof rhProfile === 'object' && 'role' in rhProfile && (rhProfile as any).role && ['juridico', 'manager'].includes((rhProfile as any).role))
+        ) {
+            return true;
+        }
         if (typeof rhProfile === 'object') {
             // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
             if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states) && rhProfile.assigned_states.length > 0) {

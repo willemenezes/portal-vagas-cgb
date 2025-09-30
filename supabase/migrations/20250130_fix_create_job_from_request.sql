@@ -55,7 +55,7 @@ BEGIN
         request_data.workload,
         'active', -- Já aprovado
         'active', -- Ativo para candidaturas
-        request_data.approved_by,
+        request_data.approved_by::uuid, -- Cast para UUID
         COALESCE(request_data.quantity, 1), -- Usar quantidade da solicitação ou padrão 1
         request_data.expires_at, -- Usar data de expiração da solicitação
         COALESCE(request_data.flow_status::job_flow_status, 'ativa'::job_flow_status), -- Cast para job_flow_status

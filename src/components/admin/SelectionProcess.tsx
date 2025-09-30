@@ -104,10 +104,10 @@ const SelectionProcess = () => {
 
     const jobsForSelection = useMemo(() => {
         if (isRhProfileLoading) return [];
-        
+
         // Filtrar apenas vagas ativas (flow_status = 'ativa')
         const activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
-        
+
         if (!rhProfile || rhProfile.is_admin) return activeJobs;
 
         return activeJobs.filter(job => {

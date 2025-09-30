@@ -79,7 +79,14 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         });
     }
 
-    let jobsQuery = supabase.from('jobs').select('*', { count: 'exact', head: true });
+    // Contabiliza apenas vagas realmente visíveis/ativas no sistema
+    // status = 'active' | approval_status = 'active' | flow_status = 'ativa'
+    let jobsQuery = supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .eq('approval_status', 'active')
+        .eq('flow_status', 'ativa');
     if (!unrestrictedRoles.includes(rhProfile.role)) {
         if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
             jobsQuery = jobsQuery.in('state', rhProfile.assigned_states);
