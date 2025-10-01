@@ -3,17 +3,19 @@ import { useCandidates, useDeleteCandidate, Candidate } from '@/hooks/useCandida
 import { useAllJobs } from '@/hooks/useJobs';
 import { useRHProfile } from '@/hooks/useRH';
 import { useAuth } from '@/hooks/useAuth';
+import { useInviteCandidate } from '@/hooks/useInviteCandidate';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2 } from 'lucide-react';
+import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send } from 'lucide-react';
 import { ResumeButton } from './ResumeButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const CandidateManagement = () => {
   const { user } = useAuth();
@@ -21,6 +23,7 @@ const CandidateManagement = () => {
   const { data: candidates = [], isLoading, error } = useCandidates();
   const { data: jobs = [] } = useAllJobs();
   const deleteCandidate = useDeleteCandidate();
+  const inviteCandidate = useInviteCandidate();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +31,9 @@ const CandidateManagement = () => {
     status: 'all', jobId: 'all', state: 'all', cnh: 'all', vehicle: 'all',
   });
   const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
+  const [candidateToInvite, setCandidateToInvite] = useState<Candidate | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string>('');
+  const [isInviting, setIsInviting] = useState(false);
 
   const talentBankJobId = useMemo(() => jobs.find(job => job.title === "Banco de Talentos")?.id, [jobs]);
 
@@ -177,6 +183,34 @@ const CandidateManagement = () => {
     });
   };
 
+  const handleInviteToJob = async () => {
+    if (!candidateToInvite || !selectedJobId) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, selecione uma vaga para o convite.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsInviting(true);
+
+    try {
+      await inviteCandidate.mutateAsync({
+        candidateId: candidateToInvite.id,
+        newJobId: selectedJobId,
+        candidateName: candidateToInvite.name
+      });
+
+      setCandidateToInvite(null);
+      setSelectedJobId('');
+    } catch (error) {
+      // Erro já tratado no hook
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-cgb-primary" /> <span className="ml-2">Carregando...</span></div>;
   if (error) return <div className="text-red-600 p-4 bg-red-50 rounded-md">Erro ao carregar candidatos: {error.message}</div>;
 
@@ -237,7 +271,20 @@ const CandidateManagement = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => setCandidateToDelete(candidate)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCandidateToInvite(candidate)}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                            >
+                              <UserPlus className="w-4 h-4 mr-1" />
+                              Convidar
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setCandidateToDelete(candidate)}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -252,6 +299,83 @@ const CandidateManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog para Convite para Nova Vaga */}
+      <Dialog open={!!candidateToInvite} onOpenChange={() => setCandidateToInvite(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-blue-600" />
+              Convidar para Nova Vaga
+            </DialogTitle>
+            <DialogDescription>
+              Convide <strong>{candidateToInvite?.name}</strong> para se candidatar a uma nova vaga.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Selecione a Nova Vaga:</label>
+              <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Escolha uma vaga..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobsForFilter.map(job => (
+                    <SelectItem key={job.id} value={job.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{job.title}</span>
+                        <span className="text-xs text-gray-500">
+                          {job.city}, {job.state}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedJobId && candidateToInvite && (
+              <div className="bg-blue-50 p-3 rounded-md">
+                <h4 className="font-medium text-blue-900 mb-2">Prévia do Convite:</h4>
+                <p className="text-sm text-blue-800">
+                  <strong>{candidateToInvite.name}</strong> será convidado(a) para se candidatar à vaga
+                  <strong> {jobsForFilter.find(j => j.id === selectedJobId)?.title}</strong>.
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  📋 O candidato será transferido para o processo seletivo da nova vaga.
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  ⚠️ Esta ação alterará o status atual do candidato.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCandidateToInvite(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleInviteToJob}
+              disabled={!selectedJobId || isInviting}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isInviting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Enviar Convite
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!candidateToDelete} onOpenChange={() => setCandidateToDelete(null)}>
         <AlertDialogContent>
