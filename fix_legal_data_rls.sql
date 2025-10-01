@@ -90,3 +90,4 @@ COMMENT ON POLICY "Juridico pode atualizar revisao" ON candidate_legal_data IS '
 
 
 
+

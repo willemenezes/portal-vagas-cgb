@@ -5,7 +5,7 @@ import { Candidate } from '@/hooks/useCandidates';
 import { useAuth } from '@/hooks/useAuth';
 import {
     Loader2, ThumbsUp, ThumbsDown, UserCheck, AlertTriangle, MapPin, Briefcase, Clock, User,
-    Phone, Mail, Car, Calendar, Building, FileText, ChevronDown, ChevronUp, Shield, CheckCircle, XCircle, Info
+    Phone, Mail, Car, Calendar, Building, FileText, ChevronDown, ChevronUp, Shield, CheckCircle, XCircle, Info, Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +22,8 @@ import { maskCPF, maskRG } from '@/utils/legal-validation';
 import { format, isValid, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import ApprovedLegalValidations from './ApprovedLegalValidations';
 
 type LegalStatus = 'aprovado' | 'reprovado' | 'aprovado_com_restricao';
@@ -51,9 +53,9 @@ const getTimeElapsed = (startDate: string | null | undefined): { text: string; i
         const now = new Date();
         const hours = differenceInHours(now, start);
         const minutes = differenceInMinutes(now, start) % 60;
-        
+
         const isOverdue = hours >= 48;
-        
+
         if (hours < 1) {
             return { text: `${minutes} min`, isOverdue: false, hours: 0 };
         } else if (hours < 24) {
@@ -70,7 +72,11 @@ const getTimeElapsed = (startDate: string | null | undefined): { text: string; i
 };
 
 
-const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; onAction: (candidate: ExtendedCandidate, action: LegalStatus) => void }) => {
+const CandidateCard = ({ candidate, onAction, contractFilter }: {
+    candidate: ExtendedCandidate;
+    onAction: (candidate: ExtendedCandidate, action: LegalStatus) => void;
+    contractFilter?: string;
+}) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const { data: legalData, isLoading: isLoadingLegal } = useLegalData(candidate.id);
     const reviewLegalData = useReviewLegalData();
@@ -79,6 +85,16 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
     const { data: rhProfile } = useRHProfile(user?.id);
 
     const legalDataStatus = legalData?.review_status || 'not_collected';
+
+    // Verificar se o candidato corresponde ao filtro de contrato
+    const matchesContractFilter = !contractFilter ||
+        (legalData?.company_contract &&
+            legalData.company_contract.toLowerCase().includes(contractFilter.toLowerCase()));
+
+    // Se há filtro ativo e o candidato não corresponde, não renderizar
+    if (contractFilter && !matchesContractFilter) {
+        return null;
+    }
 
     const handleLegalReview = async (status: 'approved' | 'rejected' | 'request_changes', notes?: string) => {
         try {
@@ -146,6 +162,11 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                     legalData?.review_status === 'pending' ? 'Aguardando Revisão' :
                                         'Dados Pendentes'}
                             </Badge>
+                            {legalData?.company_contract && (
+                                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                                    {legalData.company_contract}
+                                </Badge>
+                            )}
                         </div>
                     </div>
                 </CardHeader>
@@ -300,6 +321,9 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                         {legalData.responsible_name && (
                                             <div><span className="font-medium">Responsável:</span> {legalData.responsible_name}</div>
                                         )}
+                                        {legalData.company_contract && (
+                                            <div><span className="font-medium">Contrato da Empresa:</span> {legalData.company_contract}</div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -312,12 +336,7 @@ const CandidateCard = ({ candidate, onAction }: { candidate: ExtendedCandidate; 
                                         <div className="grid gap-3">
                                             {legalData.work_history.map((work, index) => (
                                                 <div key={index} className="bg-white rounded-lg p-3 border border-blue-100">
-                                                    <div className="font-medium text-gray-900">{work.position}</div>
-                                                    <div className="text-gray-600">{work.company}</div>
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        {safeFormatDate(work.start_date, 'MM/yyyy')} -
-                                                        {work.is_current ? ' Atual' : ` ${safeFormatDate(work.end_date, 'MM/yyyy')}`}
-                                                    </div>
+                                                    <div className="font-medium text-gray-900">{work.company}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -398,6 +417,8 @@ const LegalValidation = () => {
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [selectedCandidate, setSelectedCandidate] = useState<ExtendedCandidate | null>(null);
+    const [contractFilter, setContractFilter] = useState<string>('');
+    const [showFilter, setShowFilter] = useState(false);
 
     // Log de debug para investigar problemas
     console.log('🔍 [LegalValidation] Estado:', {
@@ -487,6 +508,16 @@ const LegalValidation = () => {
         });
     };
 
+    // Filtrar candidatos por contrato da empresa
+    const filteredCandidates = candidates?.filter(candidate => {
+        if (!contractFilter.trim()) return true;
+
+        // Buscar dados jurídicos do candidato para verificar o contrato
+        // Como não temos acesso direto aqui, vamos usar uma abordagem diferente
+        // O filtro será aplicado quando os dados jurídicos forem carregados
+        return true;
+    }) || [];
+
     // Tratamento de erro
     if (error) {
         return (
@@ -512,8 +543,50 @@ const LegalValidation = () => {
             <TabsContent value="pending" className="mt-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Validação de candidato</CardTitle>
-                        <CardDescription>Aprove ou reprove os candidatos na etapa de Validação TJ.</CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle>Validação de candidato</CardTitle>
+                                <CardDescription>Aprove ou reprove os candidatos na etapa de Validação TJ.</CardDescription>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowFilter(!showFilter)}
+                                className="flex items-center gap-2"
+                            >
+                                <Filter className="w-4 h-4" />
+                                Filtrar por Contrato
+                            </Button>
+                        </div>
+
+                        {showFilter && (
+                            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                                <Label htmlFor="contract-filter" className="text-sm font-medium">
+                                    Filtrar por Contrato da Empresa
+                                </Label>
+                                <div className="flex gap-2 mt-2">
+                                    <Input
+                                        id="contract-filter"
+                                        placeholder="Ex: CT 150.30"
+                                        value={contractFilter}
+                                        onChange={(e) => setContractFilter(e.target.value)}
+                                        className="flex-1"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setContractFilter('')}
+                                    >
+                                        Limpar
+                                    </Button>
+                                </div>
+                                {contractFilter && (
+                                    <p className="text-xs text-gray-600 mt-2">
+                                        Mostrando candidatos com contrato contendo: "{contractFilter}"
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </CardHeader>
                 </Card>
                 {isLoading ? (
@@ -524,7 +597,7 @@ const LegalValidation = () => {
                 ) : (
                     <div className="space-y-4 mt-4">
                         {candidates && candidates.length > 0 ? candidates.map(c => (
-                            <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} />
+                            <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} contractFilter={contractFilter} />
                         )) : (
                             <Card>
                                 <CardContent className="py-12 text-center">

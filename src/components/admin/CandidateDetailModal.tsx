@@ -697,6 +697,10 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                     onClose={() => setShowLegalForm(false)}
                     onSubmit={handleSaveLegalData}
                     initialData={legalData}
+                    candidateData={{
+                        city: candidate.city,
+                        state: candidate.state
+                    }}
                 />
             )}
         </div>

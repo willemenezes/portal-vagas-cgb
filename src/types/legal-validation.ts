@@ -2,10 +2,6 @@
 
 export interface WorkHistory {
     company: string;
-    position: string;
-    start_date: string;
-    end_date?: string;
-    is_current: boolean;
 }
 
 export interface CandidateLegalData {
@@ -33,6 +29,7 @@ export interface CandidateLegalData {
     desired_position: string;
     responsible_name?: string;
     cnh?: string; // Campo CNH adicionado
+    company_contract?: string; // Contrato da empresa para o qual o candidato está concorrendo
 
     // Controle e Auditoria
     collected_by?: string;

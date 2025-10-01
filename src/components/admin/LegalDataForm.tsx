@@ -19,6 +19,10 @@ interface LegalDataFormProps {
     onClose: () => void;
     onSubmit: (data: LegalDataFormValues) => Promise<void>;
     initialData?: LegalDataFormValues;
+    candidateData?: {
+        city: string;
+        state: string;
+    };
 }
 
 export const LegalDataForm = ({
@@ -27,7 +31,8 @@ export const LegalDataForm = ({
     isOpen,
     onClose,
     onSubmit,
-    initialData
+    initialData,
+    candidateData
 }: LegalDataFormProps) => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -49,7 +54,8 @@ export const LegalDataForm = ({
         is_pcd: false,
         pcd_details: '',
         desired_position: '',
-        responsible_name: ''
+        responsible_name: '',
+        company_contract: ''
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,9 +63,14 @@ export const LegalDataForm = ({
     useEffect(() => {
         if (initialData) {
             setFormData(initialData);
-            setSelectedState(initialData.birth_state);
+        } else if (candidateData) {
+            // Preencher automaticamente somente a cidade (o sistema coleta apenas cidade na inscrição)
+            setFormData(prev => ({
+                ...prev,
+                birth_city: candidateData.city
+            }));
         }
-    }, [initialData]);
+    }, [initialData, candidateData]);
 
     useEffect(() => {
         if (selectedState) {
@@ -87,11 +98,7 @@ export const LegalDataForm = ({
 
     const addWorkHistory = () => {
         const newWork: WorkHistory = {
-            company: '',
-            position: '',
-            start_date: '',
-            end_date: '',
-            is_current: false
+            company: ''
         };
         setFormData(prev => ({
             ...prev,
@@ -144,9 +151,7 @@ export const LegalDataForm = ({
             newErrors.birth_city = 'Cidade de nascimento é obrigatória';
         }
 
-        if (!formData.birth_state) {
-            newErrors.birth_state = 'Estado de nascimento é obrigatório';
-        }
+        // Não exigir estado de nascimento - apenas cidade
 
         if (!formData.desired_position) {
             newErrors.desired_position = 'Função pretendida é obrigatória';
@@ -156,12 +161,6 @@ export const LegalDataForm = ({
         formData.work_history.forEach((work, index) => {
             if (!work.company) {
                 newErrors[`work_${index}_company`] = 'Empresa é obrigatória';
-            }
-            if (!work.position) {
-                newErrors[`work_${index}_position`] = 'Cargo é obrigatório';
-            }
-            if (!work.start_date) {
-                newErrors[`work_${index}_start_date`] = 'Data de início é obrigatória';
             }
         });
 
@@ -298,39 +297,14 @@ export const LegalDataForm = ({
                             </div>
 
                             <div>
-                                <Label htmlFor="birth_state">Estado de Nascimento *</Label>
-                                <select
-                                    id="birth_state"
-                                    value={formData.birth_state}
-                                    onChange={(e) => {
-                                        handleInputChange('birth_state', e.target.value);
-                                        setSelectedState(e.target.value);
-                                        handleInputChange('birth_city', '');
-                                    }}
-                                    className={`w-full rounded-md border ${errors.birth_state ? 'border-red-500' : 'border-gray-300'} px-3 py-2`}
-                                >
-                                    <option value="">Selecione o estado</option>
-                                    {Object.keys(states).map(uf => (
-                                        <option key={uf} value={uf}>{states[uf]}</option>
-                                    ))}
-                                </select>
-                                {errors.birth_state && <p className="text-sm text-red-500 mt-1">{errors.birth_state}</p>}
-                            </div>
-
-                            <div>
                                 <Label htmlFor="birth_city">Cidade de Nascimento *</Label>
-                                <select
+                                <Input
                                     id="birth_city"
                                     value={formData.birth_city}
                                     onChange={(e) => handleInputChange('birth_city', e.target.value)}
-                                    disabled={!selectedState}
-                                    className={`w-full rounded-md border ${errors.birth_city ? 'border-red-500' : 'border-gray-300'} px-3 py-2`}
-                                >
-                                    <option value="">Selecione a cidade</option>
-                                    {availableCities.map(city => (
-                                        <option key={city} value={city}>{city}</option>
-                                    ))}
-                                </select>
+                                    className={errors.birth_city ? 'border-red-500' : ''}
+                                    readOnly
+                                />
                                 {errors.birth_city && <p className="text-sm text-red-500 mt-1">{errors.birth_city}</p>}
                             </div>
                         </div>
@@ -361,7 +335,7 @@ export const LegalDataForm = ({
                                         </Button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         <div>
                                             <Label>Empresa *</Label>
                                             <Input
@@ -372,56 +346,6 @@ export const LegalDataForm = ({
                                             {errors[`work_${index}_company`] &&
                                                 <p className="text-sm text-red-500 mt-1">{errors[`work_${index}_company`]}</p>
                                             }
-                                        </div>
-
-                                        <div>
-                                            <Label>Cargo *</Label>
-                                            <Input
-                                                value={work.position}
-                                                onChange={(e) => updateWorkHistory(index, 'position', e.target.value)}
-                                                className={errors[`work_${index}_position`] ? 'border-red-500' : ''}
-                                            />
-                                            {errors[`work_${index}_position`] &&
-                                                <p className="text-sm text-red-500 mt-1">{errors[`work_${index}_position`]}</p>
-                                            }
-                                        </div>
-
-                                        <div>
-                                            <Label>Data de Início *</Label>
-                                            <Input
-                                                type="date"
-                                                value={work.start_date}
-                                                onChange={(e) => updateWorkHistory(index, 'start_date', e.target.value)}
-                                                className={errors[`work_${index}_start_date`] ? 'border-red-500' : ''}
-                                            />
-                                            {errors[`work_${index}_start_date`] &&
-                                                <p className="text-sm text-red-500 mt-1">{errors[`work_${index}_start_date`]}</p>
-                                            }
-                                        </div>
-
-                                        <div>
-                                            <Label>Data de Término</Label>
-                                            <Input
-                                                type="date"
-                                                value={work.end_date || ''}
-                                                onChange={(e) => updateWorkHistory(index, 'end_date', e.target.value)}
-                                                disabled={work.is_current}
-                                            />
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <Switch
-                                                    id={`current-${index}`}
-                                                    checked={work.is_current}
-                                                    onCheckedChange={(checked) => {
-                                                        updateWorkHistory(index, 'is_current', checked);
-                                                        if (checked) {
-                                                            updateWorkHistory(index, 'end_date', '');
-                                                        }
-                                                    }}
-                                                />
-                                                <Label htmlFor={`current-${index}`} className="text-sm">
-                                                    Trabalho atual
-                                                </Label>
-                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -491,6 +415,19 @@ export const LegalDataForm = ({
                                     onChange={(e) => handleInputChange('responsible_name', e.target.value)}
                                     placeholder="Nome do responsável legal (se menor de idade ou necessário)"
                                 />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="company_contract">Contrato da Empresa</Label>
+                                <Input
+                                    id="company_contract"
+                                    value={formData.company_contract || ''}
+                                    onChange={(e) => handleInputChange('company_contract', e.target.value)}
+                                    placeholder="Ex: CT 150.30"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Especifique de qual contrato da empresa o candidato está concorrendo
+                                </p>
                             </div>
                         </div>
                     </div>
