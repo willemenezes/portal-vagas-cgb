@@ -42,6 +42,13 @@ export const useLegalData = (candidateId: string | null) => {
                 throw error;
             }
 
+            console.log('🔍 [useLegalData] Dados carregados:', {
+                candidate_id: candidateId,
+                has_data: !!data,
+                company_contract: data?.company_contract,
+                review_status: data?.review_status
+            });
+
             return data as CandidateLegalData | null;
         },
         enabled: !!candidateId,
@@ -192,6 +199,8 @@ export const useSaveLegalData = () => {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['legalData', data.candidate_id] });
             queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
+            queryClient.invalidateQueries({ queryKey: ['pendingLegalValidations'] });
         },
         onError: (error) => {
             console.error('Erro ao salvar dados jurídicos:', error);
