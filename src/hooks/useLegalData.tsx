@@ -34,7 +34,7 @@ export const useLegalData = (candidateId: string | null) => {
 
             const { data, error } = await supabase
                 .from('candidate_legal_data')
-                .select('*')
+                .select('*, company_contract')
                 .eq('candidate_id', candidateId)
                 .single();
 
@@ -137,6 +137,7 @@ export const useSaveLegalData = () => {
                 is_pcd: !!data.is_pcd,
                 pcd_details: data.pcd_details || '',
                 desired_position: data.desired_position,
+                company_contract: data.company_contract || null,
                 responsible_name: data.responsible_name || null,
                 collected_by: user?.id || null,
                 review_status: 'pending' as const
@@ -148,6 +149,7 @@ export const useSaveLegalData = () => {
                 review_status: payload.review_status,
                 has_cpf: !!payload.cpf,
                 has_full_name: !!payload.full_name,
+                has_company_contract: !!payload.company_contract,
                 work_history_count: payload.work_history.length
             });
 
