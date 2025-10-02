@@ -344,7 +344,7 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                                 )}
                                 {selectedRequest.solicitante_funcao && (
                                     <div>
-                                        <Label className="text-sm font-medium text-gray-600">Função/Contrato do Solicitante</Label>
+                                        <Label className="text-sm font-medium text-gray-600">Gerente Responsável</Label>
                                         <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_funcao}</p>
                                     </div>
                                 )}

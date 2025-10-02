@@ -63,7 +63,7 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
         jobBody.push(['Solicitante', report.job.solicitante_nome]);
     }
     if (report.job?.solicitante_funcao) {
-        jobBody.push(['Função/Contrato do Solicitante', report.job.solicitante_funcao]);
+        jobBody.push(['Gerente Responsável', report.job.solicitante_funcao]);
     }
     if (report.job?.tipo_solicitacao) {
         jobBody.push(['Tipo de Solicitação', report.job.tipo_solicitacao]);

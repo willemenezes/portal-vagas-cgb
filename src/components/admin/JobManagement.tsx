@@ -1133,12 +1133,12 @@ const JobForm = ({
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="solicitante_funcao">Função/Contrato do Solicitante</Label>
+              <Label htmlFor="solicitante_funcao">Gerente Responsável</Label>
               <Input
                 name="solicitante_funcao"
                 value={job.solicitante_funcao || ''}
                 onChange={onFormChange}
-                placeholder="Ex: Gerente de TI - CLT"
+                placeholder="Ex: Gerente - CT 02.150"
               />
               <p className="text-xs text-gray-500">
                 ℹ️ Para controle interno - função e tipo de contrato
@@ -1440,12 +1440,12 @@ const JobRequestEditForm = ({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="solicitante_funcao">Função/Contrato do Solicitante</Label>
+            <Label htmlFor="solicitante_funcao">Gerente Responsável</Label>
             <Input
               id="solicitante_funcao"
               value={formData.solicitante_funcao || ''}
               onChange={(e) => handleChange('solicitante_funcao', e.target.value)}
-              placeholder="Ex: Gerente de TI - CLT"
+              placeholder="Ex: Gerente - CT 02.150"
             />
           </div>
         </div>

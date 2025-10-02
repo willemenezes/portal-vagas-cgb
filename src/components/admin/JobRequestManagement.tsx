@@ -503,12 +503,12 @@ export default function JobRequestManagement() {
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="solicitante_funcao">Função/Contrato do Solicitante</Label>
+                                    <Label htmlFor="solicitante_funcao">Gerente Responsável</Label>
                                     <Input
                                         id="solicitante_funcao"
                                         value={newRequest.solicitante_funcao}
                                         onChange={(e) => setNewRequest({ ...newRequest, solicitante_funcao: e.target.value })}
-                                        placeholder="Ex: Gerente de TI - CLT"
+                                        placeholder="Ex: Gerente - CT 02.150"
                                     />
                                     <p className="text-xs text-gray-500">
                                         ℹ️ Para controle interno - função e tipo de contrato
