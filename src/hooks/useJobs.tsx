@@ -40,8 +40,9 @@ export const useJobs = () => {
         const { data: jobs, error: jobsError } = await supabase
           .from('jobs')
           .select('*')
-          .eq('status', 'active')
-          .eq('approval_status', 'active')
+          // Aceitar tanto inglês quanto português para compatibilidade de dados
+          .in('status', ['active', 'ativo'])
+          .in('approval_status', ['active', 'ativo'])
           .eq('flow_status', 'ativa')
           .order('created_at', { ascending: false });
 
@@ -89,7 +90,7 @@ export const useJobs = () => {
         const talentJobs = jobsWithApplicants.filter(j => j.title === 'Banco de Talentos');
 
         let chosenTalentJob: typeof jobsWithApplicants[number] | undefined =
-          talentJobs.find(j => (j.approval_status === 'active' || j.status === 'active')) ||
+          talentJobs.find(j => (['active', 'ativo'].includes(j.approval_status as any) || ['active', 'ativo'].includes(j.status as any))) ||
           talentJobs[0];
 
         const dedupedJobs = chosenTalentJob ? [chosenTalentJob, ...nonTalentJobs] : nonTalentJobs;
