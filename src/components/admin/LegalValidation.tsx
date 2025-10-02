@@ -473,19 +473,17 @@ const LegalValidation = () => {
         updateCandidateStatus.mutate(updateData, {
             onSuccess: async () => {
                 // Atualizar também os dados jurídicos para manter consistência
-                if (comments.trim()) {
-                    try {
-                        await supabase
-                            .from('candidate_legal_data')
-                            .update({
-                                review_status: action === 'aprovado' ? 'approved' : action === 'reprovado' ? 'rejected' : 'approved_with_restrictions',
-                                review_notes: comments.trim(),
-                                reviewed_at: new Date().toISOString()
-                            })
-                            .eq('candidate_id', selectedCandidate.id);
-                    } catch (error) {
-                        console.warn('Erro ao salvar comentários nos dados jurídicos:', error);
-                    }
+                try {
+                    await supabase
+                        .from('candidate_legal_data')
+                        .update({
+                            review_status: action === 'aprovado' ? 'approved' : action === 'reprovado' ? 'rejected' : 'approved_with_restrictions',
+                            review_notes: comments.trim() || null,
+                            reviewed_at: new Date().toISOString()
+                        })
+                        .eq('candidate_id', selectedCandidate.id);
+                } catch (error) {
+                    console.warn('Erro ao salvar dados jurídicos:', error);
                 }
 
                 toast({
