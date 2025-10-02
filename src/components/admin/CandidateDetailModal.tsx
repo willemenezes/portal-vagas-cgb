@@ -359,6 +359,7 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
         const statusConfig = {
             pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
             approved: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
+            approved_with_restrictions: { label: 'Aprovado c/ Restrições', color: 'bg-orange-100 text-orange-800' },
             rejected: { label: 'Reprovado', color: 'bg-red-100 text-red-800' },
             request_changes: { label: 'Correções Solicitadas', color: 'bg-orange-100 text-orange-800' }
         };
