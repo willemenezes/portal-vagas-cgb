@@ -60,7 +60,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         // Menu específico para Jurídico
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
-            { id: "legal-validation", icon: Gavel, text: "Validação Legal", action: () => setActiveTab("legal-validation") },
+            { id: "legal-validation", icon: Gavel, text: "Validação", action: () => setActiveTab("legal-validation") },
         ];
     } else if (userRole === 'solicitador') {
         // Menu específico para Solicitador de Vagas
