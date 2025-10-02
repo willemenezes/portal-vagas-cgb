@@ -746,7 +746,10 @@ const JobManagement = () => {
                       <TableCell>
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
-                            <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+                            {/* Só mostra o badge "Ativa" se flow_status não for 'concluida' ou 'congelada' */}
+                            {job.flow_status !== 'concluida' && job.flow_status !== 'congelada' && (
+                              <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+                            )}
                             {statusKey === 'rejected' && job.rejection_reason && (
                               <Popover>
                                 <PopoverTrigger asChild>
