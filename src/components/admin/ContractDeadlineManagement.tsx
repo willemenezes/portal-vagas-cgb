@@ -135,7 +135,27 @@ export const ContractDeadlineManagement: React.FC = () => {
     };
 
     // Função para obter status de expiração
-    const getExpiryStatus = (expiryDate: string) => {
+    const getExpiryStatus = (expiryDate: string, flowStatus?: string) => {
+        // Se a vaga está concluída ou congelada, não mostrar contagem regressiva
+        const normalize = (value?: string | null) => {
+            if (!value) return '';
+            try {
+                return value
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/\p{Diacritic}/gu, '');
+            } catch {
+                return String(value).toLowerCase();
+            }
+        };
+
+        const normalizedFlow = normalize(flowStatus);
+        const isInactive = normalizedFlow === 'concluida' || normalizedFlow === 'congelada';
+        
+        if (isInactive) {
+            return { status: 'inactive', color: 'gray', text: 'Concluída' };
+        }
+
         const days = getDaysUntilExpiry(expiryDate);
         if (days < 0) return { status: 'expired', color: 'red', text: `Expirada há ${Math.abs(days)} dias` };
         if (days === 0) return { status: 'expiring_today', color: 'orange', text: 'Expira hoje' };
@@ -343,7 +363,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                         </TableHeader>
                         <TableBody>
                             {filteredJobs.map((job) => {
-                                const expiryInfo = job.expires_at ? getExpiryStatus(job.expires_at) : null;
+                                const expiryInfo = job.expires_at ? getExpiryStatus(job.expires_at, job.flow_status) : null;
                                 const remainingPositions = (job.quantity || 1) - (job.quantity_filled || 0);
 
                                 return (
@@ -385,7 +405,8 @@ export const ContractDeadlineManagement: React.FC = () => {
                                                         expiryInfo.color === 'red' && "bg-red-100 text-red-700 border-red-200",
                                                         expiryInfo.color === 'orange' && "bg-orange-100 text-orange-700 border-orange-200",
                                                         expiryInfo.color === 'yellow' && "bg-yellow-100 text-yellow-700 border-yellow-200",
-                                                        expiryInfo.color === 'green' && "bg-green-100 text-green-700 border-green-200"
+                                                        expiryInfo.color === 'green' && "bg-green-100 text-green-700 border-green-200",
+                                                        expiryInfo.color === 'gray' && "bg-gray-100 text-gray-700 border-gray-200"
                                                     )}
                                                 >
                                                     {expiryInfo.text}
