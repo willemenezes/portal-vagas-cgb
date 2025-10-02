@@ -151,8 +151,14 @@ export const ContractDeadlineManagement: React.FC = () => {
 
         const normalizedFlow = normalize(flowStatus);
         const isInactive = normalizedFlow === 'concluida' || normalizedFlow === 'congelada';
-        
+
         if (isInactive) {
+            if (normalizedFlow === 'concluida') {
+                return { status: 'inactive', color: 'gray', text: 'Concluída' };
+            }
+            if (normalizedFlow === 'congelada') {
+                return { status: 'inactive', color: 'blue', text: 'Congelada' };
+            }
             return { status: 'inactive', color: 'gray', text: 'Concluída' };
         }
 
@@ -406,7 +412,8 @@ export const ContractDeadlineManagement: React.FC = () => {
                                                         expiryInfo.color === 'orange' && "bg-orange-100 text-orange-700 border-orange-200",
                                                         expiryInfo.color === 'yellow' && "bg-yellow-100 text-yellow-700 border-yellow-200",
                                                         expiryInfo.color === 'green' && "bg-green-100 text-green-700 border-green-200",
-                                                        expiryInfo.color === 'gray' && "bg-gray-100 text-gray-700 border-gray-200"
+                                                        expiryInfo.color === 'gray' && "bg-gray-100 text-gray-700 border-gray-200",
+                                                        expiryInfo.color === 'blue' && "bg-blue-100 text-blue-700 border-blue-200"
                                                     )}
                                                 >
                                                     {expiryInfo.text}
