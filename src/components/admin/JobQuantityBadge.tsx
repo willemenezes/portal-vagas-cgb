@@ -18,8 +18,23 @@ export const JobQuantityBadge: React.FC<JobQuantityBadgeProps> = ({
     flowStatus,
     className
 }) => {
+    // Normalizar flowStatus para evitar problemas com acentos/maiúsculas/variações
+    const normalize = (value?: string | null) => {
+        if (!value) return '';
+        try {
+            // Remover acentos e padronizar para minúsculas
+            return value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/\p{Diacritic}/gu, '');
+        } catch {
+            return String(value).toLowerCase();
+        }
+    };
+
+    const normalizedFlow = normalize(flowStatus);
     // Se a vaga está concluída ou congelada, não mostrar contagem regressiva
-    const isInactive = flowStatus === 'concluida' || flowStatus === 'congelada';
+    const isInactive = normalizedFlow === 'concluida' || normalizedFlow === 'congelada';
 
     // Calcular dias até expiração
     const getDaysUntilExpiry = (expiryDate: string) => {
