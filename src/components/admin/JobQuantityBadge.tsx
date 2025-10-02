@@ -7,6 +7,7 @@ interface JobQuantityBadgeProps {
     quantity?: number;
     quantityFilled?: number;
     expiresAt?: string;
+    flowStatus?: 'ativa' | 'concluida' | 'congelada';
     className?: string;
 }
 
@@ -14,8 +15,12 @@ export const JobQuantityBadge: React.FC<JobQuantityBadgeProps> = ({
     quantity = 1,
     quantityFilled = 0,
     expiresAt,
+    flowStatus,
     className
 }) => {
+    // Se a vaga está concluída ou congelada, não mostrar contagem regressiva
+    const isInactive = flowStatus === 'concluida' || flowStatus === 'congelada';
+
     // Calcular dias até expiração
     const getDaysUntilExpiry = (expiryDate: string) => {
         const now = new Date();
@@ -45,8 +50,8 @@ export const JobQuantityBadge: React.FC<JobQuantityBadgeProps> = ({
                 </Badge>
             )}
 
-            {/* Badge de Expiração */}
-            {expiresAt && (
+            {/* Badge de Expiração - só exibir se a vaga estiver ativa */}
+            {expiresAt && !isInactive && (
                 <Badge
                     variant={isExpired ? "destructive" : isExpiringSoon ? "secondary" : "outline"}
                     className={cn(

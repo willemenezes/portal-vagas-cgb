@@ -736,6 +736,7 @@ const JobManagement = () => {
                             quantity={job.quantity || 1}
                             quantityFilled={job.quantity_filled || 0}
                             expiresAt={job.expires_at}
+                            flowStatus={job.flow_status}
                           />
                         </div>
                       </TableCell>
