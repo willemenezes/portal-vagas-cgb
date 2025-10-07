@@ -331,10 +331,7 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                                                     <Badge variant="secondary" className="text-xs">
                                                         {job.type}
                                                     </Badge>
-                                                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <Users className="w-3 h-3" />
-                                                        {job.applicants || 0} candidatos
-                                                    </span>
+                                                    {/* Ocultado: quantidade de candidatos inscritos */}
                                                 </div>
                                                 <p className="text-xs text-gray-600 line-clamp-2 mb-2">
                                                     {job.description}

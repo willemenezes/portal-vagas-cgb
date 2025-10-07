@@ -308,9 +308,7 @@ const Index = () => {
                               <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
                                 {job.type}
                               </span>
-                              <span className="text-xs text-gray-500">
-                                {job.applicants || 0} candidatos
-                              </span>
+                              {/* Ocultado: quantidade de candidatos inscritos */}
                             </div>
                             <Link
                               to={`/vaga/${job.id}`}

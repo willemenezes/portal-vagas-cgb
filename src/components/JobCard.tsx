@@ -149,10 +149,7 @@ const JobCard = ({ job, isTalentBank = false }: JobCardProps) => {
             <Clock className="w-3 h-3" />
             <span>{job.workload}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Users className="w-3 h-3" />
-            <span>{job.applicants ?? 0} candidatos</span>
-          </div>
+          {/* Ocultado: quantidade de candidatos inscritos */}
         </div>
 
         {/* Action Buttons */}
