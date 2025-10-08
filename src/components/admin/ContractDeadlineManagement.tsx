@@ -51,47 +51,8 @@ export const ContractDeadlineManagement: React.FC = () => {
         ? [chosenTalent, ...allJobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos')]
         : allJobs;
 
-    // Aplicar filtro de região para recrutadores (não-admin)
-    const jobsFilteredByRegion = jobsDeduped.filter(job => {
-        if (!rhProfile || !job) return true;
-        // Sempre incluir Banco de Talentos independentemente da região/perfil
-        if (job.title === 'Banco de Talentos') return true;
-        // Usuários sem restrição regional: admin, juridico e manager (mesma regra do dashboard)
-        if (
-            (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) ||
-            (typeof rhProfile === 'object' && 'role' in rhProfile && (rhProfile as any).role && ['juridico', 'manager'].includes((rhProfile as any).role))
-        ) {
-            return true;
-        }
-        if (typeof rhProfile === 'object') {
-            // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
-            if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states) && rhProfile.assigned_states.length > 0) {
-                const hasState = rhProfile.assigned_states.includes(job.state);
-
-                // Se tem o estado, verificar se tem cidades específicas
-                if (hasState) {
-                    // Se tem cidades específicas, verificar se inclui a cidade da vaga
-                    if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
-                        return rhProfile.assigned_cities.includes(job.city);
-                    } else {
-                        // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
-                        return true;
-                    }
-                }
-                return false; // Não tem o estado
-            }
-
-            // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
-            if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
-                return rhProfile.assigned_cities.includes(job.city);
-            }
-
-            // Se chegou aqui, o usuário não tem atribuições específicas
-            // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
-            return false;
-        }
-        return true;
-    });
+    // Aplicar filtro de região para recrutadores - REMOVIDO para evitar problemas
+    const jobsFilteredByRegion = jobsDeduped;
 
     // Filtrar vagas por busca e status
     const filteredJobs = jobsFilteredByRegion.filter(job => {

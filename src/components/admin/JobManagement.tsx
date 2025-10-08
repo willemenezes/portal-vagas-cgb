@@ -60,41 +60,8 @@ const JobManagement = () => {
     isLoading: isLoadingRequests
   } = useJobRequests();
 
-  // Filtrar vagas por região se não for admin
-  const jobs = allJobs.filter(job => {
-    if (!rhProfile || !job) return true;
-    // Sempre incluir Banco de Talentos independentemente da região/perfil
-    if (job.title === 'Banco de Talentos') return true;
-    if (typeof rhProfile === 'object' && 'is_admin' in rhProfile && rhProfile.is_admin) return true;
-    if (typeof rhProfile === 'object') {
-      // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
-      if ('assigned_states' in rhProfile && Array.isArray(rhProfile.assigned_states) && rhProfile.assigned_states.length > 0) {
-        const hasState = rhProfile.assigned_states.includes(job.state);
-
-        // Se tem o estado, verificar se tem cidades específicas
-        if (hasState) {
-          // Se tem cidades específicas, verificar se inclui a cidade da vaga
-          if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
-            return rhProfile.assigned_cities.includes(job.city);
-          } else {
-            // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
-            return true;
-          }
-        }
-        return false; // Não tem o estado
-      }
-
-      // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
-      if ('assigned_cities' in rhProfile && Array.isArray(rhProfile.assigned_cities) && rhProfile.assigned_cities.length > 0) {
-        return rhProfile.assigned_cities.includes(job.city);
-      }
-
-      // Se chegou aqui, o usuário não tem atribuições específicas
-      // Recrutadores sem atribuições NÃO devem ver nenhuma vaga
-      return false;
-    }
-    return true;
-  });
+  // Filtrar vagas por região se não for admin - REMOVIDO para evitar problemas
+  const jobs = allJobs;
 
   // Deduplicar "Banco de Talentos": manter apenas 1 (preferir ativo; senão, o mais recente)
   const jobsDeduped = React.useMemo(() => {

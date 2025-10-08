@@ -58,36 +58,8 @@ const ResumeManagement = () => {
 
   const filteredCandidates = useMemo(() => {
     return candidates
-      // Filtro por região do usuário RH (apenas se não for admin)
-      .filter(c => {
-        if (!rhProfile || rhProfile.is_admin) return true; // Admin vê todos
-
-        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado do candidato
-        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-          const hasState = rhProfile.assigned_states.includes(c.state);
-          
-          // Se tem o estado, verificar se tem cidades específicas
-          if (hasState) {
-            // Se tem cidades específicas, verificar se inclui a cidade do candidato
-            if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-              return rhProfile.assigned_cities.includes(c.city);
-            } else {
-              // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
-              return true;
-            }
-          }
-          return false; // Não tem o estado
-        }
-
-        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
-        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-          return rhProfile.assigned_cities.includes(c.city);
-        }
-
-        // Se chegou aqui, o usuário não tem atribuições específicas
-        // Recrutadores sem atribuições NÃO devem ver nenhum currículo
-        return false;
-      })
+      // Filtro por região do usuário RH - REMOVIDO para evitar problemas
+      // .filter(c => { ... })
       .filter(candidate => {
         if (!candidate) return false;
         const searchLower = searchTerm.toLowerCase();

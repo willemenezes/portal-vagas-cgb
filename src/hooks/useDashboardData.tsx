@@ -59,25 +59,8 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
 
     let allCandidates = allCandidatesData || [];
 
-    // Aplicar filtro por região, a menos que seja admin, jurídico ou gerência
-    const unrestrictedRoles = ['admin', 'juridico', 'manager'];
-    if (!unrestrictedRoles.includes(rhProfile.role)) {
-        allCandidates = allCandidates.filter(candidate => {
-            if (!candidate) return false;
-            const hasState = candidate.state;
-            const hasCity = candidate.city;
-
-            if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-                return hasState && rhProfile.assigned_states.includes(candidate.state as string);
-            }
-            if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-                return hasCity && rhProfile.assigned_cities.includes(candidate.city as string);
-            }
-            // Se chegou aqui, o usuário não tem atribuições específicas
-            // Recrutadores sem atribuições NÃO devem ver dados no dashboard
-            return false;
-        });
-    }
+    // Filtro por região - REMOVIDO para evitar problemas
+    // allCandidates = allCandidates.filter(candidate => { ... });
 
     // Contabiliza apenas vagas realmente visíveis/ativas no sistema
     // status = 'active' | approval_status = 'active' | flow_status = 'ativa'

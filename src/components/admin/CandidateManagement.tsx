@@ -47,39 +47,8 @@ const CandidateManagement = () => {
       result = result.filter(c => c.job_id !== talentBankJobId);
     }
 
-    // 2. Filtro de região (RH)
-    result = result.filter(c => {
-      if (!rhProfile || rhProfile.is_admin) return true;
-
-      const candidateState = c.state || c.job?.state;
-      const candidateCity = c.city || c.job?.city;
-
-      // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado do candidato
-      if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-        const hasState = rhProfile.assigned_states.includes(candidateState);
-
-        // Se tem o estado, verificar se tem cidades específicas
-        if (hasState) {
-          // Se tem cidades específicas, verificar se inclui a cidade do candidato
-          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-            return rhProfile.assigned_cities.includes(candidateCity);
-          } else {
-            // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
-            return true;
-          }
-        }
-        return false; // Não tem o estado
-      }
-
-      // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
-      if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-        return rhProfile.assigned_cities.includes(candidateCity);
-      }
-
-      // Se chegou aqui, o usuário não tem atribuições específicas
-      // Para recrutadores sem atribuições, não mostrar nenhum candidato
-      return false;
-    });
+    // 2. Filtro de região (RH) - REMOVIDO para evitar problemas
+    // result = result.filter(c => { ... });
 
     // 3. Filtro de busca por texto
     if (searchTerm.trim()) {
