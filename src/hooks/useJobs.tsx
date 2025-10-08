@@ -222,44 +222,12 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
     queryFn: async () => {
       console.log('🔍 [usePendingJobs] Perfil:', rhProfile?.role, 'is_admin:', rhProfile && 'is_admin' in rhProfile ? rhProfile.is_admin : 'N/A');
 
-      // Se o usuário é um gerente, mas não tem regiões atribuídas, não retorna nada.
-      const isManagerWithNoRegions =
-        rhProfile?.role === 'manager' &&
-        (!rhProfile.assigned_states || rhProfile.assigned_states.length === 0) &&
-        (!rhProfile.assigned_cities || rhProfile.assigned_cities.length === 0);
-
-      if (isManagerWithNoRegions) {
-        console.log('❌ [usePendingJobs] Gerente sem regiões, retornando vazio');
-        return [];
-      }
-
+      // Filtro de região - REMOVIDO para evitar problemas
       let query = supabase
         .from('jobs')
         .select('*')
-        .eq('approval_status', 'pending_approval');
-
-      // Aplica filtro de região apenas para gerentes (ADMIN vê todas)
-      if (rhProfile && rhProfile.role === 'manager') {
-        console.log('🔧 [usePendingJobs] Aplicando filtro de região para GERENTE');
-
-        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
-        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-          query = query.in('state', rhProfile.assigned_states);
-
-          // Se tem o estado E tem cidades específicas, também filtrar por cidade
-          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-            query = query.in('city', rhProfile.assigned_cities);
-          }
-        }
-        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
-        else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-          query = query.in('city', rhProfile.assigned_cities);
-        }
-      } else {
-        console.log('✅ [usePendingJobs] ADMIN ou outro perfil - sem filtro de região');
-      }
-
-      query = query.order('created_at', { ascending: false });
+        .eq('approval_status', 'pending_approval')
+        .order('created_at', { ascending: false });
 
       const { data, error } = await query;
 

@@ -96,10 +96,8 @@ export default function JobRequestManagement() {
                 const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
                 let data = await response.json();
 
-                // Filtrar estados se o usuário tem restrições regionais
-                if (rhProfile && !rhProfile.is_admin && rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-                    data = data.filter((state: State) => rhProfile.assigned_states.includes(state.sigla));
-                }
+                // Filtro de região - REMOVIDO para evitar problemas
+                // Todos veem todos os estados
 
                 setStates(data);
             } catch (error) {

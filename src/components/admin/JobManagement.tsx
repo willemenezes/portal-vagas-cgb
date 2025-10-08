@@ -125,32 +125,10 @@ const JobManagement = () => {
   const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<JobRequest | null>(null);
 
   // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
-  // e aplicar filtro de região para usuários não-admin (recrutadores)
+  // Filtro de região - REMOVIDO para evitar problemas
   const approvedRequests = (jobRequests?.filter((request) => {
     if (request.status !== 'aprovado' || request.job_created) return false;
-
-    // Admin vê todas as solicitações aprovadas
-    if (!rhProfile || rhProfile.is_admin) return true;
-
-    // PRIORIDADE 1: filtro por estados atribuídos
-    if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-      const hasState = rhProfile.assigned_states.includes(request.state);
-      if (hasState) {
-        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-          return rhProfile.assigned_cities.includes(request.city);
-        }
-        return true; // tem o estado e não há cidades específicas
-      }
-      return false;
-    }
-
-    // PRIORIDADE 2: filtro por cidades atribuídas
-    if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-      return rhProfile.assigned_cities.includes(request.city);
-    }
-
-    // Sem atribuições específicas: não exibir
-    return false;
+    return true; // Todos veem todas
   })) || [];
 
   const talentBankJobExists = jobsDeduped.some(job => job.title === "Banco de Talentos");

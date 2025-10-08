@@ -91,22 +91,8 @@ const ResumeManagement = () => {
   const summary = useMemo(() => {
     let relevantCandidates = Array.isArray(candidates) ? candidates : [];
 
-    // Aplicar filtro por região também no summary
-    if (rhProfile && !rhProfile.is_admin) {
-      relevantCandidates = relevantCandidates.filter(c => {
-        // Se tem estados atribuídos, filtrar por eles
-        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-          return rhProfile.assigned_states.includes(c.state);
-        }
-
-        // Se tem cidades atribuídas, filtrar por elas
-        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-          return rhProfile.assigned_cities.includes(c.city);
-        }
-
-        return true;
-      });
-    }
+    // Filtro por região - REMOVIDO para evitar problemas
+    // Todos veem todos os candidatos
 
     const summaryData = SELECTION_STATUSES.reduce((acc, status) => {
       acc[status] = relevantCandidates.filter(c => c.status === status).length;

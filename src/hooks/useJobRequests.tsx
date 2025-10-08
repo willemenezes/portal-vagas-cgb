@@ -138,21 +138,8 @@ export const useJobRequests = () => {
                 .from('job_requests')
                 .select('*');
 
-            // Aplicar filtros regionais baseados no perfil do usuário
-            if (rhProfile && !rhProfile.is_admin) {
-                if (rhProfile.role === 'solicitador') {
-                    // Solicitadores veem apenas suas próprias solicitações
-                    // E aplicam filtro regional se configurado
-                    query = query.eq('requested_by', user.id.toString());
-                } else if (rhProfile.role === 'manager' || rhProfile.role === 'gerente') {
-                    // Gerentes veem todas as solicitações, mas filtradas por região
-                    if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-                        query = query.in('state', rhProfile.assigned_states);
-                    } else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-                        query = query.in('city', rhProfile.assigned_cities);
-                    }
-                }
-            }
+            // Filtros regionais - REMOVIDOS para evitar problemas
+            // Todos veem todas as solicitações por enquanto
 
             query = query.order('created_at', { ascending: false });
 
