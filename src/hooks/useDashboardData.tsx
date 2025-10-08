@@ -70,13 +70,10 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         .eq('status', 'active')
         .eq('approval_status', 'active')
         .eq('flow_status', 'ativa');
-    if (!unrestrictedRoles.includes(rhProfile.role)) {
-        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-            jobsQuery = jobsQuery.in('state', rhProfile.assigned_states);
-        } else if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
-            jobsQuery = jobsQuery.in('city', rhProfile.assigned_cities);
-        }
-    }
+    
+    // Filtro de região para vagas - REMOVIDO para evitar problemas
+    // if (!unrestrictedRoles.includes(rhProfile.role)) { ... }
+    
     const { count: totalJobs, error: jobsError } = await jobsQuery;
     if (jobsError) throw jobsError;
 
