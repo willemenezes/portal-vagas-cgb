@@ -50,7 +50,7 @@ export const useCandidates = () => {
           *,
           job:jobs(title, city, state)
         `)
-        .order('applied_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Erro ao buscar candidatos:", error);
