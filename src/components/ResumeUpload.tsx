@@ -40,6 +40,15 @@ const ResumeUpload = () => {
     birthCity: "",
     lastCompany1: "",
     lastCompany2: "",
+    // Campos adicionais para igualar com candidatura direta
+    age: "",
+    workedAtCGB: "",
+    whatsapp: "",
+    pcd: "",
+    travel: "",
+    vehicle: "",
+    vehicleModel: "",
+    vehicleYear: "",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -156,7 +165,7 @@ const ResumeUpload = () => {
       // Create resume record
       const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill !== '');
 
-      // Criar apenas os dados específicos para a tabela resumes (sem campos extras)
+      // Criar dados completos para a tabela resumes (após correção do banco)
       const resumeDataForDB = {
         name: formData.name,
         email: formData.email,
@@ -168,7 +177,18 @@ const ResumeUpload = () => {
         skills: skillsArray,
         resume_file_url: resumeFileUrl,
         resume_file_name: resumeFileName,
-        status: 'new' as const
+        status: 'new' as const,
+        // Campos básicos
+        cnh: formData.cnh,
+        // Campos adicionais (agora funcionando)
+        age: formData.age,
+        whatsapp: formData.whatsapp,
+        workedAtCGB: formData.workedAtCGB,
+        pcd: formData.pcd,
+        travel: formData.travel,
+        vehicle: formData.vehicle,
+        vehicleModel: formData.vehicleModel,
+        vehicleYear: formData.vehicleYear,
       };
 
       // Debug: verificar exatamente o que está sendo enviado
@@ -196,8 +216,8 @@ const ResumeUpload = () => {
             ],
             is_former_employee: false,
             former_employee_details: '',
-            is_pcd: false,
-            pcd_details: '',
+            is_pcd: formData.pcd === 'Sim',
+            pcd_details: formData.pcd === 'Sim' ? 'Informado no cadastro' : '',
             desired_position: formData.position || 'Posição não especificada',
             responsible_name: null
           }
@@ -231,6 +251,14 @@ const ResumeUpload = () => {
         birthCity: "",
         lastCompany1: "",
         lastCompany2: "",
+        age: "",
+        workedAtCGB: "",
+        whatsapp: "",
+        pcd: "",
+        travel: "",
+        vehicle: "",
+        vehicleModel: "",
+        vehicleYear: "",
       });
       setSelectedFile(null);
 
@@ -268,6 +296,14 @@ const ResumeUpload = () => {
           birthCity: "",
           lastCompany1: "",
           lastCompany2: "",
+          age: "",
+          workedAtCGB: "",
+          whatsapp: "",
+          pcd: "",
+          travel: "",
+          vehicle: "",
+          vehicleModel: "",
+          vehicleYear: "",
         });
         setSelectedFile(null);
         navigate("/");
@@ -536,6 +572,111 @@ const ResumeUpload = () => {
                       <SelectItem value="Outra">Outra</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Informações Adicionais */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-cgb-blue">Informações Adicionais</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="age">Idade *</Label>
+                    <Input
+                      id="age"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      placeholder="Ex: 25"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="whatsapp">WhatsApp *</Label>
+                    <Input
+                      id="whatsapp"
+                      value={formData.whatsapp}
+                      onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                      placeholder="(91) 99999-9999"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="workedAtCGB">Já trabalhou na CGB? *</Label>
+                    <Select value={formData.workedAtCGB} onValueChange={(value) => setFormData({ ...formData, workedAtCGB: value })} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sim">Sim</SelectItem>
+                        <SelectItem value="Não">Não</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="pcd">Pessoa com Deficiência (PCD)? *</Label>
+                    <Select value={formData.pcd} onValueChange={(value) => setFormData({ ...formData, pcd: value })} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sim">Sim</SelectItem>
+                        <SelectItem value="Não">Não</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="travel">Disponibilidade para Viagens *</Label>
+                    <Select value={formData.travel} onValueChange={(value) => setFormData({ ...formData, travel: value })} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sim">Sim</SelectItem>
+                        <SelectItem value="Não">Não</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="vehicle">Possui Veículo Próprio? *</Label>
+                    <Select value={formData.vehicle} onValueChange={(value) => setFormData({ ...formData, vehicle: value })} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Carro">Carro</SelectItem>
+                        <SelectItem value="Moto">Moto</SelectItem>
+                        <SelectItem value="Não possuo">Não possuo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.vehicle && formData.vehicle !== "Não possuo" && (
+                    <>
+                      <div>
+                        <Label htmlFor="vehicleModel">Modelo do Veículo</Label>
+                        <Input
+                          id="vehicleModel"
+                          value={formData.vehicleModel}
+                          onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
+                          placeholder="Ex: Honda Civic"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="vehicleYear">Ano do Veículo</Label>
+                        <Input
+                          id="vehicleYear"
+                          value={formData.vehicleYear}
+                          onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
+                          placeholder="Ex: 2020"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

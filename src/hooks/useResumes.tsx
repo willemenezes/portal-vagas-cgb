@@ -16,6 +16,14 @@ export interface Resume {
   resume_file_name?: string | null;
   cnh?: string | null;
   vehicle?: string | null;
+  // Novos campos adicionados
+  age?: string | null;
+  whatsapp?: string | null;
+  workedAtCGB?: string | null;
+  pcd?: string | null;
+  travel?: string | null;
+  vehicleModel?: string | null;
+  vehicleYear?: string | null;
   status: 'new' | 'reviewed' | 'shortlisted' | 'contacted';
   submitted_date: string;
   created_at: string;

@@ -169,16 +169,16 @@ const TalentBankManagement = () => {
                 applied_date: new Date().toISOString(),
                 // Campos adicionais baseados no currículo
                 desiredJob: resumeToInvite.position || selectedJob?.title || '',
-                age: '', // Não disponível no banco de talentos
-                workedAtCGB: '', // Não disponível no banco de talentos
-                whatsapp: resumeToInvite.phone || '',
+                age: resumeToInvite.age || '', // Agora disponível se migração foi executada
+                workedAtCGB: resumeToInvite.workedAtCGB || '', // Agora disponível se migração foi executada
+                whatsapp: resumeToInvite.whatsapp || resumeToInvite.phone || '',
                 emailInfo: resumeToInvite.email,
-                pcd: '', // Não disponível no banco de talentos
-                travel: '', // Não disponível no banco de talentos
-                cnh: '', // Não disponível no banco de talentos
-                vehicle: '', // Não disponível no banco de talentos
-                vehicleModel: '', // Não disponível no banco de talentos
-                vehicleYear: '', // Não disponível no banco de talentos
+                pcd: resumeToInvite.pcd || '', // Agora disponível se migração foi executada
+                travel: resumeToInvite.travel || '', // Agora disponível se migração foi executada
+                cnh: resumeToInvite.cnh || '', // Agora disponível se migração foi executada
+                vehicle: resumeToInvite.vehicle || '', // Agora disponível se migração foi executada
+                vehicleModel: resumeToInvite.vehicleModel || '', // Agora disponível se migração foi executada
+                vehicleYear: resumeToInvite.vehicleYear || '', // Agora disponível se migração foi executada
                 lgpdConsent: true // Assumir consentimento já dado no banco de talentos
             };
 
