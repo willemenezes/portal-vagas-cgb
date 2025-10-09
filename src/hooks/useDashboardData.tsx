@@ -44,40 +44,125 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         throw new Error("Perfil do usuário não carregado.");
     }
 
-    let query = supabase
-        .from('candidates')
-        .select('applied_date, status, city, state');
-
     const fromDate = dateRange?.from ?? addDays(new Date(), -180);
     const toDate = dateRange?.to ?? new Date();
 
-    query = query.gte('created_at', fromDate.toISOString());
-    query = query.lte('created_at', toDate.toISOString());
+    // BUG FIX: Para recrutador, precisamos buscar os dados para filtrar por região
+    // Para admin, usamos count('exact') direto
+    let totalCandidates = 0;
 
-    const { data: allCandidatesData, error: candidatesError } = await query;
+    if (rhProfile && rhProfile.role === 'recruiter' &&
+        (rhProfile.assigned_states?.length || rhProfile.assigned_cities?.length)) {
+        // Recrutador: buscar dados para filtrar
+        let candidatesForCountQuery = supabase
+            .from('candidates')
+            .select('state, city')
+            .gte('created_at', fromDate.toISOString())
+            .lte('created_at', toDate.toISOString());
+
+        const { data: candidatesForCount, error: countError } = await candidatesForCountQuery;
+        if (countError) throw countError;
+
+        // Filtrar por região
+        const filtered = (candidatesForCount || []).filter(candidate => {
+            const assignedStates = rhProfile.assigned_states || [];
+            const assignedCities = rhProfile.assigned_cities || [];
+
+            const matchState = assignedStates.length === 0 || assignedStates.includes(candidate.state || '');
+            const matchCity = assignedCities.length === 0 || assignedCities.includes(candidate.city || '');
+
+            return matchState && matchCity;
+        });
+
+        totalCandidates = filtered.length;
+    } else {
+        // Admin: usar count('exact') direto
+        let countQuery = supabase
+            .from('candidates')
+            .select('id', { count: 'exact', head: true })
+            .gte('created_at', fromDate.toISOString())
+            .lte('created_at', toDate.toISOString());
+
+        const { count, error: countError } = await countQuery;
+        if (countError) throw countError;
+        totalCandidates = count || 0;
+    }
+
+    // Buscar dados para gráficos e análises (com paginação se necessário)
+    // Limitamos a 2000 para performance, mas usamos count acima para total real
+    let dataQuery = supabase
+        .from('candidates')
+        .select('applied_date, status, city, state')
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString())
+        .limit(2000); // Aumentado de 1000 padrão para 2000
+
+    const { data: allCandidatesData, error: candidatesError } = await dataQuery;
     if (candidatesError) throw candidatesError;
 
     let allCandidates = allCandidatesData || [];
 
-    // Filtro por região - REMOVIDO para evitar problemas
-    // allCandidates = allCandidates.filter(candidate => { ... });
+    // BUG FIX: Filtro por região para RECRUTADOR (reativado e corrigido)
+    if (rhProfile && rhProfile.role === 'recruiter') {
+        const assignedStates = rhProfile.assigned_states || [];
+        const assignedCities = rhProfile.assigned_cities || [];
+
+        if (assignedStates.length > 0 || assignedCities.length > 0) {
+            allCandidates = allCandidates.filter(candidate => {
+                const candidateState = candidate.state;
+                const candidateCity = candidate.city;
+
+                const matchState = assignedStates.length === 0 || assignedStates.includes(candidateState || '');
+                const matchCity = assignedCities.length === 0 || assignedCities.includes(candidateCity || '');
+
+                return matchState && matchCity;
+            });
+        }
+    }
 
     // Contabiliza apenas vagas realmente visíveis/ativas no sistema
     // status = 'active' | approval_status = 'active' | flow_status = 'ativa'
-    let jobsQuery = supabase
-        .from('jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'active')
-        .eq('approval_status', 'active')
-        .eq('flow_status', 'ativa');
-    
-    // Filtro de região para vagas - REMOVIDO para evitar problemas
-    // if (!unrestrictedRoles.includes(rhProfile.role)) { ... }
-    
-    const { count: totalJobs, error: jobsError } = await jobsQuery;
-    if (jobsError) throw jobsError;
+    let totalJobs = 0;
 
-    const totalCandidates = allCandidates.length;
+    if (rhProfile && rhProfile.role === 'recruiter' &&
+        (rhProfile.assigned_states?.length || rhProfile.assigned_cities?.length)) {
+        // Recrutador: buscar vagas para filtrar por região
+        let jobsForFilterQuery = supabase
+            .from('jobs')
+            .select('state, city')
+            .eq('status', 'active')
+            .eq('approval_status', 'active')
+            .eq('flow_status', 'ativa');
+
+        const { data: jobsForFilter, error: jobsError } = await jobsForFilterQuery;
+        if (jobsError) throw jobsError;
+
+        // Filtrar por região
+        const filteredJobs = (jobsForFilter || []).filter(job => {
+            const assignedStates = rhProfile.assigned_states || [];
+            const assignedCities = rhProfile.assigned_cities || [];
+
+            const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
+            const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
+
+            return matchState && matchCity;
+        });
+
+        totalJobs = filteredJobs.length;
+    } else {
+        // Admin: usar count('exact') direto
+        let jobsQuery = supabase
+            .from('jobs')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'active')
+            .eq('approval_status', 'active')
+            .eq('flow_status', 'ativa');
+
+        const { count, error: jobsError } = await jobsQuery;
+        if (jobsError) throw jobsError;
+        totalJobs = count || 0;
+    }
+
     const statusCounts = allCandidates.reduce((acc, candidate) => {
         if (candidate?.status) {
             const status = candidate.status;
@@ -87,7 +172,8 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
     }, {} as Record<string, number>);
 
     const approvedCount = statusCounts['Aprovado'] || 0;
-    const conversionRate = totalCandidates > 0 ? Math.round((approvedCount / totalCandidates) * 100) : 0;
+    // BUG FIX: totalCandidates agora vem do count('exact'), não do array.length
+    const conversionRate = (totalCandidates || 0) > 0 ? Math.round((approvedCount / (totalCandidates || 1)) * 100) : 0;
 
     const statusData: StatusData[] = [
         { name: "Pendentes", value: statusCounts['Cadastrado'] || 0 },
@@ -97,7 +183,7 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
     ];
 
     const funnelData: FunnelData[] = [
-        { name: 'Cadastrado', value: totalCandidates, fill: 'hsl(220, 80%, 60%)' },
+        { name: 'Cadastrado', value: totalCandidates || 0, fill: 'hsl(220, 80%, 60%)' },
         { name: 'Análise de Currículo', value: statusCounts['Análise de Currículo'] || 0, fill: 'hsl(225, 75%, 65%)' },
         { name: 'Entrevista com RH', value: statusCounts['Entrevista com RH'] || 0, fill: 'hsl(230, 70%, 70%)' },
         { name: 'Entrevista com Gestor', value: statusCounts['Entrevista com Gestor'] || 0, fill: 'hsl(240, 65%, 75%)' },
@@ -144,7 +230,16 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         };
     });
 
-    return { totalCandidates, totalJobs: totalJobs || 0, conversionRate, approvedCount, statusData, topCities, funnelData, weeklyData };
+    return {
+        totalCandidates: totalCandidates,
+        totalJobs: totalJobs,
+        conversionRate,
+        approvedCount,
+        statusData,
+        topCities,
+        funnelData,
+        weeklyData
+    };
 };
 
 export const useDashboardData = (rhProfile: RHUser | null, dateRange?: DateRange) => {

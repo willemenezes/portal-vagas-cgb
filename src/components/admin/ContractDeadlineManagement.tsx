@@ -51,8 +51,25 @@ export const ContractDeadlineManagement: React.FC = () => {
         ? [chosenTalent, ...allJobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos')]
         : allJobs;
 
-    // Aplicar filtro de região para recrutadores - REMOVIDO para evitar problemas
-    const jobsFilteredByRegion = jobsDeduped;
+    // BUG FIX: Aplicar filtro de região para RECRUTADOR
+    const jobsFilteredByRegion = React.useMemo(() => {
+        if (!rhProfile || rhProfile.role !== 'recruiter') {
+            return jobsDeduped;
+        }
+
+        const assignedStates = rhProfile.assigned_states || [];
+        const assignedCities = rhProfile.assigned_cities || [];
+
+        if (assignedStates.length === 0 && assignedCities.length === 0) {
+            return jobsDeduped;
+        }
+
+        return jobsDeduped.filter(job => {
+            const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
+            const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
+            return matchState && matchCity;
+        });
+    }, [jobsDeduped, rhProfile]);
 
     // Filtrar vagas por busca e status
     const filteredJobs = jobsFilteredByRegion.filter(job => {

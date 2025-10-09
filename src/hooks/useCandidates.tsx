@@ -40,23 +40,70 @@ export interface Candidate {
 // Criando um tipo específico para a criação de um novo candidato
 export type NewCandidate = Omit<Candidate, 'id' | 'created_at' | 'updated_at' | 'applied_date' | 'job'>;
 
+/**
+ * Hook para buscar TODOS os candidatos do sistema.
+ * 
+ * ⚠️ ATENÇÃO: Este hook tem limite de 1000 registros do Supabase por padrão.
+ * Para telas que precisam de contagem exata ou muitos registros, use:
+ * - useCandidatesByJob() para filtrar por vaga específica (server-side)
+ * - count('exact') para contagens totais
+ * - Paginação com .range() para grandes volumes
+ * 
+ * Este hook é adequado para:
+ * - Visualizações administrativas gerais (< 1000 candidatos)
+ * - Dropdowns e seletores
+ * - Dashboards que não dependem de contagem exata
+ */
 export const useCandidates = () => {
   return useQuery({
-    queryKey: ['candidates'],
+    queryKey: ['candidates', 'unlimited', 'v3'], // BUG FIX: Nova queryKey para forçar refresh total
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('candidates')
-        .select(`
-          *,
-          job:jobs(title, city, state)
-        `)
-        .order('created_at', { ascending: false });
+      console.log('🔄 useCandidates: Buscando TODOS os candidatos (SEM LIMITE)...');
 
-      if (error) {
-        console.error("Erro ao buscar candidatos:", error);
-        throw error;
+      // BUG FIX FINAL: Buscar em lotes de 1000 até pegar tudo
+      let allCandidates: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error, count } = await supabase
+          .from('candidates')
+          .select(`
+            *,
+            job:jobs(title, city, state, department)
+          `, { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        if (error) {
+          console.error("❌ Erro ao buscar candidatos:", error);
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          allCandidates = [...allCandidates, ...data];
+          console.log(`📥 Lote ${Math.floor(from / batchSize) + 1}: ${data.length} candidatos (Total acumulado: ${allCandidates.length})`);
+          from += batchSize;
+
+          // Se retornou menos que batchSize, não há mais dados
+          if (data.length < batchSize) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+
+        // Segurança: máximo 20 lotes (20.000 candidatos)
+        if (from >= 20000) {
+          console.warn('⚠️ Limite de segurança atingido (20.000 candidatos)');
+          hasMore = false;
+        }
       }
-      return data;
+
+      console.log(`✅ useCandidates: ${allCandidates.length} candidatos carregados (TOTAL REAL)`);
+
+      return allCandidates;
     },
     select: (data): Candidate[] => {
       if (!Array.isArray(data)) return [];

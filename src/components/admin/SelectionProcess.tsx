@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAllJobs, Job, useUpdateJobFlowStatus } from '@/hooks/useJobs';
 import { useCandidates, Candidate, useUpdateCandidateStatus } from '@/hooks/useCandidates';
+import { useCandidatesByJob } from '@/hooks/useCandidatesByJob';
 import { SELECTION_STATUSES, SelectionStatus, STATUS_COLORS } from '@/lib/constants';
 import { Loader2, PlusCircle, Linkedin, Gavel, Grid3X3, ArrowRightLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -84,7 +85,9 @@ const KanbanCard = ({ candidate, index, onClick }) => {
 
 const SelectionProcess = () => {
     const { data: allJobs = [], isLoading: isLoadingJobs } = useAllJobs();
-    const { data: candidates = [], isLoading: isLoadingCandidates } = useCandidates();
+    // BUG FIX: Removido useCandidates() global que buscava TODOS os candidatos
+    // Agora usamos useCandidatesByJob() que busca apenas os candidatos da vaga selecionada
+    // const { data: candidates = [], isLoading: isLoadingCandidates } = useCandidates();
     const updateStatus = useUpdateCandidateStatus();
     const updateJobFlowStatus = useUpdateJobFlowStatus();
     const createNote = useCreateCandidateNote();
@@ -92,6 +95,9 @@ const SelectionProcess = () => {
     const { data: rhProfile, isLoading: isRhProfileLoading } = useRHProfile(user?.id);
     const { toast } = useToast();
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+    // BUG FIX: Hook otimizado que busca apenas candidatos da vaga selecionada (server-side)
+    const { data: jobCandidates = [], isLoading: isLoadingCandidates } = useCandidatesByJob(selectedJobId);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [candidateToReject, setCandidateToReject] = useState<Candidate | null>(null);
@@ -106,9 +112,23 @@ const SelectionProcess = () => {
         if (isRhProfileLoading) return [];
 
         // Filtrar apenas vagas ativas (flow_status = 'ativa')
-        const activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
+        let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
 
-        // Filtro de região - REMOVIDO para evitar problemas
+        // BUG FIX: Filtro de região para RECRUTADOR (reativado e corrigido)
+        if (rhProfile && 'role' in rhProfile && rhProfile.role === 'recruiter') {
+            const assignedStates = (rhProfile.assigned_states as string[]) || [];
+            const assignedCities = (rhProfile.assigned_cities as string[]) || [];
+
+            if (assignedStates.length > 0 || assignedCities.length > 0) {
+                activeJobs = activeJobs.filter(job => {
+                    const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
+                    const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
+
+                    return matchState && matchCity;
+                });
+            }
+        }
+
         return activeJobs;
     }, [allJobs, rhProfile, isRhProfileLoading]);
 
@@ -176,10 +196,12 @@ const SelectionProcess = () => {
         setSelectedCandidate(null);
     };
 
+    // BUG FIX: Não precisa mais filtrar localmente, pois jobCandidates já vem filtrado do servidor
     const filteredCandidates = useMemo(() => {
-        if (!selectedJobId || !Array.isArray(candidates)) return [];
-        return candidates.filter(c => c.job_id === selectedJobId);
-    }, [selectedJobId, candidates]);
+        if (!selectedJobId || !Array.isArray(jobCandidates)) return [];
+        // jobCandidates já está filtrado por job_id no hook useCandidatesByJob
+        return jobCandidates;
+    }, [selectedJobId, jobCandidates]);
 
     const columns = useMemo(() => {
         // Gera as colunas dinamicamente a partir das constantes
@@ -247,7 +269,8 @@ const SelectionProcess = () => {
         const { source, destination, draggableId } = result;
         if (!destination) return;
 
-        const candidate = candidates.find(c => c.id === draggableId);
+        // BUG FIX: Usar jobCandidates ao invés de candidates global
+        const candidate = jobCandidates.find(c => c.id === draggableId);
         if (!candidate) return;
 
         // Regra de bloqueio para Validação TJ
@@ -483,16 +506,14 @@ const SelectionProcess = () => {
                     {activeTab === 'reprovados' && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                             <p className="text-sm text-blue-700">
-                                <strong>📊 Estatística:</strong> Total de candidatos reprovados nesta vaga: {filteredCandidates.filter(c => c.status === 'Reprovado').length} |
-                                Total no sistema: {candidates.filter(c => c.status === 'Reprovado').length}
+                                <strong>📊 Estatística:</strong> Total de candidatos reprovados nesta vaga: {filteredCandidates.filter(c => c.status === 'Reprovado').length}
                             </p>
                         </div>
                     )}
                     {activeTab === 'aprovados' && (
                         <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                             <p className="text-sm text-green-700">
-                                <strong>📊 Estatística:</strong> Total de candidatos aprovados nesta vaga: {filteredCandidates.filter(c => c.status === 'Aprovado').length} |
-                                Total no sistema: {candidates.filter(c => c.status === 'Aprovado').length}
+                                <strong>📊 Estatística:</strong> Total de candidatos aprovados nesta vaga: {filteredCandidates.filter(c => c.status === 'Aprovado').length}
                             </p>
                         </div>
                     )}

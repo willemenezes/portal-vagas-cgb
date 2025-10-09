@@ -47,8 +47,28 @@ const CandidateManagement = () => {
       result = result.filter(c => c.job_id !== talentBankJobId);
     }
 
-    // 2. Filtro de região (RH) - REMOVIDO para evitar problemas
-    // result = result.filter(c => { ... });
+    // 2. BUG FIX: Filtro de região para RECRUTADOR (reativado e corrigido)
+    if (rhProfile && rhProfile.role === 'recruiter') {
+      const assignedStates = rhProfile.assigned_states || [];
+      const assignedCities = rhProfile.assigned_cities || [];
+
+      if (assignedStates.length > 0 || assignedCities.length > 0) {
+        result = result.filter(candidate => {
+          const candidateState = candidate.state || candidate.job?.state;
+          const candidateCity = candidate.city || candidate.job?.city;
+
+          // Se não tem estado/cidade definido, não deve aparecer para recrutador com filtro
+          if (!candidateState && assignedStates.length > 0) return false;
+          if (!candidateCity && assignedCities.length > 0) return false;
+
+          // Verifica se bate com os estados E cidades atribuídos
+          const matchState = assignedStates.length === 0 || assignedStates.includes(candidateState);
+          const matchCity = assignedCities.length === 0 || assignedCities.includes(candidateCity);
+
+          return matchState && matchCity;
+        });
+      }
+    }
 
     // 3. Filtro de busca por texto
     if (searchTerm.trim()) {

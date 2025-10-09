@@ -60,8 +60,25 @@ const JobManagement = () => {
     isLoading: isLoadingRequests
   } = useJobRequests();
 
-  // Filtrar vagas por região se não for admin - REMOVIDO para evitar problemas
-  const jobs = allJobs;
+  // BUG FIX: Filtrar vagas por região para RECRUTADOR
+  const jobs = React.useMemo(() => {
+    if (!rhProfile || rhProfile.role !== 'recruiter') {
+      return allJobs;
+    }
+
+    const assignedStates = rhProfile.assigned_states || [];
+    const assignedCities = rhProfile.assigned_cities || [];
+
+    if (assignedStates.length === 0 && assignedCities.length === 0) {
+      return allJobs;
+    }
+
+    return allJobs.filter(job => {
+      const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
+      const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
+      return matchState && matchCity;
+    });
+  }, [allJobs, rhProfile]);
 
   // Deduplicar "Banco de Talentos": manter apenas 1 (preferir ativo; senão, o mais recente)
   const jobsDeduped = React.useMemo(() => {
