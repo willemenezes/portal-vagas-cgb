@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { MessageSquare } from 'lucide-react';
 import { useAllRejectionNotes } from '@/hooks/useAllRejectionNotes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useQueryClient } from '@tanstack/react-query';
 import { differenceInDays, parseISO, isValid } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
@@ -84,6 +85,7 @@ const KanbanCard = ({ candidate, index, onClick }) => {
 };
 
 const SelectionProcess = () => {
+    const queryClient = useQueryClient(); // BUG FIX: Para invalidar queries após atualizações diretas
     const { data: allJobs = [], isLoading: isLoadingJobs } = useAllJobs();
     // BUG FIX: Removido useCandidates() global que buscava TODOS os candidatos
     // Agora usamos useCandidatesByJob() que busca apenas os candidatos da vaga selecionada
@@ -165,6 +167,11 @@ const SelectionProcess = () => {
                             console.error(`Erro ao corrigir legal_status para ${candidate.name}:`, error);
                         } else {
                             console.log(`Legal_status corrigido para ${candidate.name}`);
+
+                            // BUG FIX: Invalidar queries para atualização automática da UI
+                            queryClient.invalidateQueries({ queryKey: ['candidates'] });
+                            queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+                            queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
 
                             if (user) {
                                 createNote.mutate({
@@ -349,6 +356,11 @@ const SelectionProcess = () => {
                                 console.error('Erro ao resetar legal_status:', error);
                                 toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
                             } else {
+                                // BUG FIX: Invalidar queries para atualização automática da UI
+                                queryClient.invalidateQueries({ queryKey: ['candidates'] });
+                                queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+                                queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+                                
                                 if (isMovingBackward) {
                                     toast({
                                         title: "Status atualizado!",

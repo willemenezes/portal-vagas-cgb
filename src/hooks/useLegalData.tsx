@@ -197,8 +197,11 @@ export const useSaveLegalData = () => {
             }
         },
         onSuccess: (data) => {
+            // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
             queryClient.invalidateQueries({ queryKey: ['legalData', data.candidate_id] });
             queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
             queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
             queryClient.invalidateQueries({ queryKey: ['pendingLegalValidations'] });
         },
@@ -274,8 +277,13 @@ export const useReviewLegalData = () => {
             return data;
         },
         onSuccess: async (data, variables) => {
+            // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
             queryClient.invalidateQueries({ queryKey: ['legalData', data.candidate_id] });
             queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+            queryClient.invalidateQueries({ queryKey: ['candidatesForLegalValidation'] });
+            queryClient.invalidateQueries({ queryKey: ['pendingLegalValidations'] });
 
             toast({
                 title: 'Revisão salva',

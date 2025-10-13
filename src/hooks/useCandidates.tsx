@@ -155,7 +155,12 @@ export const useCreateCandidate = () => {
       return data;
     },
     onSuccess: () => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] });
     },
   });
 };
@@ -195,9 +200,20 @@ export const useUpdateCandidateStatus = () => {
       return data;
     },
     onSuccess: async (data, variables) => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] }); // Processo Seletivo
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); // Dashboard
+      queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }); // Estatísticas
+      queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }); // Contagens
+      
       // Opcional: atualizar o candidato específico no cache para uma resposta mais rápida da UI
       queryClient.setQueryData(['candidate', variables.id], data);
+
+      console.log('✅ Status atualizado e queries invalidadas:', {
+        candidato: data.name,
+        novoStatus: variables.status
+      });
 
       // Enviar notificações para status importantes
       try {
@@ -280,7 +296,12 @@ export const useDeleteCandidate = () => {
       return candidate.id;
     },
     onSuccess: () => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] });
     },
   });
 };

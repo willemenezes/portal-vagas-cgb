@@ -277,9 +277,11 @@ export const useCreateJob = () => {
       return data;
     },
     onSuccess: (data) => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobsRobust'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     },
     onError: (error) => {
       console.error("Erro ao criar vaga:", error);
@@ -311,9 +313,12 @@ export const useUpdateJob = () => {
       return data;
     },
     onSuccess: () => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       queryClient.invalidateQueries({ queryKey: ['pendingJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
   });
 };
@@ -331,8 +336,11 @@ export const useDeleteJob = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
   });
 };
@@ -353,8 +361,11 @@ export const useUpdateJobFlowStatus = () => {
       return data;
     },
     onSuccess: () => {
+      // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
   });
 };
