@@ -51,6 +51,7 @@ export const departments = [
   "SESMT",
   "QSMS", 
   "Financeiro",
+  "FROTA",
   "Departamento Pessoal",
   "Almoxarifado",
   "RH",
