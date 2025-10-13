@@ -47,6 +47,7 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Santarém': [-2.4448, -54.7081],
     'Ananindeua': [-1.3656, -48.3722],
     'Parauapebas': [-6.0675, -49.9022],
+    'Canaã dos Carajás': [-6.4969, -49.8778],
     'Cametá': [-2.2441, -49.4956],
     'Bragança': [-1.0539, -46.7656],
     'Altamira': [-3.2039, -52.2089],
@@ -166,9 +167,9 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             setIsLoadingLocations(true);
             const locationMap = new Map<string, JobLocation>();
             const citiesToGeocode = new Set<string>();
-            // Limpar cache de geocodificação para forçar nova busca com estado correto
-            localStorage.removeItem('geocodedCities'); // Força limpeza total
-            const geocodedCache: Record<string, [number, number]> = {};
+            // Carregar cache de geocodificação
+            const cachedData = localStorage.getItem('geocodedCities');
+            const geocodedCache: Record<string, [number, number]> = cachedData ? JSON.parse(cachedData) : {};
 
             for (const job of jobs) {
                 if (!job.city || !job.state || job.city.toLowerCase() === 'remoto' || job.title === 'Banco de Talentos') {

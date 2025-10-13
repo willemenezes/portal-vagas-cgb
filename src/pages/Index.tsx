@@ -8,7 +8,7 @@ import MapStats from "@/components/MapStats";
 import { useJobsRobust } from "@/hooks/useJobsRobust";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Briefcase, MapPin, Filter, ArrowRight, AlertTriangle, X } from "lucide-react";
+import { Search, Briefcase, MapPin, Filter, ArrowRight, AlertTriangle, X, Users, TrendingUp, Star, CheckCircle } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 
@@ -100,7 +100,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-cgb-cream via-white to-cgb-pearl">
       <Header />
 
       {/* Anti-Scam Popup */}
@@ -166,155 +166,231 @@ const Index = () => {
 
 
         {/* Modern Hero Section */}
-        <section className="relative py-16 lg:py-24 rounded-2xl overflow-hidden">
-          <div
-            className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,rgba(106,11,39,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(106,11,39,0.1)_1px,transparent_1px)] bg-[size:2rem_2rem] animate-grid"
-          ></div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="text-center lg:text-left">
-                {/* Badge */}
-                <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-cgb-accent/10 border border-cgb-accent/20 shadow-md rounded-full text-cgb-primary-dark font-semibold mb-8 backdrop-blur-sm">
-                  <img src="/CGB.png" alt="Ícone CGB" className="h-5 w-5" />
-                  <span className="text-base font-semibold">Portal de Carreiras</span>
-                </div>
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+          {/* Background with gradient and pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cgb-cream via-white to-cgb-pearl"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(106,11,39,0.05)_0%,transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(196,83,111,0.03)_0%,transparent_50%)]"></div>
 
-                {/* Hero Title */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                  <span className="block text-cgb-primary">
-                    Oportunidades que transformam vidas
+          {/* Background Image - Horizontal and Semi-transparent */}
+          <div className="absolute inset-0 opacity-25">
+            <img
+              src="/CGBRH2.png"
+              alt="CGB RH Background"
+              className="w-full h-full object-cover object-center"
+            />
+          </div>
+
+          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+            <div className="space-y-8">
+
+              {/* Badge */}
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/90 backdrop-blur-sm border border-cgb-accent/20 shadow-soft rounded-full text-cgb-primary-dark font-semibold">
+                <div className="w-2 h-2 bg-cgb-accent rounded-full animate-pulse"></div>
+                <img src="/CGB.png" alt="Ícone CGB" className="h-5 w-5" />
+                <span className="text-base font-semibold">Portal de Carreiras</span>
+              </div>
+
+              {/* Hero Title */}
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.2] tracking-tight">
+                  <span className="block text-gray-900">Oportunidades que</span>
+                  <span className="block bg-gradient-to-r from-cgb-primary via-cgb-primary-light to-cgb-accent bg-clip-text text-transparent">
+                    transformam vidas
                   </span>
                 </h1>
-
-                {/* Subtitle */}
-                <p className="text-lg sm:text-xl text-gray-600 mb-12 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                  Conectamos talentos excepcionais com oportunidades únicas no Grupo CGB.
-                </p>
               </div>
 
-              {/* Logo CGB de Olho para o Futuro */}
-              <div className="flex justify-center items-center mt-8 lg:mt-0">
-                <img
-                  src="/CGB ENERGIA LOGO.png"
-                  alt="CGB Energia Logo"
-                  className="h-24 sm:h-28 md:h-32 lg:h-36 xl:h-40 w-auto object-contain"
-                />
+              {/* Subtitle */}
+              <p className="text-xl sm:text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed font-light">
+                Conectamos talentos excepcionais com oportunidades únicas no Grupo CGB.
+                <span className="text-cgb-primary font-medium"> Sua carreira começa aqui.</span>
+              </p>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-cgb-primary">{jobs.length}+</div>
+                  <div className="text-sm text-gray-600 font-medium">Vagas Abertas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-cgb-primary">100+</div>
+                  <div className="text-sm text-gray-600 font-medium">Cidades</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-cgb-primary">15+</div>
+                  <div className="text-sm text-gray-600 font-medium">Departamentos</div>
+                </div>
               </div>
+
+              {/* CTA Buttons */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => document.getElementById('all-jobs')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-cgb-primary hover:bg-cgb-primary-dark text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-medium hover:shadow-strong transition-all duration-300 hover:scale-105"
+                >
+                  <Search className="w-5 h-5 mr-2" />
+                  Explorar Vagas
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <div className="w-6 h-10 border-2 border-cgb-primary/30 rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-cgb-primary/50 rounded-full mt-2 animate-pulse"></div>
             </div>
           </div>
         </section>
 
         {/* Interactive Map Section */}
-        <section className="py-16 bg-white">
+        <section className="py-20 bg-gradient-to-b from-white to-cgb-pearl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <div className="flex items-center justify-center gap-4 mb-4">
-                <h2 className="text-3xl font-bold tracking-tight text-gray-800 sm:text-4xl">
-                  Vagas pelo Brasil
-                </h2>
+            {/* Section Header */}
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-cgb-primary/5 border border-cgb-primary/20 rounded-full mb-6">
+                <MapPin className="w-5 h-5 text-cgb-primary" />
+                <span className="text-cgb-primary font-semibold">Exploração Nacional</span>
+              </div>
+
+              <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                Vagas pelo <span className="text-cgb-primary">Brasil</span>
+              </h2>
+
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="h-1 w-16 rounded-full bg-gradient-to-r from-cgb-primary to-cgb-accent"></div>
+                <div className="h-1 w-8 rounded-full bg-cgb-accent/50"></div>
+                <div className="h-1 w-16 rounded-full bg-gradient-to-r from-cgb-accent to-cgb-primary"></div>
+              </div>
+
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Explore oportunidades em todo o país através do nosso mapa interativo.
+                <span className="text-cgb-primary font-medium"> Descubra onde sua carreira pode crescer.</span>
+              </p>
+
+              <div className="mt-8">
                 <button
                   onClick={() => refetch()}
-                  className="flex items-center gap-2 px-4 py-2 bg-cgb-primary hover:bg-cgb-primary-dark text-white rounded-lg transition-colors duration-200 text-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-cgb-primary text-cgb-primary hover:bg-cgb-primary hover:text-white rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-soft hover:shadow-medium"
                   title="Atualizar dados do mapa"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  Atualizar
+                  Atualizar Dados
                 </button>
               </div>
-              <div className="mt-4 flex justify-center">
-                <div className="h-1 w-24 rounded-full bg-gradient-to-r from-cgb-primary-light to-cgb-accent"></div>
+            </div>
+
+            {/* Enhanced Stats */}
+            <div className="mb-12">
+              <MapStats jobs={jobs} />
+            </div>
+
+            {/* Map Container */}
+            <div className="relative">
+              <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-strong overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cgb-primary via-cgb-accent to-cgb-primary"></div>
+                <JobsMap jobs={jobs} />
               </div>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                Explore oportunidades em todo o país através do nosso mapa interativo
-              </p>
-            </div>
 
-            {/* Mini Dashboard */}
-            <MapStats jobs={jobs} />
-
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
-              <JobsMap jobs={jobs} />
-            </div>
-
-            <div className="text-center mt-8">
-              <p className="text-sm text-gray-500">
-                Clique nos marcadores para ver as vagas disponíveis em cada cidade
-              </p>
+              {/* Map overlay info */}
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-soft border border-white/20">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-cgb-primary rounded-full"></div>
+                  <span className="font-medium">Clique nos marcadores para ver vagas</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Featured Jobs Section */}
-        <section className="py-16 bg-gray-50">
+        <section className="py-20 bg-gradient-to-b from-cgb-pearl to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-800 sm:text-4xl">
-                Vagas em Destaque
-              </h2>
-              <div className="mt-4 flex justify-center">
-                <div className="h-1 w-24 rounded-full bg-gradient-to-r from-cgb-primary-light to-cgb-accent"></div>
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-cgb-accent/10 border border-cgb-accent/20 rounded-full mb-6">
+                <Star className="w-5 h-5 text-cgb-accent" />
+                <span className="text-cgb-accent font-semibold">Oportunidades Selecionadas</span>
               </div>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                Oportunidades selecionadas especialmente para você
+
+              <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                Vagas em <span className="text-cgb-primary">Destaque</span>
+              </h2>
+
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="h-1 w-16 rounded-full bg-gradient-to-r from-cgb-accent to-cgb-primary"></div>
+                <div className="h-1 w-8 rounded-full bg-cgb-primary/50"></div>
+                <div className="h-1 w-16 rounded-full bg-gradient-to-r from-cgb-primary to-cgb-accent"></div>
+              </div>
+
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Oportunidades selecionadas especialmente para você.
+                <span className="text-cgb-primary font-medium"> Encontre sua próxima conquista profissional.</span>
               </p>
             </div>
 
             {isLoading ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cgb-primary"></div>
-                <p className="mt-2 text-gray-600">Carregando vagas...</p>
+              <div className="text-center py-16">
+                <div className="inline-flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-cgb-primary border-t-transparent"></div>
+                  <p className="text-gray-600 font-medium">Carregando oportunidades...</p>
+                </div>
               </div>
             ) : jobs.length > 0 ? (
               <>
                 <div className="overflow-hidden" ref={emblaRef}>
-                  <div className="flex">
-                    {jobs.slice(0, 6).map((job) => (
-                      <div key={job.id} className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 p-3">
-                        <div className="h-full w-full bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200 flex flex-col">
-                          <div className="flex-grow">
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-gray-900 mb-2 h-14 line-clamp-2">
-                                  {job.title}
-                                </h3>
-                                <div className="flex items-center text-gray-600 mb-2">
-                                  <MapPin className="w-4 h-4 mr-1" />
-                                  <span className="text-sm">{job.city}, {job.state}</span>
-                                </div>
-                                <div className="flex items-center text-gray-600">
-                                  <Briefcase className="w-4 h-4 mr-1" />
-                                  <span className="text-sm">{job.department}</span>
-                                </div>
-                              </div>
-                              <div className="text-right text-sm text-gray-500">
-                                {job.posted ? (
-                                  <div className="flex flex-col items-end">
-                                    <span>há</span>
-                                    <span>{job.posted}</span>
-                                  </div>
-                                ) : 'N/A'}
-                              </div>
-                            </div>
+                  <div className="flex gap-6">
+                    {jobs.slice(0, 6).map((job, index) => (
+                      <div key={job.id} className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3">
+                        <div className="group h-full bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-strong transition-all duration-300 hover:scale-105 hover:border-cgb-primary/20 relative overflow-hidden">
+                          {/* Decorative gradient */}
+                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cgb-primary via-cgb-accent to-cgb-primary"></div>
 
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10">
-                              {job.description}
-                            </p>
+                          {/* Featured badge */}
+                          <div className="absolute top-4 right-4">
+                            <div className="bg-cgb-accent text-white text-xs font-bold px-3 py-1 rounded-full">
+                              #{index + 1}
+                            </div>
                           </div>
 
-                          <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+                          <div className="flex-grow">
+                            <div className="mb-6">
+                              <h3 className="font-bold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-cgb-primary transition-colors">
+                                {job.title}
+                              </h3>
+
+                              <div className="space-y-2 mb-4">
+                                <div className="flex items-center text-gray-600">
+                                  <MapPin className="w-4 h-4 mr-2 text-cgb-primary" />
+                                  <span className="text-sm font-medium">{job.city}, {job.state}</span>
+                                </div>
+                                <div className="flex items-center text-gray-600">
+                                  <Briefcase className="w-4 h-4 mr-2 text-cgb-primary" />
+                                  <span className="text-sm font-medium">{job.department}</span>
+                                </div>
+                              </div>
+
+                              <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
+                                {job.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                             <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                              <span className="px-3 py-1 bg-cgb-primary/10 text-cgb-primary rounded-lg text-xs font-semibold">
                                 {job.type}
                               </span>
-                              {/* Ocultado: quantidade de candidatos inscritos */}
                             </div>
                             <Link
                               to={`/vaga/${job.id}`}
-                              className="text-cgb-primary hover:text-cgb-primary-dark font-medium text-sm transition-colors"
+                              className="text-cgb-primary hover:text-cgb-primary-dark font-semibold text-sm transition-colors flex items-center gap-1 group-hover:gap-2"
                             >
-                              Ver detalhes →
+                              Ver detalhes
+                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                             </Link>
                           </div>
                         </div>
@@ -323,21 +399,24 @@ const Index = () => {
                   </div>
                 </div>
 
-                <div className="text-center mt-8">
+                <div className="text-center mt-12">
                   <Button
                     onClick={() => document.getElementById('all-jobs')?.scrollIntoView({ behavior: 'smooth' })}
-                    variant="outline"
-                    className="border-cgb-primary text-cgb-primary hover:bg-cgb-primary hover:text-white transition-colors px-8 py-3 rounded-xl"
+                    className="bg-cgb-primary hover:bg-cgb-primary-dark text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-medium hover:shadow-strong transition-all duration-300 hover:scale-105"
                   >
+                    <TrendingUp className="w-5 h-5 mr-2" />
                     Ver Todas as Vagas
                   </Button>
                 </div>
               </>
             ) : (
               !isLoading && (
-                <div className="text-center py-12">
-                  <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-4 text-lg font-semibold text-gray-800">Nenhuma vaga em destaque no momento</h3>
+                <div className="text-center py-16">
+                  <div className="bg-cgb-pearl rounded-3xl p-12 max-w-md mx-auto">
+                    <Briefcase className="mx-auto h-16 w-16 text-cgb-primary/50 mb-6" />
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">Nenhuma vaga em destaque no momento</h3>
+                    <p className="text-gray-600">Volte em breve para novas oportunidades!</p>
+                  </div>
                 </div>
               )
             )}
@@ -345,116 +424,238 @@ const Index = () => {
         </section>
 
         {/* All Jobs & Filters Section */}
-        <section id="all-jobs" className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <section id="all-jobs" className="py-20 bg-gradient-to-b from-white to-cgb-pearl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-cgb-primary/5 border border-cgb-primary/20 rounded-full mb-6">
+                <Filter className="w-5 h-5 text-cgb-primary" />
+                <span className="text-cgb-primary font-semibold">Busca Avançada</span>
+              </div>
 
-            {/* Filters Column */}
-            <div className="lg:col-span-1 lg:sticky lg:top-8 bg-white rounded-2xl shadow-lg border border-gray-100 p-1">
-              <JobFilters filters={filters} onFilterChange={handleFilterChange} />
+              <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                Todas as <span className="text-cgb-primary">Oportunidades</span>
+              </h2>
+
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="h-1 w-16 rounded-full bg-gradient-to-r from-cgb-primary to-cgb-accent"></div>
+                <div className="h-1 w-8 rounded-full bg-cgb-accent/50"></div>
+                <div className="h-1 w-16 rounded-full bg-gradient-to-r from-cgb-accent to-cgb-primary"></div>
+              </div>
+
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Use nossos filtros para encontrar a vaga perfeita para você.
+                <span className="text-cgb-primary font-medium"> Sua próxima oportunidade está aqui.</span>
+              </p>
             </div>
 
-            {/* Jobs List Column */}
-            <div className="lg:col-span-3">
-              <div className="space-y-6">
-                {isLoading ? (
-                  Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="bg-white p-6 rounded-xl border border-gray-200 animate-pulse">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/4 mb-4"></div>
-                      <div className="h-8 bg-gray-200 rounded w-1/3 float-right"></div>
-                    </div>
-                  ))
-                ) : filteredJobs.length > 0 ? (
-                  filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
-                ) : (
-                  <div className="text-center py-16 col-span-full">
-                    <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 font-semibold text-xl">Nenhuma vaga encontrada</p>
-                    <p className="text-gray-500 mt-2">Tente ajustar seus filtros ou volte mais tarde.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+              {/* Enhanced Filters Column */}
+              <div className="lg:col-span-1">
+                <div className="sticky top-8 bg-white rounded-3xl shadow-strong border border-gray-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-cgb-primary to-cgb-accent p-4">
+                    <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                      <Filter className="w-5 h-5" />
+                      Filtros
+                    </h3>
                   </div>
-                )}
+                  <div className="p-1">
+                    <JobFilters filters={filters} onFilterChange={handleFilterChange} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Enhanced Jobs List Column */}
+              <div className="lg:col-span-3">
+                <div className="space-y-6">
+                  {isLoading ? (
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="bg-white p-8 rounded-2xl border border-gray-200 animate-pulse">
+                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
+                        <div className="h-10 bg-gray-200 rounded w-1/3 float-right"></div>
+                      </div>
+                    ))
+                  ) : filteredJobs.length > 0 ? (
+                    filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                  ) : (
+                    <div className="text-center py-20">
+                      <div className="bg-cgb-pearl rounded-3xl p-16 max-w-lg mx-auto">
+                        <Briefcase className="w-20 h-20 text-cgb-primary/50 mx-auto mb-6" />
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4">Nenhuma vaga encontrada</h3>
+                        <p className="text-gray-600 mb-6">Tente ajustar seus filtros ou volte mais tarde para novas oportunidades.</p>
+                        <Button
+                          onClick={() => {
+                            setFilters({
+                              search: "",
+                              city: "all",
+                              state: "all",
+                              department: "all",
+                              type: "all"
+                            });
+                            setSearchTerm("");
+                          }}
+                          className="bg-cgb-primary hover:bg-cgb-primary-dark text-white px-6 py-3 rounded-xl font-semibold"
+                        >
+                          Limpar Filtros
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-cgb-primary">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              Não encontrou a vaga ideal?
-            </h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Cadastre seu currículo aqui e seja o primeiro a saber sobre novas oportunidades
-            </p>
-            <Button
-              asChild
-              className="bg-white text-cgb-primary hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-xl transition-colors"
-            >
-              <Link to="/cadastrar-curriculo">
-                Cadastre Seu Currículo
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
+        {/* Enhanced CTA Section */}
+        <section className="py-24 bg-gradient-to-br from-cgb-primary via-cgb-primary-dark to-cgb-primary-light relative overflow-hidden">
+          {/* Background decorations */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(255,255,255,0.1)_0%,transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.05)_0%,transparent_50%)]"></div>
+
+          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="space-y-8">
+              {/* Icon */}
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border border-white/20">
+                <Users className="w-10 h-10 text-white" />
+              </div>
+
+              {/* Title */}
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                Não encontrou a vaga ideal?
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-xl sm:text-2xl text-white/90 max-w-4xl mx-auto leading-relaxed font-light">
+                Cadastre seu currículo aqui e seja o primeiro a saber sobre novas oportunidades.
+                <span className="text-white font-medium"> Sua carreira merece o melhor!</span>
+              </p>
+
+              {/* Benefits */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
+                <div className="flex items-center gap-3 text-white/90">
+                  <CheckCircle className="w-6 h-6 text-white flex-shrink-0" />
+                  <span className="font-medium">Notificações automáticas</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/90">
+                  <CheckCircle className="w-6 h-6 text-white flex-shrink-0" />
+                  <span className="font-medium">Acesso exclusivo</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/90">
+                  <CheckCircle className="w-6 h-6 text-white flex-shrink-0" />
+                  <span className="font-medium">Processo simplificado</span>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="pt-8">
+                <Button
+                  asChild
+                  className="bg-white text-cgb-primary hover:bg-gray-100 font-bold px-12 py-6 text-xl rounded-2xl shadow-strong hover:shadow-glow transition-all duration-300 hover:scale-105"
+                >
+                  <Link to="/cadastrar-curriculo">
+                    <Users className="w-6 h-6 mr-3" />
+                    Cadastre Seu Currículo
+                    <ArrowRight className="w-6 h-6 ml-3" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center">
-              {/* Logo */}
-              <div className="flex justify-center mb-8">
-                <img
-                  src="/CGB ENERGIA LOGO.png"
-                  alt="CGB Energia"
-                  className="h-16 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform"
-                />
+        {/* Enhanced Footer */}
+        <footer className="bg-gradient-to-b from-white to-cgb-pearl border-t border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="text-center space-y-12">
+              {/* Logo Section */}
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <div className="bg-white rounded-3xl p-6 shadow-soft border border-gray-200">
+                      <img
+                        src="/CGBRH2.png"
+                        alt="CGB RH Logo"
+                        className="h-20 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-3xl font-bold text-gray-900">
+                    Portal de <span className="text-cgb-primary">Carreiras</span>
+                  </h3>
+                  <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
+                    Conectando talentos excepcionais com oportunidades únicas no Grupo CGB.
+                    <span className="text-cgb-primary font-medium"> Sua carreira é nossa prioridade.</span>
+                  </p>
+                </div>
               </div>
 
-              {/* Company Info */}
-              <div className="space-y-4 mb-8">
-                <p className="text-gray-900 text-2xl font-bold">
-                  Portal de Carreiras
-                </p>
-                <p className="text-gray-500 max-w-2xl mx-auto">
-                  Conectando talentos excepcionais com oportunidades únicas.
-                </p>
-              </div>
-
-              {/* Links */}
-              <div className="flex flex-wrap justify-center gap-6 mb-8">
+              {/* Links Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
                 <Link
                   to="/"
-                  className="text-gray-600 hover:text-cgb-primary transition-colors font-medium"
+                  className="group flex items-center justify-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-cgb-primary/20 hover:shadow-medium transition-all duration-300 hover:scale-105"
                 >
-                  Vagas
+                  <Briefcase className="w-5 h-5 text-cgb-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-gray-700 hover:text-cgb-primary transition-colors font-semibold">
+                    Vagas Abertas
+                  </span>
                 </Link>
+
                 <Link
                   to="/cadastrar-curriculo"
-                  className="text-gray-600 hover:text-cgb-primary transition-colors font-medium"
+                  className="group flex items-center justify-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-cgb-primary/20 hover:shadow-medium transition-all duration-300 hover:scale-105"
                 >
-                  Cadastre Seu Currículo
+                  <Users className="w-5 h-5 text-cgb-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-gray-700 hover:text-cgb-primary transition-colors font-semibold">
+                    Cadastre Seu Currículo
+                  </span>
                 </Link>
+
                 <a
                   href="https://cgbengenharia.com.br"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-cgb-primary transition-colors font-medium"
+                  className="group flex items-center justify-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-cgb-primary/20 hover:shadow-medium transition-all duration-300 hover:scale-105"
                 >
-                  Sobre a CGB
+                  <ArrowRight className="w-5 h-5 text-cgb-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-gray-700 hover:text-cgb-primary transition-colors font-semibold">
+                    Sobre a CGB
+                  </span>
                 </a>
               </div>
 
-              {/* Copyright */}
+              {/* Copyright Section */}
               <div className="border-t border-gray-200 pt-8">
-                <p className="text-gray-500 text-sm font-medium">
-                  © 2025 <span className="text-cgb-primary font-bold">GRUPO CGB</span>. Todos os direitos reservados.
-                </p>
-                <p className="text-gray-400 text-xs mt-2">
-                  Portal de Carreiras - Sistema de Gestão de Talentos
-                </p>
+                <div className="space-y-4">
+                  <p className="text-gray-600 font-semibold text-lg">
+                    © 2025 <span className="text-cgb-primary font-bold">GRUPO CGB</span>. Todos os direitos reservados.
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Portal de Carreiras - Sistema de Gestão de Talentos
+                  </p>
+
+                  {/* Trust indicators */}
+                  <div className="flex justify-center items-center gap-6 pt-4">
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Site Seguro</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Processo Gratuito</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Dados Protegidos</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

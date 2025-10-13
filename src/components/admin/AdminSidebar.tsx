@@ -128,6 +128,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                 <div className="text-center text-gray-600 text-xs mt-5">
                     <p>&copy; 2025 Grupo CGB.</p>
                     <p className="mt-1">Versão {__APP_VERSION__} ({__COMMIT_HASH__})</p>
+                    <p className="mt-1">Programado por Wille Menezes</p>
                 </div>
             </div>
         </aside>

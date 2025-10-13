@@ -83,11 +83,11 @@ const Login = () => {
         {/* Modern Login Card */}
         <Card className="bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden">
           <CardHeader className="text-center px-6 py-8">
-            {/* Logo CGB Energia */}
+            {/* Logo CGB */}
             <div className="flex justify-center mb-6">
               <img
-                src="/CGB ENERGIA LOGO.png"
-                alt="CGB Energia"
+                src="/CGB.png"
+                alt="CGB Logo"
                 className="h-20 w-auto object-contain drop-shadow-sm"
               />
             </div>
@@ -229,8 +229,8 @@ const Login = () => {
         <div className="mt-8 text-center">
           <div className="flex justify-center mb-4">
             <img
-              src="/CGB ENERGIA LOGO.png"
-              alt="CGB Energia"
+              src="/CGB.png"
+              alt="CGB Logo"
               className="h-10 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
             />
           </div>

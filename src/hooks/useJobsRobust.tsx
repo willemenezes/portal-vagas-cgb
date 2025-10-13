@@ -24,13 +24,13 @@ export const useJobsRobust = () => {
     return useQuery({
         queryKey: ['jobs-robust'],
         queryFn: async (): Promise<Job[]> => {
-            // Buscar vagas ativas e aprovadas COM flow_status = 'ativa'
+            // Buscar vagas ativas e aprovadas COM flow_status = 'ativa' OU null (recém-criadas)
             const { data, error } = await supabase
                 .from('jobs')
                 .select('*')
                 .eq('status', 'active')
                 .eq('approval_status', 'active')
-                .eq('flow_status', 'ativa')
+                .or('flow_status.eq.ativa,flow_status.is.null')
                 .order('created_at', { ascending: false });
 
             if (error) {

@@ -91,7 +91,7 @@ const Header = () => {
             <SheetTitle>
               <div className="flex items-center gap-3">
                 <img
-                  src="/CGB ENERGIA LOGO.png"
+                  src="/CGBRH2.png"
                   alt="CGB Energia Logo"
                   className="h-10"
                 />
