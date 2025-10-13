@@ -130,7 +130,7 @@ export const useJobRequests = () => {
         error,
         refetch
     } = useQuery({
-        queryKey: ['job-requests', user?.id, rhProfile?.role],
+        queryKey: ['job-requests', 'filtered', 'v2', user?.id, rhProfile?.role, rhProfile?.assigned_departments, rhProfile?.assigned_states, rhProfile?.assigned_cities],
         queryFn: async () => {
             if (!user) throw new Error('Usuário não autenticado');
 
@@ -138,10 +138,32 @@ export const useJobRequests = () => {
                 .from('job_requests')
                 .select('*');
 
-            // Filtros regionais - REMOVIDOS para evitar problemas
-            // Todos veem todas as solicitações por enquanto
+            // CORREÇÃO: Aplicar filtros por departamento, estado e cidade para gerentes
+            console.log('🔍 [useJobRequests] Perfil:', rhProfile?.role, {
+                assigned_departments: rhProfile?.assigned_departments,
+                assigned_states: rhProfile?.assigned_states,
+                assigned_cities: rhProfile?.assigned_cities
+            });
 
-            query = query.order('created_at', { ascending: false });
+            // Filtro por DEPARTAMENTO (para gerentes)
+            if (rhProfile?.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
+                console.log('🔍 [useJobRequests] Filtrando por departamentos:', rhProfile.assigned_departments);
+                query = query.in('department', rhProfile.assigned_departments);
+            }
+
+            // Filtro por ESTADO
+            if (rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
+                console.log('🔍 [useJobRequests] Filtrando por estados:', rhProfile.assigned_states);
+                query = query.in('state', rhProfile.assigned_states);
+            }
+
+            // Filtro por CIDADE
+            if (rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) {
+                console.log('🔍 [useJobRequests] Filtrando por cidades:', rhProfile.assigned_cities);
+                query = query.in('city', rhProfile.assigned_cities);
+            }
+
+            query = query.order('created_at', { ascending: false});
 
             const { data, error } = await query;
 

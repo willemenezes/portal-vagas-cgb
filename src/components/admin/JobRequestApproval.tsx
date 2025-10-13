@@ -249,17 +249,29 @@ export default function JobRequestApproval() {
                     <div className="space-y-1">
                         <p className="text-gray-600">Analise e aprove solicitações de novas vagas</p>
                         {rhProfile && !rhProfile.is_admin && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-4 h-4 text-blue-500" />
-                                <span className="text-blue-600 font-medium">
-                                    Região atribuída: {
-                                        rhProfile.assigned_states && rhProfile.assigned_states.length > 0
-                                            ? `Estados: ${rhProfile.assigned_states.join(', ')}`
-                                            : rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0
-                                                ? `Cidades: ${rhProfile.assigned_cities.join(', ')}`
-                                                : 'Todas as regiões'
-                                    }
-                                </span>
+                            <div className="space-y-1">
+                                {(rhProfile.assigned_states?.length || rhProfile.assigned_cities?.length) && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <MapPin className="w-4 h-4 text-blue-500" />
+                                        <span className="text-blue-600 font-medium">
+                                            Região atribuída: {
+                                                rhProfile.assigned_states && rhProfile.assigned_states.length > 0
+                                                    ? `Estados: ${rhProfile.assigned_states.join(', ')}`
+                                                    : rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0
+                                                        ? `Cidades: ${rhProfile.assigned_cities.join(', ')}`
+                                                        : 'Todas as regiões'
+                                            }
+                                        </span>
+                                    </div>
+                                )}
+                                {rhProfile.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0 && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Building className="w-4 h-4 text-green-500" />
+                                        <span className="text-green-600 font-medium">
+                                            Departamentos: {rhProfile.assigned_departments.join(', ')}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
