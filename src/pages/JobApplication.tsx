@@ -273,8 +273,8 @@ const JobApplication = () => {
       setFormData({
         ...formData,
         vehicle: value,
-        vehicleModel: '',
-        vehicleYear: '',
+        vehicleModel: 'N/A',
+        vehicleYear: 'N/A',
       });
     } else {
       setFormData({ ...formData, vehicle: value });
@@ -386,6 +386,9 @@ const JobApplication = () => {
                           </SelectContent>
                         </Select>
                       )}
+                      {!jobIdFromUrl && !formData.state && (
+                        <div style={{ color: 'red', fontSize: 12, marginTop: 6 }}>Campo obrigatório</div>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="city">Cidade *</Label>
@@ -422,6 +425,9 @@ const JobApplication = () => {
                             )}
                           </SelectContent>
                         </Select>
+                      )}
+                      {!jobIdFromUrl && !formData.city && (
+                        <div style={{ color: 'red', fontSize: 12, marginTop: 6 }}>Campo obrigatório</div>
                       )}
                     </div>
                   </div>
@@ -500,12 +506,13 @@ const JobApplication = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="fatherName">Nome do Pai</Label>
+                        <Label htmlFor="fatherName">Nome do Pai *</Label>
                         <Input
                           id="fatherName"
                           value={formData.fatherName}
                           onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
-                          placeholder="Nome completo do pai (opcional)"
+                          placeholder="Nome completo do pai"
+                          required
                         />
                       </div>
                     </div>
@@ -522,12 +529,13 @@ const JobApplication = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="lastCompany2">Penúltima Empresa que Trabalhou</Label>
+                        <Label htmlFor="lastCompany2">Penúltima Empresa que Trabalhou *</Label>
                         <Input
                           id="lastCompany2"
                           value={formData.lastCompany2}
                           onChange={(e) => setFormData({ ...formData, lastCompany2: e.target.value })}
-                          placeholder="Nome da empresa anterior (opcional)"
+                          placeholder="Nome da empresa anterior"
+                          required
                         />
                       </div>
                     </div>
@@ -667,23 +675,25 @@ const JobApplication = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="vehicleModel">Qual modelo do veículo?</Label>
+                    <Label htmlFor="vehicleModel">Qual modelo do veículo? *</Label>
                     <Input
                       id="vehicleModel"
                       value={formData.vehicleModel}
                       onChange={e => setFormData({ ...formData, vehicleModel: e.target.value })}
                       disabled={formData.vehicle === 'Não possuo'}
+                      required={formData.vehicle !== 'Não possuo'}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="vehicleYear">Qual o ano do veículo?</Label>
+                    <Label htmlFor="vehicleYear">Qual o ano do veículo? *</Label>
                     <Input
                       id="vehicleYear"
                       type="number"
                       value={formData.vehicleYear}
                       onChange={e => setFormData({ ...formData, vehicleYear: e.target.value })}
                       disabled={formData.vehicle === 'Não possuo'}
+                      required={formData.vehicle !== 'Não possuo'}
                     />
                   </div>
 
