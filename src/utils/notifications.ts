@@ -3,15 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { NotificationRecipient } from '@/types/notifications';
 
 /**
- * Busca gerentes por região (estado/cidade)
+ * Busca gerentes por região (estado/cidade) e departamento
  */
-export const getManagersByRegion = async (state: string, city: string): Promise<NotificationRecipient[]> => {
+export const getManagersByRegion = async (
+  state: string,
+  city: string,
+  department?: string
+): Promise<NotificationRecipient[]> => {
   try {
-    console.log('🔍 Buscando gerentes para estado:', state, 'cidade:', city);
+    console.log('🔍 Buscando gerentes para estado:', state, 'cidade:', city, 'departamento:', department);
 
     const { data, error } = await supabase
       .from('rh_users')
-      .select('email, full_name, role, assigned_states, assigned_cities')
+      .select('email, full_name, role, assigned_states, assigned_cities, assigned_departments')
       .in('role', ['manager', 'gerente']);
 
     if (error) throw error;
@@ -23,24 +27,34 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
         console.log(`👤 Analisando gerente: ${user.full_name || user.name}`, {
           assigned_states: user.assigned_states,
           assigned_cities: user.assigned_cities,
+          assigned_departments: user.assigned_departments,
           target_state: state,
-          target_city: city
+          target_city: city,
+          target_department: department
         });
 
-        // PRIORIDADE 1: Se tem estados atribuídos, verificar se inclui o estado da vaga
+        // PRIORIDADE 1: Verificar DEPARTAMENTO (se fornecido)
+        if (department && user.assigned_departments && user.assigned_departments.length > 0) {
+          const hasDepartment = user.assigned_departments.includes(department);
+          console.log(`🏢 Departamento ${department} encontrado? ${hasDepartment}`);
+          if (!hasDepartment) {
+            console.log(`❌ Gerente não tem acesso ao departamento ${department}`);
+            return false; // Não tem o departamento
+          }
+        }
+        // Se assigned_departments é NULL, tem acesso a todos os departamentos (compatibilidade)
+
+        // PRIORIDADE 2: Verificar REGIÃO (Estado/Cidade)
         if (user.assigned_states && user.assigned_states.length > 0) {
           const hasState = user.assigned_states.includes(state);
           console.log(`📍 Estado ${state} encontrado? ${hasState}`);
 
-          // Se tem o estado, verificar se tem cidades específicas
           if (hasState) {
-            // Se tem cidades específicas, verificar se inclui a cidade da vaga
             if (user.assigned_cities && user.assigned_cities.length > 0) {
               const hasCity = user.assigned_cities.includes(city);
               console.log(`🏙️ Cidade ${city} encontrada? ${hasCity}`);
               return hasCity;
             } else {
-              // Tem o estado mas não tem cidades específicas = pode ver todas as cidades do estado
               console.log(`✅ Gerente tem estado ${state} mas sem cidades específicas - incluindo`);
               return true;
             }
@@ -48,14 +62,14 @@ export const getManagersByRegion = async (state: string, city: string): Promise<
           return false; // Não tem o estado
         }
 
-        // PRIORIDADE 2: Se não tem estados, mas tem cidades específicas
+        // PRIORIDADE 3: Se não tem estados, mas tem cidades específicas
         if (user.assigned_cities && user.assigned_cities.length > 0) {
           const hasCity = user.assigned_cities.includes(city);
           console.log(`🏙️ Cidade ${city} encontrada? ${hasCity}`);
           return hasCity;
         }
 
-        // PRIORIDADE 3: Se não tem restrições, pode ver todas
+        // PRIORIDADE 4: Se não tem restrições, pode ver todas
         console.log('✅ Gerente sem restrições regionais - incluindo');
         return true;
       });

@@ -10,6 +10,7 @@ export interface RHUser {
     email: string;
     assigned_states?: string[] | null;
     assigned_cities?: string[] | null;
+    assigned_departments?: string[] | null;
     role: 'admin' | 'recruiter' | 'manager' | 'juridico' | 'solicitador';
     created_at: string;
     updated_at: string;

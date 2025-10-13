@@ -81,10 +81,8 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { data: rhProfile } = useRHProfile(user?.id);
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -180),
-    to: new Date(),
-  });
+  // CORREÇÃO CRÍTICA: Iniciar SEM filtro de data para mostrar TODOS os candidatos
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const { data: dashboardData, isLoading, isError, error } = useDashboardData(rhProfile, dateRange);
 
@@ -176,7 +174,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalCandidates}</div>
-              <p className="text-xs text-indigo-800/80">no período selecionado</p>
+              <p className="text-xs text-indigo-800/80">{dateRange?.from && dateRange?.to ? 'no período selecionado' : 'de todos os tempos'}</p>
             </CardContent>
           </Card>
           <Card className="bg-blue-50 border-blue-100 text-blue-900 transition-all hover:shadow-md hover:-translate-y-1">
@@ -196,7 +194,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{approvedCount}</div>
-              <p className="text-xs text-green-800/80">contratados no período</p>
+              <p className="text-xs text-green-800/80">{dateRange?.from && dateRange?.to ? 'contratados no período' : 'contratados (total)'}</p>
             </CardContent>
           </Card>
           <Card className="bg-teal-50 border-teal-100 text-teal-900 transition-all hover:shadow-md hover:-translate-y-1">

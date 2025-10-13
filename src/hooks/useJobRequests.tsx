@@ -199,10 +199,10 @@ export const useJobRequests = () => {
                 description: "Sua solicitação de vaga foi enviada para aprovação da gerência.",
             });
 
-            // Enviar notificação para gerentes da região
+            // Enviar notificação para gerentes da região e departamento
             try {
-                console.log('🔍 Buscando gerentes para região:', data.state, data.city);
-                const managers = await getManagersByRegion(data.state, data.city);
+                console.log('🔍 Buscando gerentes para região:', data.state, data.city, 'departamento:', data.department);
+                const managers = await getManagersByRegion(data.state, data.city, data.department);
                 console.log('👥 Gerentes encontrados:', managers);
 
                 if (managers.length > 0) {

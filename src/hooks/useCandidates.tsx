@@ -43,22 +43,20 @@ export type NewCandidate = Omit<Candidate, 'id' | 'created_at' | 'updated_at' | 
 /**
  * Hook para buscar TODOS os candidatos do sistema.
  * 
- * ⚠️ ATENÇÃO: Este hook tem limite de 1000 registros do Supabase por padrão.
- * Para telas que precisam de contagem exata ou muitos registros, use:
- * - useCandidatesByJob() para filtrar por vaga específica (server-side)
- * - count('exact') para contagens totais
- * - Paginação com .range() para grandes volumes
+ * ✅ SEM LIMITES: Este hook busca TODOS os candidatos em lotes de 1000
+ * até atingir o limite de segurança de 100.000 candidatos.
  * 
  * Este hook é adequado para:
- * - Visualizações administrativas gerais (< 1000 candidatos)
- * - Dropdowns e seletores
- * - Dashboards que não dependem de contagem exata
+ * - Visualizações administrativas completas
+ * - Dashboards com contagem exata
+ * - Relatórios completos
+ * - Qualquer tela que precise de todos os dados
  */
 export const useCandidates = () => {
   return useQuery({
     queryKey: ['candidates', 'unlimited', 'v3'], // BUG FIX: Nova queryKey para forçar refresh total
     queryFn: async () => {
-      console.log('🔄 useCandidates: Buscando TODOS os candidatos (SEM LIMITE)...');
+      console.log('🔄 useCandidates: Buscando TODOS os candidatos (SEM LIMITES - até 100.000)...');
 
       // BUG FIX FINAL: Buscar em lotes de 1000 até pegar tudo
       let allCandidates: any[] = [];
@@ -94,9 +92,9 @@ export const useCandidates = () => {
           hasMore = false;
         }
 
-        // Segurança: máximo 20 lotes (20.000 candidatos)
-        if (from >= 20000) {
-          console.warn('⚠️ Limite de segurança atingido (20.000 candidatos)');
+        // Segurança: máximo 100 lotes (100.000 candidatos) - AUMENTADO para suportar grande volume
+        if (from >= 100000) {
+          console.warn('⚠️ Limite de segurança atingido (100.000 candidatos)');
           hasMore = false;
         }
       }
@@ -206,7 +204,7 @@ export const useUpdateCandidateStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); // Dashboard
       queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }); // Estatísticas
       queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }); // Contagens
-      
+
       // Opcional: atualizar o candidato específico no cache para uma resposta mais rápida da UI
       queryClient.setQueryData(['candidate', variables.id], data);
 

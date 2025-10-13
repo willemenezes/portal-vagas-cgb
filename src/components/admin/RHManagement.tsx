@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Shield, UserPlus, Edit, Trash2, Loader2, Key, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { departments } from "@/data/departments";
 
 const statesAndCities = {
     "PA": ["Belém", "Ananindeua", "Santarém", "Marabá", "Castanhal", "Abaetetuba", "Cametá", "Marituba", "Parauapebas", "Altamira"],
@@ -96,6 +97,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
     const [role, setRole] = useState<'admin' | 'recruiter' | 'manager' | 'juridico' | 'solicitador'>('recruiter');
     const [selectedStates, setSelectedStates] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
+    const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
 
     // Estados para carregar dados do IBGE
     const [ibgeStates, setIbgeStates] = useState<{ id: number; nome: string; sigla: string }[]>([]);
@@ -123,6 +125,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
         setEmail(userToEdit?.email || '');
         setSelectedStates(userToEdit?.assigned_states || []);
         setSelectedCities(userToEdit?.assigned_cities || []);
+        setSelectedDepartments(userToEdit?.assigned_departments || []);
         setPassword('');
         setConfirmPassword('');
     }, [userToEdit, isOpen]);
@@ -284,6 +287,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
             role,
             assigned_states: hasRegionalAccess ? selectedStates : null,
             assigned_cities: hasRegionalAccess ? selectedCities : null,
+            assigned_departments: role === 'manager' ? (selectedDepartments.length > 0 ? selectedDepartments : null) : null,
             ...((!userToEdit && password) && { password }),
         };
 
@@ -294,6 +298,7 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                 role,
                 assigned_states: hasRegionalAccess ? selectedStates : null,
                 assigned_cities: hasRegionalAccess ? selectedCities : null,
+                assigned_departments: role === 'manager' ? (selectedDepartments.length > 0 ? selectedDepartments : null) : null,
                 password,
             };
             console.log('🚀 Chamando onSave com novo usuário:', newUser);
@@ -468,6 +473,37 @@ const AddUserDialog = ({ onSave, userToEdit, isOpen, onOpenChange, isLoading }: 
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Campo de Departamentos para Gerentes */}
+                    {role === 'manager' && (
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label className="text-right pt-2">Departamentos Autorizados</Label>
+                            <div className="col-span-3 border rounded-md p-4 max-h-60 overflow-y-auto">
+                                <div className="grid grid-cols-2 gap-2">
+                                    {departments.map(dept => (
+                                        <div key={dept} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`dept-${dept}`}
+                                                checked={selectedDepartments.includes(dept)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedDepartments([...selectedDepartments, dept]);
+                                                    } else {
+                                                        setSelectedDepartments(selectedDepartments.filter(d => d !== dept));
+                                                    }
+                                                }}
+                                            />
+                                            <Label htmlFor={`dept-${dept}`} className="text-sm cursor-pointer">{dept}</Label>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-3 p-2 bg-blue-50 rounded">
+                                    💡 <strong>Dica:</strong> Selecione os departamentos que este gerente pode aprovar vagas.
+                                    Se nenhum for selecionado, ele verá todas as vagas da região (compatibilidade).
+                                </p>
                             </div>
                         </div>
                     )}
@@ -926,6 +962,16 @@ const RHManagementPanel = () => {
                                                     {rhUser.assigned_cities && rhUser.assigned_cities.length > 0 && (
                                                         <div>
                                                             <span className="font-medium">Cidades:</span> {rhUser.assigned_cities.join(", ")}
+                                                        </div>
+                                                    )}
+                                                    {rhUser.role === 'manager' && rhUser.assigned_departments && rhUser.assigned_departments.length > 0 && (
+                                                        <div>
+                                                            <span className="font-medium">Departamentos:</span> {rhUser.assigned_departments.join(", ")}
+                                                        </div>
+                                                    )}
+                                                    {rhUser.role === 'manager' && (!rhUser.assigned_departments || rhUser.assigned_departments.length === 0) && (
+                                                        <div>
+                                                            <span className="font-medium text-blue-600">Departamentos:</span> <span className="text-blue-600">Todos (compatibilidade)</span>
                                                         </div>
                                                     )}
                                                 </div>

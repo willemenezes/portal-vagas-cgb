@@ -42,8 +42,9 @@ const CandidateManagement = () => {
 
     let result = candidates;
 
-    // 1. Filtrar Banco de Talentos se necessário
-    if (filters.jobId === 'all') {
+    // 1. CORREÇÃO: Filtrar Banco de Talentos APENAS para recrutadores
+    // Admins devem ver TODOS os candidatos (incluindo Banco de Talentos)
+    if (filters.jobId === 'all' && rhProfile && !rhProfile.is_admin) {
       result = result.filter(c => c.job_id !== talentBankJobId);
     }
 
@@ -135,8 +136,15 @@ const CandidateManagement = () => {
   const jobsForFilter = useMemo(() => jobs.filter(job => job.id !== talentBankJobId), [jobs, talentBankJobId]);
 
   const summary = useMemo(() => {
-    let relevantCandidates = Array.isArray(candidates) ? candidates.filter(c => c.job_id !== talentBankJobId) : [];
+    if (!Array.isArray(candidates)) return { Total: 0 };
+
+    // CORREÇÃO CRÍTICA: Para ADMIN, mostrar TODOS os candidatos (incluindo Banco de Talentos)
+    // Para RECRUTADOR, remover Banco de Talentos e aplicar filtros de região
+    let relevantCandidates = candidates;
+
     if (rhProfile && !rhProfile.is_admin) {
+      // Recrutador: remover Banco de Talentos E aplicar filtros de região
+      relevantCandidates = candidates.filter(c => c.job_id !== talentBankJobId);
       relevantCandidates = relevantCandidates.filter(c => {
         const candidateState = c.state || c.job?.state;
         const candidateCity = c.city || c.job?.city;
@@ -145,11 +153,22 @@ const CandidateManagement = () => {
         return true;
       });
     }
+    // Admin: não aplicar filtros, mostrar TODOS os candidatos (incluindo Banco de Talentos)
+
     const summaryData = SELECTION_STATUSES.reduce((acc, status) => {
       acc[status] = relevantCandidates.filter(c => c.status === status).length;
       return acc;
     }, {} as Record<SelectionStatus, number>);
     summaryData['Total'] = relevantCandidates.length;
+
+    console.log('📊 [CandidateManagement] Resumo calculado:', {
+      totalCandidates: candidates.length,
+      relevantCandidates: relevantCandidates.length,
+      role: rhProfile?.role,
+      isAdmin: rhProfile?.is_admin,
+      bancoTalentosRemovido: rhProfile && !rhProfile.is_admin
+    });
+
     return summaryData;
   }, [candidates, talentBankJobId, rhProfile]);
 

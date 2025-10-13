@@ -222,12 +222,28 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
     queryFn: async () => {
       console.log('🔍 [usePendingJobs] Perfil:', rhProfile?.role, 'is_admin:', rhProfile && 'is_admin' in rhProfile ? rhProfile.is_admin : 'N/A');
 
-      // Filtro de região - REMOVIDO para evitar problemas
       let query = supabase
         .from('jobs')
         .select('*')
         .eq('approval_status', 'pending_approval')
         .order('created_at', { ascending: false });
+
+      // NOVO: Filtro por departamento para gerentes
+      if (rhProfile?.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
+        console.log('🔍 [usePendingJobs] Filtrando por departamentos:', rhProfile.assigned_departments);
+        query = query.in('department', rhProfile.assigned_departments);
+      }
+
+      // Filtro por região (Estado/Cidade)
+      if (rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
+        console.log('🔍 [usePendingJobs] Filtrando por estados:', rhProfile.assigned_states);
+        query = query.in('state', rhProfile.assigned_states);
+      }
+
+      if (rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) {
+        console.log('🔍 [usePendingJobs] Filtrando por cidades:', rhProfile.assigned_cities);
+        query = query.in('city', rhProfile.assigned_cities);
+      }
 
       const { data, error } = await query;
 

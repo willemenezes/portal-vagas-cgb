@@ -36,7 +36,7 @@ serve(async (req) => {
     }
 
     try {
-        const { email, fullName, password, role, assignedStates, assignedCities } = await req.json()
+        const { email, fullName, password, role, assignedStates, assignedCities, assignedDepartments } = await req.json()
 
         if (!email || !fullName || !password || !role) {
             return new Response(JSON.stringify({ error: 'Faltando parâmetros obrigatórios (email, fullName, password, role)' }), {
@@ -96,6 +96,7 @@ serve(async (req) => {
             is_admin: role === 'admin',
             assigned_states: hasRegionalAccess ? assignedStates : null,
             assigned_cities: hasRegionalAccess ? assignedCities : null,
+            assigned_departments: role === 'manager' ? assignedDepartments : null,
         }
 
         const { data: rhUser, error: rhInsertError } = await supabaseAdmin

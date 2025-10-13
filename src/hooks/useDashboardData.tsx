@@ -44,8 +44,13 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         throw new Error("Perfil do usuário não carregado.");
     }
 
-    const fromDate = dateRange?.from ?? addDays(new Date(), -180);
-    const toDate = dateRange?.to ?? new Date();
+    // CORREÇÃO CRÍTICA: Usar filtro de data APENAS se o usuário selecionou um período
+    // Se não selecionou, mostrar TODOS os candidatos (sem filtro de data)
+    const fromDate = dateRange?.from;
+    const toDate = dateRange?.to;
+    const hasDateFilter = fromDate && toDate;
+
+    console.log('📅 [useDashboardData] Filtro de data:', hasDateFilter ? `${fromDate} até ${toDate}` : 'TODOS OS PERÍODOS');
 
     // BUG FIX: Para recrutador, precisamos buscar os dados para filtrar por região
     // Para admin, usamos count('exact') direto
@@ -56,9 +61,14 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         // Recrutador: buscar dados para filtrar
         let candidatesForCountQuery = supabase
             .from('candidates')
-            .select('state, city')
-            .gte('created_at', fromDate.toISOString())
-            .lte('created_at', toDate.toISOString());
+            .select('state, city');
+
+        // Aplicar filtro de data APENAS se selecionado
+        if (hasDateFilter) {
+            candidatesForCountQuery = candidatesForCountQuery
+                .gte('created_at', fromDate.toISOString())
+                .lte('created_at', toDate.toISOString());
+        }
 
         const { data: candidatesForCount, error: countError } = await candidatesForCountQuery;
         if (countError) throw countError;
@@ -79,28 +89,70 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         // Admin: usar count('exact') direto
         let countQuery = supabase
             .from('candidates')
-            .select('id', { count: 'exact', head: true })
-            .gte('created_at', fromDate.toISOString())
-            .lte('created_at', toDate.toISOString());
+            .select('id', { count: 'exact', head: true });
+
+        // Aplicar filtro de data APENAS se selecionado
+        if (hasDateFilter) {
+            countQuery = countQuery
+                .gte('created_at', fromDate.toISOString())
+                .lte('created_at', toDate.toISOString());
+        }
 
         const { count, error: countError } = await countQuery;
         if (countError) throw countError;
         totalCandidates = count || 0;
     }
 
-    // Buscar dados para gráficos e análises (com paginação se necessário)
-    // Limitamos a 2000 para performance, mas usamos count acima para total real
-    let dataQuery = supabase
-        .from('candidates')
-        .select('applied_date, status, city, state')
-        .gte('created_at', fromDate.toISOString())
-        .lte('created_at', toDate.toISOString())
-        .limit(2000); // Aumentado de 1000 padrão para 2000
+    console.log('✅ [useDashboardData] Total de candidatos:', totalCandidates);
 
-    const { data: allCandidatesData, error: candidatesError } = await dataQuery;
-    if (candidatesError) throw candidatesError;
+    // CORREÇÃO CRÍTICA: Buscar TODOS os candidatos em lotes para não ocultar dados
+    console.log('🔄 [useDashboardData] Buscando TODOS os candidatos para gráficos (SEM LIMITES - até 200.000)...');
 
-    let allCandidates = allCandidatesData || [];
+    let allCandidates: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+        let candidatesQuery = supabase
+            .from('candidates')
+            .select('applied_date, status, city, state')
+            .range(from, from + batchSize - 1);
+
+        // Aplicar filtro de data APENAS se selecionado
+        if (hasDateFilter) {
+            candidatesQuery = candidatesQuery
+                .gte('created_at', fromDate!.toISOString())
+                .lte('created_at', toDate!.toISOString());
+        }
+
+        const { data, error } = await candidatesQuery;
+
+        if (error) {
+            console.error("❌ Erro ao buscar candidatos para dashboard:", error);
+            throw error;
+        }
+
+        if (data && data.length > 0) {
+            allCandidates = [...allCandidates, ...data];
+            console.log(`📥 Dashboard - Lote ${Math.floor(from / batchSize) + 1}: ${data.length} candidatos (Total: ${allCandidates.length})`);
+            from += batchSize;
+
+            if (data.length < batchSize) {
+                hasMore = false;
+            }
+        } else {
+            hasMore = false;
+        }
+
+        // Limite de segurança para evitar loops infinitos - AUMENTADO para suportar grande volume
+        if (from >= 200000) {
+            console.warn('⚠️ Limite de segurança atingido (200.000 candidatos)');
+            hasMore = false;
+        }
+    }
+
+    console.log(`✅ [useDashboardData] ${allCandidates.length} candidatos carregados para gráficos`);
 
     // BUG FIX: Filtro por região para RECRUTADOR (reativado e corrigido)
     if (rhProfile && rhProfile.role === 'recruiter') {
@@ -244,10 +296,10 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
 
 export const useDashboardData = (rhProfile: RHUser | null, dateRange?: DateRange) => {
     return useQuery({
-        queryKey: ['dashboardData', rhProfile?.user_id, dateRange],
+        queryKey: ['dashboardData', 'unlimited', 'v5', 'all-periods', rhProfile?.user_id, dateRange], // CORREÇÃO CRÍTICA: Nova queryKey v5 - sem limite de data padrão
         queryFn: () => fetchDashboardData(rhProfile, dateRange),
         enabled: !!rhProfile, // A query só será executada se o perfil do RH estiver carregado
-        staleTime: 5 * 60 * 1000, // 5 minutos
+        staleTime: 2 * 60 * 1000, // 2 minutos (reduzido para atualizações mais frequentes)
         refetchOnWindowFocus: true, // Atualiza quando o usuário volta para a aba
     });
 }; 

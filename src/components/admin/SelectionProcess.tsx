@@ -360,7 +360,7 @@ const SelectionProcess = () => {
                                 queryClient.invalidateQueries({ queryKey: ['candidates'] });
                                 queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
                                 queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
-                                
+
                                 if (isMovingBackward) {
                                     toast({
                                         title: "Status atualizado!",
