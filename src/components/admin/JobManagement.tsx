@@ -44,6 +44,7 @@ const JobManagement = () => {
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const { toast } = useToast();
 
   // Estados para busca e filtro
@@ -751,7 +752,7 @@ const JobManagement = () => {
                         {job.title !== 'Banco de Talentos' && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id!)}><Trash2 className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => setJobToDelete(job)}><Trash2 className="w-4 h-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Excluir Vaga</p></TooltipContent>
                           </Tooltip>
@@ -787,6 +788,7 @@ const JobManagement = () => {
       </Dialog>
 
       {/* Modal de Confirmação de Exclusão */}
+      {/* Confirmação para cancelar solicitação de vaga */}
       <SimpleModal
         open={!!deleteConfirmRequest}
         onClose={() => setDeleteConfirmRequest(null)}
@@ -839,6 +841,60 @@ const JobManagement = () => {
                 <>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Cancelar Solicitação
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </SimpleModal>
+
+      {/* Confirmação para exclusão de vaga */}
+      <SimpleModal
+        open={!!jobToDelete}
+        onClose={() => setJobToDelete(null)}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Trash2 className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-red-800">Excluir Vaga</h3>
+              <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
+            </div>
+          </div>
+
+          {jobToDelete && (
+            <div className="p-4 bg-gray-50 rounded-lg border">
+              <p className="font-medium text-gray-900 mb-1">{jobToDelete.title}</p>
+              <p className="text-sm text-gray-600">{jobToDelete.department} • {jobToDelete.city}, {jobToDelete.state}</p>
+            </div>
+          )}
+
+          <p className="text-gray-700">
+            Tem certeza de que deseja excluir esta vaga? Os candidatos associados continuarão no histórico, mas a vaga será removida da gestão.
+          </p>
+
+          <div className="flex gap-3 justify-end pt-4 border-t">
+            <Button variant="outline" onClick={() => setJobToDelete(null)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!jobToDelete?.id) return;
+                await handleDelete(jobToDelete.id);
+                setJobToDelete(null);
+              }}
+              disabled={deleteJob.isPending}
+            >
+              {deleteJob.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Excluir Vaga
                 </>
               )}
             </Button>
