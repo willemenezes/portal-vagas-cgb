@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { RHUser } from "./useRH";
-import { addDays } from "date-fns";
+import { addDays, differenceInDays } from "date-fns";
 
 // Interfaces para tipagem dos dados
 export interface DashboardStats {
@@ -304,12 +304,8 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
                 id,
                 city,
                 job_id,
-                job:jobs(id, created_at),
-                candidate_notes!inner(
-                    note,
-                    created_at,
-                    activity_type
-                )
+                updated_at,
+                job:jobs(id, created_at)
             `)
             .in('status', ['Contratado', 'Aprovado']);
 
@@ -321,20 +317,10 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
             for (const candidate of hiredCandidates) {
                 // Base: data de criação da vaga (alinha com o relatório)
                 const jobCreated = candidate.job?.created_at ? new Date(candidate.job.created_at) : null;
-                // Fallback: se não houver vaga vinculada, usa a data da própria candidatura
-                const baseDate = jobCreated || new Date();
 
-                // Procurar a nota de contratação mais recente
-                const hiringNote = candidate.candidate_notes
-                    .filter((note: any) =>
-                        note.activity_type === 'Mudança de Status' &&
-                        (note.note.includes('Contratado') || note.note.includes('Aprovado'))
-                    )
-                    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-
-                if (hiringNote && baseDate) {
-                    const hiringDate = new Date(hiringNote.created_at);
-                    const daysDiff = Math.ceil((hiringDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+                // CORREÇÃO: Usar mesma lógica do relatório - candidate.updated_at
+                if (jobCreated && candidate.updated_at) {
+                    const daysDiff = differenceInDays(new Date(candidate.updated_at), jobCreated);
 
                     if (daysDiff > 0 && daysDiff < 365) { // Filtrar valores razoáveis (menos de 1 ano)
                         hiringTimes.push({
