@@ -15,7 +15,7 @@ import JobApprovalsWrapper from "@/components/admin/JobApprovalsWrapper";
 import ContractDeadlineManagement from "@/components/admin/ContractDeadlineManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
-import { Loader2, Menu } from "lucide-react";
+import { Loader2, Menu, X } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import LegalValidation from "@/components/admin/LegalValidation";
 import { Button } from "@/components/ui/button";
@@ -161,10 +161,12 @@ const Admin = () => {
           <div className="hidden md:flex">
             <Button
               variant="outline"
+              size="icon"
               onClick={() => setIsSidebarVisibleDesktop((v) => !v)}
               className="border-gray-300"
+              aria-label={isSidebarVisibleDesktop ? 'Recolher menu' : 'Mostrar menu'}
             >
-              {isSidebarVisibleDesktop ? 'Recolher menu' : 'Mostrar menu'}
+              {isSidebarVisibleDesktop ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
