@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { departments } from "@/data/departments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -73,8 +74,7 @@ const JobFilters = ({ filters, onFilterChange }: JobFiltersProps) => {
     fetchCities();
   }, [filters.state]);
 
-  // Usar lista centralizada de departamentos
-  const { departments } = require("@/data/departments");
+  // Lista centralizada de departamentos (importada acima)
 
   const types = ["CLT", "Estágio", "Aprendiz", "Terceirizado", "Temporário"];
 
