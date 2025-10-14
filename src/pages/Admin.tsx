@@ -158,18 +158,8 @@ const Admin = () => {
             </Button>
           </div>
 
-          {/* Desktop: mostrar/ocultar sidebar */}
-          <div className="hidden md:flex">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSidebarVisibleDesktop((v) => !v)}
-              className="border-gray-300"
-              aria-label={isSidebarVisibleDesktop ? 'Recolher menu' : 'Mostrar menu'}
-            >
-              {isSidebarVisibleDesktop ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-          </div>
+          {/* Desktop: controle agora fica dentro da própria sidebar */}
+          <div className="hidden md:flex"></div>
         </div>
         {/* Adicionar um cabeçalho de boas-vindas */}
         <div className="mb-6 md:mb-8">
