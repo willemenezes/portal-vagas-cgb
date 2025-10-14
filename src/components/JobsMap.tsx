@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,6 +125,68 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Anápolis': [-16.3281, -48.9531],
     'Várzea Grande': [-15.6467, -56.1325],
     'Dourados': [-22.2211, -54.8056],
+    'Três Lagoas': [-20.7511, -51.6783],
+    'Corumbá': [-19.0078, -57.6547],
+    
+    // Cidades adicionais do Pará
+    'Altamira': [-3.2033, -52.2069],
+    'Tucuruí': [-3.7661, -49.6725],
+    'Abaetetuba': [-1.7217, -48.8781],
+    'Bragança': [-1.0533, -46.7656],
+    'Capanema': [-1.1944, -47.1811],
+    'Itaituba': [-4.2761, -55.9836],
+    'Oriximiná': [-1.7656, -55.8661],
+    'Paragominas': [-2.9947, -47.3544],
+    'Redenção': [-8.0289, -50.0306],
+    'Tailândia': [-1.9456, -48.9456],
+    'Tomé-Açu': [-2.4181, -48.1506],
+    'Xinguara': [-7.0933, -49.9456],
+    
+    // Cidades adicionais importantes
+    'Imperatriz': [-5.5264, -47.4919],
+    'Bacabal': [-4.2250, -44.7806],
+    'Caxias': [-4.8581, -43.3561],
+    'Codó': [-4.4553, -43.8856],
+    'Timon': [-5.0953, -42.8364],
+    'Açailândia': [-4.9472, -47.5069],
+    'Balsas': [-7.5325, -46.0356],
+    
+    // Rondônia
+    'Ji-Paraná': [-10.8781, -61.9506],
+    'Ariquemes': [-9.9131, -63.0406],
+    'Cacoal': [-11.4381, -61.4469],
+    'Vilhena': [-12.7406, -60.1456],
+    'Rolim de Moura': [-11.7256, -61.7781],
+    
+    // Acre
+    'Cruzeiro do Sul': [-7.6281, -72.6781],
+    'Sena Madureira': [-9.0656, -68.6581],
+    'Tarauacá': [-8.1581, -70.7656],
+    'Feijó': [-8.1631, -70.3531],
+    'Brasileia': [-11.0131, -68.7481],
+    
+    // Roraima
+    'Caracaraí': [1.8181, -61.1281],
+    'Rorainópolis': [0.4431, -60.4381],
+    'São João da Baliza': [-0.9569, -59.9131],
+    'Mucajaí': [2.4381, -60.9081],
+    
+    // Amapá
+    'Santana': [-0.0581, -51.1781],
+    'Laranjal do Jari': [-0.4581, -52.4781],
+    'Oiapoque': [3.8381, -51.8281],
+    'Porto Grande': [0.7081, -51.4081],
+    'Mazagão': [-0.1181, -51.2881],
+    
+    // Mato Grosso
+    'Rondonópolis': [-16.4706, -54.6356],
+    'Sinop': [-11.8642, -55.5131],
+    'Tangará da Serra': [-14.6219, -57.5031],
+    'Barra do Garças': [-15.8906, -52.2569],
+    'Cáceres': [-16.0756, -57.6781],
+    'Primavera do Leste': [-15.5561, -54.2969],
+    'Sorriso': [-12.5456, -55.7181],
+    'Lucas do Rio Verde': [-13.0581, -55.9181],
 };
 
 // Criar ícone customizado
@@ -308,6 +370,14 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                         position={location.coordinates}
                         icon={createCustomIcon(location.jobs.length)}
                     >
+                        <Tooltip direction="top" offset={[0, -20]} opacity={0.9} permanent={false}>
+                            <div className="text-center">
+                                <div className="font-semibold text-sm">{location.city}, {location.state}</div>
+                                <div className="text-xs text-gray-600">
+                                    {location.jobs.length} {location.jobs.length === 1 ? 'vaga' : 'vagas'}
+                                </div>
+                            </div>
+                        </Tooltip>
                         <Popup maxWidth={350} className="custom-popup">
                             <Card className="border-0 shadow-none">
                                 <CardHeader className="pb-3">

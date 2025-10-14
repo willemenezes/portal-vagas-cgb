@@ -299,7 +299,7 @@ const Index = () => {
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-soft border border-white/20">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <div className="w-2 h-2 bg-cgb-primary rounded-full"></div>
-                  <span className="font-medium">Clique nos marcadores para ver vagas</span>
+                  <span className="font-medium">Passe o mouse ou clique nos marcadores</span>
                 </div>
               </div>
             </div>
