@@ -12,7 +12,8 @@ import {
     Send,
     Gavel,
     Loader2,
-    Calendar
+    Calendar,
+    X
 } from "lucide-react";
 
 // Adicionei um tipo para as props para melhor organização
@@ -22,6 +23,7 @@ type AdminSidebarProps = {
     userRole: 'admin' | 'recruiter' | 'manager' | 'juridico' | 'solicitador';
     onLogout: () => void;
     isLoggingOut?: boolean;
+    onCollapse?: () => void; // usado no desktop para recolher a sidebar
 };
 
 const NavItem = ({ icon: Icon, text, active, onClick, isNew = false }) => (
@@ -43,7 +45,7 @@ const NavItem = ({ icon: Icon, text, active, onClick, isNew = false }) => (
     </button>
 );
 
-export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLoggingOut }: AdminSidebarProps) => {
+export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLoggingOut, onCollapse }: AdminSidebarProps) => {
     let menuItems = [];
 
     if (userRole === 'manager') {
@@ -89,9 +91,22 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
 
     return (
         <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col p-5 shadow-2xl flex-shrink-0">
-            <div className="flex items-center gap-3 mb-10 px-2 pt-2">
-                <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" />
-                <span className="text-xl font-semibold tracking-wider text-cgb-primary-dark">Portal do RH</span>
+            {/* Header com botão de fechar (somente se onCollapse fornecido) */}
+            <div className="flex items-center justify-between mb-10 px-2 pt-2">
+                <div className="flex items-center gap-3">
+                    <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" />
+                    <span className="text-xl font-semibold tracking-wider text-cgb-primary-dark">Portal do RH</span>
+                </div>
+                {onCollapse && (
+                    <button
+                        type="button"
+                        aria-label="Fechar menu"
+                        onClick={onCollapse}
+                        className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 hover:bg-white/70"
+                    >
+                        <X className="w-5 h-5 text-gray-700" />
+                    </button>
+                )}
             </div>
 
             <nav className="flex flex-col gap-2.5">

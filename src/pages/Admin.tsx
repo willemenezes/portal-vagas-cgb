@@ -136,6 +136,7 @@ const Admin = () => {
             userRole={rhProfile.role}
             onLogout={handleLogout}
             isLoggingOut={isLoggingOut}
+            onCollapse={() => setIsSidebarVisibleDesktop(false)}
           />
         </div>
       )}
