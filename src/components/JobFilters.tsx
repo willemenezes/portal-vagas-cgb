@@ -73,10 +73,8 @@ const JobFilters = ({ filters, onFilterChange }: JobFiltersProps) => {
     fetchCities();
   }, [filters.state]);
 
-  const departments = [
-    "Técnico", "Administrativo", "Operacional", "Engenharia",
-    "Comercial", "Recursos Humanos", "Financeiro", "Tecnologia", "Gerência"
-  ];
+  // Usar lista centralizada de departamentos
+  const { departments } = require("@/data/departments");
 
   const types = ["CLT", "Estágio", "Aprendiz", "Terceirizado", "Temporário"];
 
