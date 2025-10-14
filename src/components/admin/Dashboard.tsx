@@ -54,6 +54,16 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
+// Paleta moderna solicitada
+const COLORS = {
+  cobalt: '#2563EB',
+  cobaltLight: 'rgba(37,99,235,0.15)',
+  green: '#22C55E',
+  red: '#EF4444',
+  grayBg: '#F9FAFB',
+  gray: '#94A3B8',
+};
+
 const chartConfig = {
   aplicacoes: {
     label: "Aplicações",
@@ -106,14 +116,34 @@ const Dashboard = () => {
     statusData,
     topCities,
     funnelData,
-    weeklyData
+    weeklyData,
+    averageHiringTime,
+    hiringTimeByCity
   } = dashboardData;
 
-  // Adicionado filtro para remover status com 0 candidatos
+  // Adicionado filtro para remover status com 0 candidatos e aplicar paleta
+  const statusColorMap: Record<string, string> = {
+    'Pendentes': COLORS.gray,
+    'Entrevista': COLORS.cobalt,
+    'Aprovados': COLORS.green,
+    'Rejeitados': COLORS.red,
+    'Cadastrado': COLORS.gray,
+    'Análise de Currículo': COLORS.cobalt,
+    'Entrevista com RH': COLORS.cobalt,
+    'Entrevista com Gestor': COLORS.cobalt,
+    'Contratado': COLORS.green,
+  };
   const statusDataFormatted = statusData.filter(item => item.value > 0).map(item => ({
     ...item,
-    color: chartConfig[item.name.toLowerCase()]?.color || '#ccc',
+    color: statusColorMap[item.name] || COLORS.gray,
     icon: item.name === 'Pendentes' ? Clock : item.name === 'Entrevista' ? Users : item.name === 'Aprovados' ? Award : ThumbsDown
+  }));
+
+  // Percentuais do funil (horizontal)
+  const totalFunnel = funnelData?.[0]?.value || 0;
+  const funnelPercentData = (funnelData || []).map(step => ({
+    ...step,
+    percent: totalFunnel ? Math.round((step.value / totalFunnel) * 100) : 0,
   }));
 
   // Função para obter a data atual formatada
@@ -167,7 +197,7 @@ const Dashboard = () => {
         </div>
         {/* Resumo Geral */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-indigo-50 border-indigo-100 text-indigo-900 transition-all hover:shadow-md hover:-translate-y-1">
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft transition-all hover:shadow-medium hover:-translate-y-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Candidatos</CardTitle>
               <Users className="h-4 w-4 text-indigo-500" />
@@ -177,7 +207,7 @@ const Dashboard = () => {
               <p className="text-xs text-indigo-800/80">{dateRange?.from && dateRange?.to ? 'no período selecionado' : 'de todos os tempos'}</p>
             </CardContent>
           </Card>
-          <Card className="bg-blue-50 border-blue-100 text-blue-900 transition-all hover:shadow-md hover:-translate-y-1">
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft transition-all hover:shadow-medium hover:-translate-y-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Vagas</CardTitle>
               <Briefcase className="h-4 w-4 text-blue-500" />
@@ -187,7 +217,7 @@ const Dashboard = () => {
               <p className="text-xs text-blue-800/80">ativas na sua região</p>
             </CardContent>
           </Card>
-          <Card className="bg-green-50 border-green-100 text-green-900 transition-all hover:shadow-md hover:-translate-y-1">
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft transition-all hover:shadow-medium hover:-translate-y-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Candidatos Aprovados</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -197,17 +227,33 @@ const Dashboard = () => {
               <p className="text-xs text-green-800/80">{dateRange?.from && dateRange?.to ? 'contratados no período' : 'contratados (total)'}</p>
             </CardContent>
           </Card>
-          <Card className="bg-teal-50 border-teal-100 text-teal-900 transition-all hover:shadow-md hover:-translate-y-1">
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft transition-all hover:shadow-medium hover:-translate-y-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
               <TrendingUp className="h-4 w-4 text-teal-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{conversionRate}%</div>
-              <p className="text-xs text-teal-800/80">de candidatos aprovados</p>
+              <p className="text-xs text-teal-800/80">{approvedCount} aprovados de {totalCandidates} candidatos</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Card adicional de Tempo Médio de Contratação */}
+        {averageHiringTime > 0 && (
+          <div className="grid gap-6 md:grid-cols-1">
+            <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft transition-all hover:shadow-medium hover:-translate-y-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tempo Médio de Contratação</CardTitle>
+                <Clock className="h-4 w-4 text-indigo-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{averageHiringTime} dias</div>
+                <p className="text-xs text-gray-600">da criação da vaga à contratação</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Dashboard de Validade das Vagas */}
         <div className="space-y-4">
@@ -222,31 +268,36 @@ const Dashboard = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          {/* Gráfico de Aplicações Semanais */}
-          <Card className="lg:col-span-4">
+          {/* Tempo médio por cidade (prioridade visual no topo) */}
+          <Card className="lg:col-span-4 bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <BarChart2 className="h-5 w-5 mr-2" />
-                Aplicações na Última Semana
+                <Clock className="h-5 w-5 mr-2" />
+                Tempo Médio de Contratação por Cidade
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                <BarChart data={weeklyData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="day" tickLine={false} tickMargin={10} axisLine={false} />
-                  <YAxis />
-                  <Tooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Bar dataKey="aplicacoes" fill="var(--color-aplicacoes)" radius={8} />
-                </BarChart>
-              </ChartContainer>
+            <CardContent className="w-full">
+              {hiringTimeByCity && hiringTimeByCity.length > 0 ? (
+                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={hiringTimeByCity} margin={{ left: 10, right: 10, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="city" tickLine={false} axisLine={false} />
+                      <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={false} formatter={(v: number, _n: string, p: any) => [`${v} dias`, `Tempo Médio (${p.payload.count} contratações)`]} />
+                      <Bar dataKey="averageDays" radius={[6, 6, 0, 0]} fill={COLORS.cobalt}>
+                        <LabelList dataKey="averageDays" position="top" formatter={(v: number) => `${v}d`} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              ) : (
+                <div className="text-sm text-gray-500">Sem dados suficientes para calcular.</div>
+              )}
             </CardContent>
           </Card>
           {/* Status dos Candidatos */}
-          <Card className="lg:col-span-3">
+          <Card className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <PieChartIcon className="h-5 w-5 mr-2" />
@@ -254,26 +305,26 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Tooltip
                     cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
+                    formatter={(value, name) => [value, name]}
                   />
-                  <Pie data={statusDataFormatted} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                  <Pie data={statusDataFormatted} dataKey="value" nameKey="name" innerRadius={65} outerRadius={90} strokeWidth={4}>
                     {statusDataFormatted.map((entry) => (
                       <Cell key={`cell-${entry.name}`} fill={entry.color} />
                     ))}
                   </Pie>
                 </PieChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Funil de Conversão */}
-          <Card>
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <SlidersHorizontal className="h-5 w-5 mr-2" />
@@ -281,19 +332,24 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="w-full h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <FunnelChart>
-                  <Tooltip />
-                  <Funnel dataKey="value" data={funnelData} isAnimationActive>
-                    <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
-                  </Funnel>
-                </FunnelChart>
-              </ResponsiveContainer>
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart layout="vertical" data={funnelPercentData} margin={{ left: 20 }}>
+                    <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                    <YAxis type="category" dataKey="name" width={140} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: 'rgba(200, 200, 200, 0.2)' }} formatter={(v: number) => [`${v}%`, 'Percentual do funil']} />
+                    <Bar dataKey="percent" radius={[0, 6, 6, 0]} fill={COLORS.cobalt}>
+                      <LabelList dataKey="percent" position="right" formatter={(v: number) => `${v}%`} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
 
           {/* Top Cidades */}
-          <Card>
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <MapPin className="h-5 w-5 mr-2" />
@@ -314,6 +370,30 @@ const Dashboard = () => {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Gráfico de Aplicações Semanais (movido para abaixo) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart2 className="h-5 w-5 mr-2" />
+                Aplicações na Última Semana
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weeklyData} margin={{ left: 10, right: 10, bottom: 10 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis dataKey="day" tickLine={false} tickMargin={10} axisLine={false} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                    <Area type="monotone" dataKey="aplicacoes" fill={COLORS.cobaltLight} stroke="none" />
+                    <Line type="monotone" dataKey="aplicacoes" stroke={COLORS.cobalt} strokeWidth={3} dot={{ r: 3, stroke: '#fff', strokeWidth: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         </div>

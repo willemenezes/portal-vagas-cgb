@@ -14,6 +14,14 @@ export interface DashboardStats {
     topCities: CityData[];
     funnelData: FunnelData[];
     weeklyData: WeeklyData[];
+    averageHiringTime: number;
+    hiringTimeByCity: HiringTimeData[];
+}
+
+interface HiringTimeData {
+    city: string;
+    averageDays: number;
+    count: number;
 }
 
 interface WeeklyData {
@@ -282,6 +290,95 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         };
     });
 
+    // Calcular tempo médio de contratação
+    console.log('🔄 [useDashboardData] Calculando tempo médio de contratação...');
+
+    let averageHiringTime = 0;
+    let hiringTimeByCity: HiringTimeData[] = [];
+
+    try {
+        // Buscar candidatos contratados/aprovados com a vaga (para usar a data de criação da vaga)
+        const { data: hiredCandidates, error: hiredError } = await supabase
+            .from('candidates')
+            .select(`
+                id,
+                city,
+                job_id,
+                job:jobs(id, created_at),
+                candidate_notes!inner(
+                    note,
+                    created_at,
+                    activity_type
+                )
+            `)
+            .in('status', ['Contratado', 'Aprovado']);
+
+        if (hiredError) {
+            console.warn('Erro ao buscar candidatos contratados:', hiredError);
+        } else if (hiredCandidates && hiredCandidates.length > 0) {
+            const hiringTimes: { candidateId: string, city: string, days: number }[] = [];
+
+            for (const candidate of hiredCandidates) {
+                // Base: data de criação da vaga (alinha com o relatório)
+                const jobCreated = candidate.job?.created_at ? new Date(candidate.job.created_at) : null;
+                // Fallback: se não houver vaga vinculada, usa a data da própria candidatura
+                const baseDate = jobCreated || new Date();
+
+                // Procurar a nota de contratação mais recente
+                const hiringNote = candidate.candidate_notes
+                    .filter((note: any) =>
+                        note.activity_type === 'Mudança de Status' &&
+                        (note.note.includes('Contratado') || note.note.includes('Aprovado'))
+                    )
+                    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+                if (hiringNote && baseDate) {
+                    const hiringDate = new Date(hiringNote.created_at);
+                    const daysDiff = Math.ceil((hiringDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+
+                    if (daysDiff > 0 && daysDiff < 365) { // Filtrar valores razoáveis (menos de 1 ano)
+                        hiringTimes.push({
+                            candidateId: candidate.id,
+                            city: candidate.city || 'Não informado',
+                            days: daysDiff
+                        });
+                    }
+                }
+            }
+
+            if (hiringTimes.length > 0) {
+                // Calcular média geral
+                averageHiringTime = Math.round(
+                    hiringTimes.reduce((sum, item) => sum + item.days, 0) / hiringTimes.length
+                );
+
+                // Calcular por cidade
+                const cityGroups = hiringTimes.reduce((acc, item) => {
+                    if (!acc[item.city]) {
+                        acc[item.city] = [];
+                    }
+                    acc[item.city].push(item.days);
+                    return acc;
+                }, {} as Record<string, number[]>);
+
+                hiringTimeByCity = Object.entries(cityGroups)
+                    .map(([city, days]) => ({
+                        city,
+                        averageDays: Math.round(days.reduce((sum, d) => sum + d, 0) / days.length),
+                        count: days.length
+                    }))
+                    // Incluir cidades com 1 contratação, mas priorizar as com maior volume
+                    .sort((a, b) => (b.count - a.count) || (a.averageDays - b.averageDays))
+                    .slice(0, 15); // Top 15 cidades para dar mais contexto
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao calcular tempo médio de contratação:', error);
+    }
+
+    console.log(`✅ [useDashboardData] Tempo médio de contratação: ${averageHiringTime} dias`);
+    console.log(`✅ [useDashboardData] Cidades com tempo médio:`, hiringTimeByCity);
+
     return {
         totalCandidates: totalCandidates,
         totalJobs: totalJobs,
@@ -290,7 +387,9 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
         statusData,
         topCities,
         funnelData,
-        weeklyData
+        weeklyData,
+        averageHiringTime,
+        hiringTimeByCity
     };
 };
 
