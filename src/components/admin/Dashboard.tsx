@@ -6,11 +6,6 @@ import {
   ChartTooltipContent
 } from "@/components/ui/chart";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -125,8 +120,7 @@ const Dashboard = () => {
     topCities,
     funnelData,
     weeklyData,
-    averageHiringTime,
-    hiringTimeByCity
+    averageHiringTime
   } = dashboardData;
 
   // Adicionado filtro para remover status com 0 candidatos e aplicar paleta
@@ -275,37 +269,9 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          {/* Tempo médio por cidade (prioridade visual no topo) */}
-          <Card className="lg:col-span-4 bg-white border border-gray-200 rounded-2xl shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="h-5 w-5 mr-2" />
-                Tempo Médio de Contratação por Cidade
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="w-full">
-              {hiringTimeByCity && hiringTimeByCity.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={hiringTimeByCity} margin={{ left: 10, right: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="city" tickLine={false} axisLine={false} />
-                      <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={false} formatter={(v: number, _n: string, p: any) => [`${v} dias`, `Tempo Médio (${p.payload.count} contratações)`]} />
-                      <Bar dataKey="averageDays" radius={[6, 6, 0, 0]} fill={COLORS.cobalt}>
-                        <LabelList dataKey="averageDays" position="top" formatter={(v: number) => `${v}d`} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              ) : (
-                <div className="text-sm text-gray-500">Sem dados suficientes para calcular.</div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Status dos Candidatos */}
-          <Card className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl shadow-soft">
+          <Card className="lg:col-span-4 bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <PieChartIcon className="h-5 w-5 mr-2" />
