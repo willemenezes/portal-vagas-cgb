@@ -276,7 +276,7 @@ const Dashboard = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Status dos Candidatos */}
-          <Card className="lg:col-span-4 bg-white border border-gray-200 rounded-2xl shadow-soft">
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <PieChartIcon className="h-5 w-5 mr-2" />
@@ -299,24 +299,22 @@ const Dashboard = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
           {/* Funil de Conversão */}
           <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <SlidersHorizontal className="h-5 w-5 mr-2" />
-                Funil de Conversão de Candidatos
+                Funil de Conversão
               </CardTitle>
             </CardHeader>
-            <CardContent className="w-full h-[300px]">
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <CardContent className="w-full h-[250px]">
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart layout="vertical" data={funnelPercentData} margin={{ left: 20 }}>
                     <CartesianGrid horizontal={false} strokeDasharray="3 3" />
                     <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                    <YAxis type="category" dataKey="name" width={140} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
                     <Tooltip cursor={{ fill: 'rgba(200, 200, 200, 0.2)' }} formatter={(v: number) => [`${v}%`, 'Percentual do funil']} />
                     <Bar dataKey="percent" radius={[0, 6, 6, 0]} fill={COLORS.cobalt}>
                       <LabelList dataKey="percent" position="right" formatter={(v: number) => `${v}%`} />
@@ -332,15 +330,15 @@ const Dashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <MapPin className="h-5 w-5 mr-2" />
-                Top 5 Cidades com Mais Candidatos
+                Top Cidades
               </CardTitle>
             </CardHeader>
-            <CardContent className="w-full h-[300px]">
+            <CardContent className="w-full h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={topCities} margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="name" width={80} tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: 'rgba(200, 200, 200, 0.2)' }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {topCities.map((entry) => (
@@ -352,16 +350,16 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Gráfico de Aplicações Semanais (movido para abaixo) */}
-          <Card>
+          {/* Gráfico de Aplicações Semanais */}
+          <Card className="bg-white border border-gray-200 rounded-2xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <BarChart2 className="h-5 w-5 mr-2" />
-                Aplicações na Última Semana
+                Aplicações Semanais
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={weeklyData} margin={{ left: 10, right: 10, bottom: 10 }}>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" />
