@@ -15,9 +15,11 @@ import JobApprovalsWrapper from "@/components/admin/JobApprovalsWrapper";
 import ContractDeadlineManagement from "@/components/admin/ContractDeadlineManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import LegalValidation from "@/components/admin/LegalValidation";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const Admin = () => {
   const { user, loading, signOut } = useAuth();
@@ -25,6 +27,7 @@ const Admin = () => {
   const { data: rhProfile, isLoading: isLoadingProfile } = useRHProfile(user?.id);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (rhProfile) {
@@ -123,22 +126,58 @@ const Admin = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-800">
-      <AdminSidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        userRole={rhProfile.role}
-        onLogout={handleLogout}
-        isLoggingOut={isLoggingOut}
-      />
-      <main className="flex-1 p-8 overflow-y-auto">
+      {/* Sidebar desktop */}
+      <div className="hidden md:block">
+        <AdminSidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          userRole={rhProfile.role}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+        />
+      </div>
+
+      {/* Conteúdo principal */}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        {/* Barra superior mobile com botão de menu */}
+        <div className="md:hidden mb-4 flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsSidebarOpen(true)}
+            className="border-gray-300"
+            aria-label="Abrir menu"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
         {/* Adicionar um cabeçalho de boas-vindas */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Olá, {rhProfile.full_name || user.email}!</h1>
           <p className="text-gray-500 mt-1">Bem-vindo(a) de volta ao seu portal.</p>
         </div>
 
         {renderContent()}
       </main>
+
+      {/* Sidebar mobile como Sheet */}
+      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        <SheetContent side="left" className="w-[300px] bg-white p-0">
+          <AdminSidebar
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab);
+              setIsSidebarOpen(false);
+            }}
+            userRole={rhProfile.role}
+            onLogout={async () => {
+              setIsSidebarOpen(false);
+              await handleLogout();
+            }}
+            isLoggingOut={isLoggingOut}
+          />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
