@@ -43,9 +43,9 @@ export const CookieBanner = () => {
 
     if (!isVisible) return null;
 
-    return (
-        <div className="fixed bottom-4 right-4 z-50 max-w-sm">
-            <Card className="bg-white shadow-lg border border-gray-200">
+  return (
+    <div className="fixed bottom-4 right-4 z-40 max-w-sm">
+      <Card className="bg-white shadow-lg border border-gray-200">
                 <CardContent className="p-4">
                     <div className="space-y-3">
                         <div className="flex items-start gap-3">

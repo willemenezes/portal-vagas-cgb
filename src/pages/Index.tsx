@@ -162,7 +162,7 @@ const Index = () => {
           </div>
         </div>
       )}
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative z-10">
+      <div className="relative">
 
 
         {/* Modern Hero Section */}
@@ -172,12 +172,13 @@ const Index = () => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(106,11,39,0.05)_0%,transparent_50%)]"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(196,83,111,0.03)_0%,transparent_50%)]"></div>
 
-          {/* Background Image - Horizontal and Semi-transparent */}
-          <div className="absolute inset-0 opacity-25">
+          {/* Background Image - Full coverage and properly positioned */}
+          <div className="absolute inset-0 opacity-30 z-0">
             <img
               src="/CGBRH2.png"
               alt="CGB RH Background"
               className="w-full h-full object-cover object-center"
+              style={{ objectPosition: 'center center' }}
             />
           </div>
 
@@ -306,6 +307,7 @@ const Index = () => {
           </div>
         </section>
 
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Featured Jobs Section */}
         <section className="py-20 bg-gradient-to-b from-cgb-pearl to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -672,6 +674,7 @@ const Index = () => {
             </div>
           </div>
         </footer>
+        </div>
       </div>
     </div>
   );
