@@ -28,6 +28,7 @@ const Admin = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarVisibleDesktop, setIsSidebarVisibleDesktop] = useState(true);
 
   useEffect(() => {
     if (rhProfile) {
@@ -126,30 +127,46 @@ const Admin = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-800">
-      {/* Sidebar desktop */}
-      <div className="hidden md:block">
-        <AdminSidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          userRole={rhProfile.role}
-          onLogout={handleLogout}
-          isLoggingOut={isLoggingOut}
-        />
-      </div>
+      {/* Sidebar desktop (colapsável) */}
+      {isSidebarVisibleDesktop && (
+        <div className="hidden md:block">
+          <AdminSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            userRole={rhProfile.role}
+            onLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
+          />
+        </div>
+      )}
 
       {/* Conteúdo principal */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-        {/* Barra superior mobile com botão de menu */}
-        <div className="md:hidden mb-4 flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsSidebarOpen(true)}
-            className="border-gray-300"
-            aria-label="Abrir menu"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+        {/* Barra superior: botão de menu no mobile e colapsar no desktop */}
+        <div className="mb-4 flex items-center justify-between">
+          {/* Mobile: abrir Sheet */}
+          <div className="md:hidden">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsSidebarOpen(true)}
+              className="border-gray-300"
+              aria-label="Abrir menu"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Desktop: mostrar/ocultar sidebar */}
+          <div className="hidden md:flex">
+            <Button
+              variant="outline"
+              onClick={() => setIsSidebarVisibleDesktop((v) => !v)}
+              className="border-gray-300"
+            >
+              {isSidebarVisibleDesktop ? 'Recolher menu' : 'Mostrar menu'}
+            </Button>
+          </div>
         </div>
         {/* Adicionar um cabeçalho de boas-vindas */}
         <div className="mb-6 md:mb-8">
@@ -178,6 +195,21 @@ const Admin = () => {
           />
         </SheetContent>
       </Sheet>
+
+      {/* Botão flutuante para reabrir a sidebar no desktop quando oculta */}
+      {!isSidebarVisibleDesktop && (
+        <div className="hidden md:block fixed left-4 top-4 z-40">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsSidebarVisibleDesktop(true)}
+            className="border-gray-300 bg-white"
+            aria-label="Mostrar menu"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
