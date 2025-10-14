@@ -2,11 +2,14 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { CookieBanner } from "@/components/CookieBanner";
 import Index from "@/pages/Index";
 import JobDetail from "@/pages/JobDetail";
 import JobApplication from "@/pages/JobApplication";
 import ResumeSubmission from "@/pages/ResumeSubmission";
 import Login from "@/pages/Login";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfUse from "@/pages/TermsOfUse";
 
 import Admin from "@/pages/Admin";
 import AdminSetupPage from "@/pages/AdminSetup";
@@ -34,6 +37,8 @@ function App() {
             <Route path="/candidatar/:id" element={<JobApplication />} />
             <Route path="/cadastrar-curriculo" element={<ResumeSubmission />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/politica-privacidade" element={<PrivacyPolicy />} />
+            <Route path="/termos-uso" element={<TermsOfUse />} />
 
             {/* Rotas protegidas - para usuários autenticados (admins e RH) */}
             <Route
@@ -57,6 +62,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
+          <CookieBanner />
         </div>
       </Router>
     </QueryClientProvider>
