@@ -13,7 +13,7 @@ import {
     Gavel,
     Loader2,
     Calendar,
-    X
+    Menu
 } from "lucide-react";
 
 // Adicionei um tipo para as props para melhor organização
@@ -104,7 +104,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                         onClick={onCollapse}
                         className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 hover:bg-white/70"
                     >
-                        <X className="w-5 h-5 text-gray-700" />
+                        <Menu className="w-5 h-5 text-gray-700" />
                     </button>
                 )}
             </div>
