@@ -1,3 +1,0 @@
-[33m22dd398[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: adicionar campos de controle interno para solicitantes
-[33mfc4f999[m fix: corrigir lógica de filtro por localização para perfis RH - estados e cidades específicas
-[33m6da83ac[m feat: separar departamento 'Leitura e Cobrança' em 'LEITURA' e 'COBRANÇA'
