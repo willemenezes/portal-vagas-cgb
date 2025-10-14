@@ -653,15 +653,15 @@ const Index = () => {
 
                   {/* Legal Links */}
                   <div className="flex justify-center items-center gap-6 pt-4">
-                    <a 
-                      href="/politica-privacidade" 
+                    <a
+                      href="/politica-privacidade"
                       className="text-gray-500 hover:text-cgb-primary text-sm transition-colors"
                     >
                       Política de Privacidade
                     </a>
                     <span className="text-gray-300">|</span>
-                    <a 
-                      href="/termos-uso" 
+                    <a
+                      href="/termos-uso"
                       className="text-gray-500 hover:text-cgb-primary text-sm transition-colors"
                     >
                       Termos de Uso
