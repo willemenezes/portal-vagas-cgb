@@ -17,7 +17,12 @@ import {
   Funnel,
   FunnelChart,
   Tooltip,
-  LabelList
+  LabelList,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
 } from "recharts";
 import {
   TrendingUp,
