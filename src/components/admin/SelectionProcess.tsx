@@ -104,7 +104,26 @@ const SelectionProcess = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [candidateToReject, setCandidateToReject] = useState<Candidate | null>(null);
     const [rejectionReason, setRejectionReason] = useState("");
+    const [selectedRejectionMotif, setSelectedRejectionMotif] = useState("");
     const { data: rejectionNotes = [] } = useAllRejectionNotes();
+
+    // Opções de motivos de reprovação
+    const rejectionMotifs = [
+        "Não possui moto",
+        "Não possui CNH",
+        "Reprovado pelo RH",
+        "Não possui moto e CNH",
+        "Moto fora do ano de corte",
+        "Reprovado pelo gestor",
+        "Modelo de moto inadequado",
+        "CNH provisória",
+        "Desistiu da vaga",
+        "Sem documentação",
+        "Reprovado na pesquisa",
+        "Não é Pessoa com Deficiência",
+        "Não compareceu",
+        "Não aceitou a proposta"
+    ];
     const [activeTab, setActiveTab] = useState("ativos");
     const [layoutMode, setLayoutMode] = useState<'grid' | 'horizontal'>('grid');
     const [showJobStatusModal, setShowJobStatusModal] = useState(false);
@@ -398,20 +417,27 @@ const SelectionProcess = () => {
     };
 
     const handleConfirmRejection = async () => {
-        if (!candidateToReject || !rejectionReason.trim()) {
-            toast({ title: "Campo obrigatório", description: "Por favor, preencha o motivo da reprovação.", variant: "destructive" });
+        if (!candidateToReject || (!selectedRejectionMotif && !rejectionReason.trim())) {
+            toast({ title: "Campo obrigatório", description: "Por favor, selecione um motivo ou preencha uma observação.", variant: "destructive" });
             return;
         }
         const { id: candidateId } = candidateToReject;
+        
+        // Combinar motivo selecionado com observação adicional
+        const fullRejectionNote = selectedRejectionMotif 
+            ? (rejectionReason.trim() ? `${selectedRejectionMotif} - ${rejectionReason}` : selectedRejectionMotif)
+            : rejectionReason;
+            
         try {
             await updateStatus.mutateAsync({ id: candidateId, status: 'Reprovado' });
-            if (user) await createNote.mutateAsync({ candidate_id: candidateId, author_id: user.id, note: `Motivo da reprovação: ${rejectionReason}`, activity_type: 'Reprovação' });
+            if (user) await createNote.mutateAsync({ candidate_id: candidateId, author_id: user.id, note: `Motivo da reprovação: ${fullRejectionNote}`, activity_type: 'Reprovação' });
             toast({ title: "Candidato reprovado", description: "O status e a nota foram salvos com sucesso." });
         } catch (error: any) {
             toast({ title: "Erro", description: `Não foi possível completar a ação: ${error.message}`, variant: "destructive" });
         } finally {
             setCandidateToReject(null);
             setRejectionReason("");
+            setSelectedRejectionMotif("");
         }
     };
 
@@ -631,27 +657,58 @@ const SelectionProcess = () => {
 
             <CandidateDetailModal candidate={selectedCandidate} isOpen={isModalOpen} onClose={handleCloseModal} />
 
-            <Dialog open={!!candidateToReject} onOpenChange={() => setCandidateToReject(null)}>
+            <Dialog open={!!candidateToReject} onOpenChange={() => {
+                setCandidateToReject(null);
+                setRejectionReason("");
+                setSelectedRejectionMotif("");
+            }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Motivo da Reprovação</DialogTitle>
                         <DialogDescription>
-                            Descreva o motivo pelo qual o candidato "{candidateToReject?.name}" está sendo reprovado. A observação será salva no histórico.
+                            Selecione o motivo da reprovação do candidato "{candidateToReject?.name}". Você pode adicionar observações adicionais no campo de texto.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <Textarea
-                            placeholder="Ex: Perfil técnico não alinhado com os requisitos da vaga..."
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                            className="min-h-[100px]"
-                        />
+                    <div className="py-4 space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Motivo da Reprovação *
+                            </label>
+                            <Select value={selectedRejectionMotif} onValueChange={setSelectedRejectionMotif}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o motivo da reprovação" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {rejectionMotifs.map((motif) => (
+                                        <SelectItem key={motif} value={motif}>
+                                            {motif}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Observações Adicionais (Opcional)
+                            </label>
+                            <Textarea
+                                placeholder="Ex: Detalhes específicos sobre a reprovação..."
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                className="min-h-[80px]"
+                            />
+                        </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setCandidateToReject(null)}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => {
+                            setCandidateToReject(null);
+                            setRejectionReason("");
+                            setSelectedRejectionMotif("");
+                        }}>Cancelar</Button>
                         <Button
                             onClick={handleConfirmRejection}
-                            disabled={!rejectionReason.trim() || updateStatus.isPending || createNote.isPending}
+                            disabled={(!selectedRejectionMotif && !rejectionReason.trim()) || updateStatus.isPending || createNote.isPending}
                             className="bg-destructive hover:bg-destructive/90 text-white"
                         >
                             {(updateStatus.isPending || createNote.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Reprovação"}
