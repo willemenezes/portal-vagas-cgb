@@ -6,123 +6,108 @@ import { Cookie, X, Shield, Settings } from 'lucide-react';
 const COOKIE_CONSENT_KEY = 'cgb-cookie-consent';
 
 export const CookieBanner = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
 
-  useEffect(() => {
-    // Verificar se o usuário já deu consentimento
-    const hasConsented = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!hasConsented) {
-      setIsVisible(true);
-    }
-  }, []);
+    useEffect(() => {
+        // Verificar se o usuário já deu consentimento
+        const hasConsented = localStorage.getItem(COOKIE_CONSENT_KEY);
+        if (!hasConsented) {
+            setIsVisible(true);
+        }
+    }, []);
 
-  const handleAcceptAll = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify({
-      necessary: true,
-      analytics: true,
-      marketing: false,
-      timestamp: new Date().toISOString()
-    }));
-    setIsVisible(false);
-  };
+    const handleAcceptAll = () => {
+        localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify({
+            necessary: true,
+            analytics: true,
+            marketing: false,
+            timestamp: new Date().toISOString()
+        }));
+        setIsVisible(false);
+    };
 
-  const handleAcceptNecessary = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify({
-      necessary: true,
-      analytics: false,
-      marketing: false,
-      timestamp: new Date().toISOString()
-    }));
-    setIsVisible(false);
-  };
+    const handleAcceptNecessary = () => {
+        localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify({
+            necessary: true,
+            analytics: false,
+            marketing: false,
+            timestamp: new Date().toISOString()
+        }));
+        setIsVisible(false);
+    };
 
-  const handleCustomize = () => {
-    setShowDetails(!showDetails);
-  };
+    const handleCustomize = () => {
+        setShowDetails(!showDetails);
+    };
 
-  if (!isVisible) return null;
+    if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-white border-t border-gray-200 shadow-lg">
-      <Card className="max-w-4xl mx-auto">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0">
-              <Cookie className="w-8 h-8 text-amber-600" />
-            </div>
-            
-            <div className="flex-1 space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  🍪 Uso de Cookies
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+      <Card className="bg-white shadow-lg border border-gray-200">
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Cookie className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  🍪 Cookies
                 </h3>
-                <p className="text-gray-700 leading-relaxed">
-                  Utilizamos cookies para melhorar sua experiência em nosso site, 
-                  analisar o tráfego e personalizar conteúdo. Alguns cookies são 
-                  essenciais para o funcionamento do site, outros nos ajudam a 
-                  entender como você interage conosco.
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Usamos cookies para melhorar sua experiência. 
+                  Alguns são essenciais, outros opcionais.
                 </p>
               </div>
+            </div>
 
-              {showDetails && (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-green-600" />
-                    <div>
-                      <h4 className="font-medium text-gray-900">Cookies Necessários</h4>
-                      <p className="text-sm text-gray-600">
-                        Essenciais para o funcionamento do site (autenticação, preferências)
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <h4 className="font-medium text-gray-900">Cookies de Análise</h4>
-                      <p className="text-sm text-gray-600">
-                        Nos ajudam a entender como você usa o site (opcional)
-                      </p>
-                    </div>
-                  </div>
+            {showDetails && (
+              <div className="bg-gray-50 rounded p-2 space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-3 h-3 text-green-600" />
+                  <span className="font-medium">Essenciais</span>
                 </div>
-              )}
+                <div className="flex items-center gap-2">
+                  <Settings className="w-3 h-3 text-blue-600" />
+                  <span className="font-medium">Análise (opcional)</span>
+                </div>
+              </div>
+            )}
 
-              <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
                 <Button 
                   onClick={handleAcceptAll}
-                  className="bg-cgb-primary hover:bg-cgb-primary-dark text-white"
+                  size="sm"
+                  className="bg-cgb-primary hover:bg-cgb-primary-dark text-white text-xs px-3 py-1"
                 >
-                  Aceitar Todos
+                  Aceitar
                 </Button>
                 
                 <Button 
                   onClick={handleAcceptNecessary}
                   variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  size="sm"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-3 py-1"
                 >
-                  Apenas Necessários
+                  Essenciais
                 </Button>
                 
                 <Button 
                   onClick={handleCustomize}
                   variant="ghost"
-                  className="text-gray-600 hover:text-gray-800"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-800 text-xs px-2 py-1"
                 >
-                  {showDetails ? 'Ocultar Detalhes' : 'Personalizar'}
+                  {showDetails ? '−' : '+'}
                 </Button>
               </div>
 
-              <div className="text-xs text-gray-500">
-                <p>
-                  Ao continuar navegando, você concorda com nossa{' '}
-                  <a href="/politica-privacidade" className="text-cgb-primary hover:underline">
-                    Política de Privacidade
-                  </a>
-                  {' '}e uso de cookies conforme a LGPD.
-                </p>
-              </div>
+              <p className="text-xs text-gray-500">
+                <a href="/politica-privacidade" className="text-cgb-primary hover:underline">
+                  Política de Privacidade
+                </a>
+              </p>
             </div>
           </div>
         </CardContent>
