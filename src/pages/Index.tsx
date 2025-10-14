@@ -349,12 +349,7 @@ const Index = () => {
                           {/* Decorative gradient */}
                           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cgb-primary via-cgb-accent to-cgb-primary"></div>
 
-                          {/* Featured badge */}
-                          <div className="absolute top-4 right-4">
-                            <div className="bg-cgb-accent text-white text-xs font-bold px-3 py-1 rounded-full">
-                              #{index + 1}
-                            </div>
-                          </div>
+                          {/* Featured badge ocultado */}
 
                           <div className="flex-grow">
                             <div className="mb-6">
