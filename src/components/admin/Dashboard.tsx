@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -53,6 +53,7 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { checkMissingCities } from "@/utils/checkMissingCities";
 
 // Paleta moderna solicitada
 const COLORS = {
@@ -95,6 +96,13 @@ const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const { data: dashboardData, isLoading, isError, error } = useDashboardData(rhProfile, dateRange);
+
+  // Executar verificação de cidades faltantes (apenas em desenvolvimento)
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      checkMissingCities();
+    }
+  }, []);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-96"><Loader2 className="w-10 h-10 animate-spin text-cgb-primary" /></div>;
