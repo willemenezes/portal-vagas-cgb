@@ -10,7 +10,6 @@ import ResumeSubmission from "@/pages/ResumeSubmission";
 import Login from "@/pages/Login";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfUse from "@/pages/TermsOfUse";
-import TVDashboard from "@/pages/TVDashboard";
 
 import Admin from "@/pages/Admin";
 import AdminSetupPage from "@/pages/AdminSetup";
@@ -50,7 +49,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/dashboard" element={<TVDashboard />} />
             <Route
               path="/admin-setup"
               element={
