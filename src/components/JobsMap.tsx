@@ -269,9 +269,26 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             setIsLoadingLocations(true);
             const locationMap = new Map<string, JobLocation>();
             const citiesToGeocode = new Set<string>();
-            // Carregar cache de geocodificação
-            const cachedData = localStorage.getItem('geocodedCities');
-            const geocodedCache: Record<string, [number, number]> = cachedData ? JSON.parse(cachedData) : {};
+            // Carregar cache de geocodificação com expiração
+            const CACHE_KEY = 'cgb-geocoded-cities';
+            const CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 dias
+            
+            let geocodedCache: Record<string, [number, number]> = {};
+            try {
+                const cachedData = localStorage.getItem(CACHE_KEY);
+                if (cachedData) {
+                    const { data, timestamp } = JSON.parse(cachedData);
+                    if (Date.now() - timestamp < CACHE_EXPIRY) {
+                        geocodedCache = data;
+                        console.log(`📦 Cache de geocoding carregado: ${Object.keys(geocodedCache).length} cidades`);
+                    } else {
+                        console.log('🗑️ Cache de geocoding expirado, limpando...');
+                        localStorage.removeItem(CACHE_KEY);
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ Erro ao carregar cache de geocoding:', error);
+            }
 
             for (const job of jobs) {
                 if (!job.city || !job.state || job.city.toLowerCase() === 'remoto' || job.title === 'Banco de Talentos') {
@@ -312,22 +329,46 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                     }
                 });
 
-                const promises = Array.from(citiesToGeocode).map(async (city) => {
+                console.log(`🗺️ Geocodificando ${citiesToGeocode.size} cidades automaticamente...`);
+                
+                const promises = Array.from(citiesToGeocode).map(async (city, index) => {
                     try {
-                        const state = cityToState[city] || 'PA'; // Default para PA se não encontrar
-                        const response = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}&country=Brazil&format=json&limit=1`);
+                        // Delay entre requests para respeitar rate limits
+                        await new Promise(resolve => setTimeout(resolve, 300 * index));
+                        
+                        const state = cityToState[city] || 'PA';
+                        const query = encodeURIComponent(`${city}, ${state}, Brasil`);
+                        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&countrycodes=br`, {
+                            headers: {
+                                'User-Agent': 'CGB-Vagas-Portal/1.0'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
                         const data = await response.json();
                         if (data && data.length > 0) {
                             const { lat, lon, display_name } = data[0];
                             const coords: [number, number] = [parseFloat(lat), parseFloat(lon)];
-                            console.log(`🗺️ Geocodificação: ${city}, ${state} -> ${display_name} (${coords[0]}, ${coords[1]})`);
+                            console.log(`✅ ${city}, ${state} -> ${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`);
                             geocodedCache[city] = coords;
                             return { city, coords };
+                        } else {
+                            console.warn(`⚠️ Cidade não encontrada: ${city}, ${state} - usando fallback`);
+                            // Usar Belém como fallback para cidades do Pará
+                            const fallbackCoords: [number, number] = [-1.4558, -48.5044];
+                            geocodedCache[city] = fallbackCoords;
+                            return { city, coords: fallbackCoords };
                         }
                     } catch (error) {
-                        console.error(`Falha ao geocodificar ${city}:`, error);
+                        console.error(`❌ Falha ao geocodificar ${city}:`, error);
+                        // Usar Belém como fallback em caso de erro
+                        const fallbackCoords: [number, number] = [-1.4558, -48.5044];
+                        geocodedCache[city] = fallbackCoords;
+                        return { city, coords: fallbackCoords };
                     }
-                    return null;
                 });
 
                 const results = await Promise.all(promises);
@@ -352,7 +393,16 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                     }
                 });
 
-                localStorage.setItem('geocodedCities', JSON.stringify(geocodedCache));
+                // Salvar cache atualizado com timestamp
+                try {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify({
+                        data: geocodedCache,
+                        timestamp: Date.now()
+                    }));
+                    console.log(`💾 Cache de geocoding salvo: ${Object.keys(geocodedCache).length} cidades`);
+                } catch (error) {
+                    console.warn('⚠️ Erro ao salvar cache de geocoding:', error);
+                }
             }
 
             setJobLocations(Array.from(locationMap.values()));
