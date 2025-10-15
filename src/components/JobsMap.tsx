@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, memo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -533,4 +533,4 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
     );
 };
 
-export default JobsMap; 
+export default memo(JobsMap); 

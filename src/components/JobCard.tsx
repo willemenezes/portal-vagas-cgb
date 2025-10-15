@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -186,4 +187,4 @@ const JobCard = ({ job, isTalentBank = false }: JobCardProps) => {
   );
 };
 
-export default JobCard;
+export default memo(JobCard);

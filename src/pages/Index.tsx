@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import JobCard from "@/components/JobCard";
 import JobFilters from "@/components/JobFilters";
-import JobsMap from "@/components/JobsMap";
 import MapStats from "@/components/MapStats";
 import { useJobsRobust } from "@/hooks/useJobsRobust";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Search, Briefcase, MapPin, Filter, ArrowRight, AlertTriangle, X, Users, TrendingUp, Star, CheckCircle } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
+
+// Lazy loading do mapa (componente mais pesado)
+const JobsMap = lazy(() => import('@/components/JobsMap'));
 
 interface FilterState {
   search: string;
@@ -177,6 +179,7 @@ const Index = () => {
             <img
               src="/CGBRH2.png"
               alt="CGB RH Background"
+              loading="lazy"
               className="w-full h-full object-cover object-center"
               style={{ objectPosition: 'center center' }}
             />
@@ -188,7 +191,7 @@ const Index = () => {
               {/* Badge */}
               <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/90 backdrop-blur-sm border border-cgb-accent/20 shadow-soft rounded-full text-cgb-primary-dark font-semibold">
                 <div className="w-2 h-2 bg-cgb-accent rounded-full animate-pulse"></div>
-                <img src="/CGB.png" alt="Ícone CGB" className="h-5 w-5" />
+                <img src="/CGB.png" alt="Ícone CGB" className="h-5 w-5" loading="lazy" />
                 <span className="text-base font-semibold">Portal de Carreiras</span>
               </div>
 
@@ -293,7 +296,16 @@ const Index = () => {
             <div className="relative">
               <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-strong overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cgb-primary via-cgb-accent to-cgb-primary"></div>
-                <JobsMap jobs={jobs} />
+                <Suspense fallback={
+                  <div className="h-96 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cgb-primary mx-auto mb-2"></div>
+                      <p className="text-gray-600 text-sm">Carregando mapa...</p>
+                    </div>
+                  </div>
+                }>
+                  <JobsMap jobs={jobs} />
+                </Suspense>
               </div>
 
               {/* Map overlay info */}

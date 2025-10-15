@@ -94,7 +94,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
             {/* Header com botão de fechar (somente se onCollapse fornecido) */}
             <div className="flex items-center justify-between mb-10 px-2 pt-2">
                 <div className="flex items-center gap-3">
-                    <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" />
+                    <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" loading="lazy" />
                     <span className="text-xl font-semibold tracking-wider text-cgb-primary-dark">Portal do RH</span>
                 </div>
                 {onCollapse && (
