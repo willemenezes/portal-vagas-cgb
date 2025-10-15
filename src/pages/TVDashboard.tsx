@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface Metrics {
   totalActiveJobs: number
@@ -16,6 +17,18 @@ const TVDashboard = () => {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authError, setAuthError] = useState('')
+
+  const handleLogin = () => {
+    if (password === 'Ferr@r186@cgb') {
+      setIsAuthenticated(true)
+      setAuthError('')
+    } else {
+      setAuthError('Senha incorreta')
+    }
+  }
 
   const fetchMetrics = async () => {
     try {
@@ -32,10 +45,12 @@ const TVDashboard = () => {
   }
 
   useEffect(() => {
-    fetchMetrics()
-    const id = setInterval(fetchMetrics, 60_000)
-    return () => clearInterval(id)
-  }, [])
+    if (isAuthenticated) {
+      fetchMetrics()
+      const id = setInterval(fetchMetrics, 60_000)
+      return () => clearInterval(id)
+    }
+  }, [isAuthenticated])
 
   const goFullscreen = () => {
     if (document.documentElement.requestFullscreen) {
@@ -43,13 +58,42 @@ const TVDashboard = () => {
     }
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <Card className="bg-zinc-900 border-zinc-800 w-96">
+          <CardHeader>
+            <CardTitle className="text-center">Acesso ao Dashboard</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Digite a senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+            {authError && (
+              <p className="text-red-400 text-sm text-center">{authError}</p>
+            )}
+            <Button onClick={handleLogin} className="w-full">
+              Entrar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Painel de TV</h1>
+        <h1 className="text-3xl font-bold">Dashboard CGB</h1>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={fetchMetrics}>Atualizar</Button>
           <Button onClick={goFullscreen}>Tela Cheia</Button>
+          <Button variant="outline" onClick={() => setIsAuthenticated(false)}>Sair</Button>
         </div>
       </div>
 

@@ -50,7 +50,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/tv" element={<TVDashboard />} />
+            <Route path="/dashboard" element={<TVDashboard />} />
             <Route
               path="/admin-setup"
               element={
