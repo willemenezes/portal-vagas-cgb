@@ -127,7 +127,7 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Dourados': [-22.2211, -54.8056],
     'Três Lagoas': [-20.7511, -51.6783],
     'Corumbá': [-19.0078, -57.6547],
-    
+
     // Cidades adicionais do Pará
     'Altamira': [-3.2033, -52.2069],
     'Tucuruí': [-3.7661, -49.6725],
@@ -141,7 +141,34 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Tailândia': [-1.9456, -48.9456],
     'Tomé-Açu': [-2.4181, -48.1506],
     'Xinguara': [-7.0933, -49.9456],
-    
+
+    // Cidades do Pará que estavam faltando
+    'Cumaru do Norte': [-7.2069, -51.0956],
+    'São Félix do Xingu': [-6.6444, -51.9956],
+    'Monte Alegre': [-2.0069, -54.0756],
+    'Curuca': [-0.7356, -47.8506],
+    'Curuçá': [-0.7356, -47.8506],
+    'Santa Izabel do Pará': [-1.2956, -48.1656],
+    'Soure': [-0.7156, -48.5256],
+    'Portel': [-1.9256, -50.8156],
+    'Salvaterra': [-0.7556, -48.5156],
+    'Porto de Moz': [-1.7456, -52.2356],
+    'Terra Santa': [-2.1056, -56.4856],
+    'Igarapé-Açu': [-1.1356, -47.6256],
+    'Santa Maria do Pará': [-1.3656, -47.5756],
+    'Viseu': [-1.1956, -46.1406],
+    'Irituia': [-1.7956, -47.4306],
+    'Mãe do Rio': [-1.9756, -50.1706],
+    'Acará': [-1.9556, -48.1856],
+    'Anapu': [-3.2556, -51.2356],
+    'Pacajá': [-3.8556, -50.6456],
+    'Rurópolis': [-4.0956, -54.9056],
+    'Novo Progresso': [-7.0856, -55.4056],
+    'Alenquer': [-1.9456, -54.7356],
+    'Brasil Novo': [-3.2056, -52.6256],
+    'Capitão Poço': [-1.7456, -47.0656],
+    'Marapanim': [-0.7156, -47.7006],
+
     // Cidades adicionais importantes
     'Imperatriz': [-5.5264, -47.4919],
     'Bacabal': [-4.2250, -44.7806],
@@ -150,34 +177,34 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Timon': [-5.0953, -42.8364],
     'Açailândia': [-4.9472, -47.5069],
     'Balsas': [-7.5325, -46.0356],
-    
+
     // Rondônia
     'Ji-Paraná': [-10.8781, -61.9506],
     'Ariquemes': [-9.9131, -63.0406],
     'Cacoal': [-11.4381, -61.4469],
     'Vilhena': [-12.7406, -60.1456],
     'Rolim de Moura': [-11.7256, -61.7781],
-    
+
     // Acre
     'Cruzeiro do Sul': [-7.6281, -72.6781],
     'Sena Madureira': [-9.0656, -68.6581],
     'Tarauacá': [-8.1581, -70.7656],
     'Feijó': [-8.1631, -70.3531],
     'Brasileia': [-11.0131, -68.7481],
-    
+
     // Roraima
     'Caracaraí': [1.8181, -61.1281],
     'Rorainópolis': [0.4431, -60.4381],
     'São João da Baliza': [-0.9569, -59.9131],
     'Mucajaí': [2.4381, -60.9081],
-    
+
     // Amapá
     'Santana': [-0.0581, -51.1781],
     'Laranjal do Jari': [-0.4581, -52.4781],
     'Oiapoque': [3.8381, -51.8281],
     'Porto Grande': [0.7081, -51.4081],
     'Mazagão': [-0.1181, -51.2881],
-    
+
     // Mato Grosso
     'Rondonópolis': [-16.4706, -54.6356],
     'Sinop': [-11.8642, -55.5131],

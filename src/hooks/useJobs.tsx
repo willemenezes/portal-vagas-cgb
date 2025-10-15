@@ -296,6 +296,7 @@ export const useCreateJob = () => {
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
       queryClient.invalidateQueries({ queryKey: ['jobsRobust'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     },
@@ -332,6 +333,7 @@ export const useUpdateJob = () => {
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
       queryClient.invalidateQueries({ queryKey: ['pendingJobs'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
@@ -355,6 +357,7 @@ export const useDeleteJob = () => {
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
@@ -380,6 +383,7 @@ export const useUpdateJobFlowStatus = () => {
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
