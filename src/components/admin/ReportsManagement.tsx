@@ -18,6 +18,41 @@ const ReportsManagement = () => {
 
     const isLoading = isLoadingCandidates || isLoadingResumes || isLoadingJobs || isLoadingRejectionNotes;
 
+    // Determina o status exibido no portal para a vaga exportada
+    const getJobPortalStatus = (job: any): string => {
+        const status = String(job?.status || '').toLowerCase();
+        const approval = String(job?.approval_status || '').toLowerCase();
+        const flow = String(job?.flow_status || '').toLowerCase();
+
+        // 1) Encerramentos e rejeições primeiro
+        if (['closed', 'fechado'].includes(status) || ['closed', 'fechado'].includes(approval)) return 'Encerrada';
+        if (['rejected', 'rejeitado'].includes(approval)) return 'Rejeitada';
+        if (['inactive', 'inativa'].includes(status)) return 'Inativa';
+        if (flow === 'concluida') return 'Concluída';
+        if (flow === 'congelada') return 'Congelada';
+
+        // 2) Expiração
+        if (job?.expires_at) {
+            const expiresAt = new Date(job.expires_at);
+            if (!isNaN(expiresAt.getTime()) && expiresAt < new Date()) {
+                return 'Expirada';
+            }
+        }
+
+        // 3) Ativa (mesmo que flow esteja vazio em dados antigos)
+        const isActive = ['active', 'ativo'].includes(status);
+        const isApproved = ['active', 'ativo'].includes(approval);
+        if (isActive && isApproved && (flow === 'ativa' || flow === '' || flow === 'null' || flow === 'undefined')) {
+            return 'Ativa';
+        }
+
+        // 4) Pendente de aprovação
+        if (['pending_approval', 'aprovacao_pendente'].includes(approval)) return 'Aprovação Pendente';
+
+        // 5) Fallback
+        return 'Indefinido';
+    };
+
     const downloadCSV = (data: string, filename: string) => {
         const blob = new Blob(['\uFEFF' + data], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -139,7 +174,7 @@ const ReportsManagement = () => {
                 break;
 
             case 'approvedJobs':
-                headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação'];
+                headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação', 'Status no Portal'];
                 rows = jobs
                     .filter(j => j.approval_status === 'active')
                     .map(j => [
@@ -147,6 +182,7 @@ const ReportsManagement = () => {
                         j.department || '',
                         `${j.city || ''}, ${j.state || ''}`,
                         format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
+                        getJobPortalStatus(j)
                     ]);
                 filename = "relatorio_vagas_aprovadas.csv";
                 break;
