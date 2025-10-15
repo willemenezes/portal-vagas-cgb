@@ -63,7 +63,6 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Breves': [-1.6819, -50.4781],
     'Capanema': [-1.1958, -47.1819],
     'Conceição do Araguaia': [-8.2581, -49.2656],
-    'Eldorado dos Carajás': [-6.1039, -49.3556],
     'Itaituba': [-4.2761, -55.9836],
     'Jacundá': [-4.4469, -49.1156],
     'Marituba': [-1.3431, -48.3419],
@@ -77,6 +76,20 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
     'Uruará': [-3.7158, -53.7381],
     'Vigia': [-0.8581, -48.1419],
     'Xinguara': [-7.0919, -49.9431],
+
+    // Cidades adicionais do Pará (corrigindo erros do console)
+    'São Domingos do Araguaia': [-5.9069, -48.7756],
+    'São Geraldo do Araguaia': [-6.3969, -48.5656],
+    'Eldorado do Carajás': [-6.1039, -49.3556],
+    'Santana do Araguaia': [-9.3169, -50.1656],
+    'Novo Repartimento': [-4.2969, -49.7856],
+    'Goianésia do Pará': [-3.8469, -49.0956],
+    'Breu Branco': [-4.0469, -49.6456],
+    'Dom Eliseu': [-4.2969, -47.5456],
+    'Itupiranga': [-5.1369, -49.3256],
+
+    // Fallback para cidades não mapeadas
+    'Cidade não informada': [-1.4558, -48.5044], // Coordenadas de Belém como fallback
 
     // Cidades do Amapá
     'Laranjal do Jari': [-0.4578, -52.4825],
