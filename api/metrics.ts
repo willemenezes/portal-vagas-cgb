@@ -1,15 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Permitir apenas GET
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   try {
     const url = process.env.SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!url || !serviceKey) {
-      return new Response(JSON.stringify({ error: 'Missing Supabase env vars' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      console.error('Missing Supabase env vars:', { url: !!url, serviceKey: !!serviceKey })
+      return res.status(500).json({ error: 'Missing Supabase environment variables' })
     }
 
     const supabase = createClient(url, serviceKey)
@@ -23,6 +27,8 @@ export default async function handler(req: Request): Promise<Response> {
 
     const in7Days = new Date()
     in7Days.setDate(in7Days.getDate() + 7)
+
+    console.log('🔍 Buscando métricas do Supabase...')
 
     const [activeJobsRes, candidatesRes, approvedRes, expiringRes, jobsByCityRes] = await Promise.all([
       supabase
@@ -59,6 +65,12 @@ export default async function handler(req: Request): Promise<Response> {
         .eq('flow_status', 'ativa')
     ])
 
+    console.log('📊 Resultados das consultas:', {
+      activeJobs: activeJobsRes.count,
+      candidatesToday: candidatesRes.count,
+      approvedThisMonth: approvedRes.count
+    })
+
     const totalActiveJobs = activeJobsRes.count || 0
     const candidatesToday = candidatesRes.count || 0
     const approvedThisMonth = approvedRes.count || 0
@@ -83,24 +95,22 @@ export default async function handler(req: Request): Promise<Response> {
       .slice(0, 10)
       .map(([city, count]) => ({ city, count }))
 
-    return new Response(
-      JSON.stringify({
-        totalActiveJobs,
-        candidatesToday,
-        approvedThisMonth,
-        conversionRate,
-        jobsExpiringSoon,
-        topCities,
-        collectedAt: new Date().toISOString(),
-      }),
-      { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
-    )
+    const result = {
+      totalActiveJobs,
+      candidatesToday,
+      approvedThisMonth,
+      conversionRate,
+      jobsExpiringSoon,
+      topCities,
+      collectedAt: new Date().toISOString(),
+    }
+
+    console.log('✅ Métricas calculadas:', result)
+
+    res.setHeader('Cache-Control', 'no-store')
+    res.status(200).json(result)
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message || 'Unknown error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    console.error('💥 Erro na API metrics:', e)
+    res.status(500).json({ error: e?.message || 'Unknown error' })
   }
 }
-
-
