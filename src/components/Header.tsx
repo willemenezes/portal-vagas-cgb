@@ -151,7 +151,11 @@ const Header = () => {
       </div>
       {/* Mobile Menu (Sheet) */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white z-[99999] h-screen overflow-y-auto fixed">
+        <SheetContent 
+          side="left" 
+          className="w-[300px] sm:w-[400px] bg-white z-[99999] h-screen overflow-y-auto fixed"
+          aria-describedby="mobile-menu-description"
+        >
           <SheetHeader className="mb-8 sticky top-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-10">
             <SheetTitle>
               <div className="flex items-center gap-3">
@@ -165,6 +169,9 @@ const Header = () => {
                 </span>
               </div>
             </SheetTitle>
+            <div id="mobile-menu-description" className="sr-only">
+              Menu de navegação mobile para acessar vagas, cadastro de currículo e área administrativa
+            </div>
           </SheetHeader>
           <nav className="flex flex-col space-y-4 pb-28">
             <Link

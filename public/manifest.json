@@ -11,19 +11,19 @@
     "lang": "pt-BR",
     "icons": [
         {
-            "src": "/CGB_ENERGIA_LOGO.png",
+            "src": "/CGB.png",
             "type": "image/png",
             "sizes": "192x192",
             "purpose": "any maskable"
         },
         {
-            "src": "/CGB_ENERGIA_LOGO.png",
+            "src": "/CGB.png",
             "type": "image/png",
             "sizes": "512x512",
             "purpose": "any maskable"
         },
         {
-            "src": "/CGB_ENERGIA_LOGO.png",
+            "src": "/CGB.png",
             "type": "image/png",
             "sizes": "256x256",
             "purpose": "any"
@@ -42,7 +42,7 @@
             "url": "/?utm_source=homescreen#vagas",
             "icons": [
                 {
-                    "src": "/CGB_ENERGIA_LOGO.png",
+                    "src": "/CGB.png",
                     "sizes": "192x192"
                 }
             ]
@@ -54,7 +54,7 @@
             "url": "/cadastrar-curriculo?utm_source=homescreen",
             "icons": [
                 {
-                    "src": "/CGB_ENERGIA_LOGO.png",
+                    "src": "/CGB.png",
                     "sizes": "192x192"
                 }
             ]
