@@ -5,10 +5,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fix para mapa não interferir com modais */
-body.modal-open .leaflet-container {
-  z-index: 0 !important;
+/* Fix para mapa não interferir com modais - SOLUÇÃO ROBUSTA */
+body.modal-open .leaflet-container,
+body.modal-open .leaflet-container * {
+  z-index: -1 !important;
   pointer-events: none !important;
+  position: relative !important;
 }
 
 body.modal-open .leaflet-map-pane,
@@ -16,9 +18,39 @@ body.modal-open .leaflet-tile-pane,
 body.modal-open .leaflet-overlay-pane,
 body.modal-open .leaflet-marker-pane,
 body.modal-open .leaflet-popup-pane,
-body.modal-open .leaflet-tooltip-pane {
-  z-index: 0 !important;
+body.modal-open .leaflet-tooltip-pane,
+body.modal-open .leaflet-control-container,
+body.modal-open .leaflet-control-zoom {
+  z-index: -1 !important;
   pointer-events: none !important;
+}
+
+/* Overlay escuro sobre o mapa quando modal aberto */
+body.modal-open .leaflet-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Forçar z-index alto para Sheet/Modal components */
+[data-radix-popper-content-wrapper],
+[data-radix-dialog-overlay],
+[data-radix-dialog-content],
+.sheet-overlay,
+.sheet-content {
+  z-index: 99999 !important;
+}
+
+/* Garantir que backdrop do Sheet tenha z-index alto */
+body.modal-open [data-radix-dialog-overlay] {
+  z-index: 99998 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
 }
 
 @layer base {

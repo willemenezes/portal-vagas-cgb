@@ -15,15 +15,36 @@ const Header = () => {
       document.body.style.overflow = 'hidden';
       // Adicionar classe para indicar que um modal está aberto
       document.body.classList.add('modal-open');
+      
+      // Esconder completamente todos os mapas
+      const mapContainers = document.querySelectorAll('.leaflet-container');
+      mapContainers.forEach(container => {
+        (container as HTMLElement).style.visibility = 'hidden';
+        (container as HTMLElement).style.opacity = '0';
+      });
     } else {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
+      
+      // Mostrar mapas novamente
+      const mapContainers = document.querySelectorAll('.leaflet-container');
+      mapContainers.forEach(container => {
+        (container as HTMLElement).style.visibility = 'visible';
+        (container as HTMLElement).style.opacity = '1';
+      });
     }
     
     // Cleanup
     return () => {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
+      
+      // Garantir que mapas estejam visíveis
+      const mapContainers = document.querySelectorAll('.leaflet-container');
+      mapContainers.forEach(container => {
+        (container as HTMLElement).style.visibility = 'visible';
+        (container as HTMLElement).style.opacity = '1';
+      });
     };
   }, [isMenuOpen]);
 
@@ -104,7 +125,7 @@ const Header = () => {
       </div>
       {/* Mobile Menu (Sheet) */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white z-[9999] h-screen overflow-y-auto">
+        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white z-[99999] h-screen overflow-y-auto fixed">
           <SheetHeader className="mb-8 sticky top-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-10">
             <SheetTitle>
               <div className="flex items-center gap-3">
