@@ -156,6 +156,154 @@ export async function generateCandidateReportPDF(report: CandidateReportData) {
 }
 
 
+// ==========================
+// Guia: Cloudflare + Vercel
+// ==========================
+export async function generateCloudflareGuidePDF() {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+    const margin = 40;
+    let y = margin;
+
+    const addTitle = (text: string) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text(text, margin, y);
+        y += 18;
+    };
+
+    const addSubtitle = (text: string) => {
+        y += 14;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(text, margin, y);
+        y += 8;
+    };
+
+    const addParagraph = (text: string) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        const lines = doc.splitTextToSize(text, 515);
+        doc.text(lines, margin, y);
+        y += lines.length * 14;
+    };
+
+    const addList = (items: string[]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        items.forEach((item) => {
+            const lines = doc.splitTextToSize(`• ${item}`, 515);
+            doc.text(lines, margin, y);
+            y += lines.length * 14;
+        });
+    };
+
+    const ensureSpace = (needed = 120) => {
+        if (y + needed > doc.internal.pageSize.getHeight() - margin) {
+            doc.addPage();
+            y = margin;
+        }
+    };
+
+    // Header
+    addTitle('Guia de Configuração: Cloudflare + Vercel (CGB Vagas)');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, y + 6);
+    y += 24;
+
+    // Benefícios
+    addSubtitle('Por que usar Cloudflare neste projeto?');
+    addList([
+        'CDN global e cache para imagens e assets (carregamento mais rápido)',
+        'Compressão Brotli, minificação automática e HTTP/3',
+        'Proteção DDoS, WAF básico e Bot Fight Mode',
+        'SSL/TLS gerenciado e alta disponibilidade',
+    ]);
+    ensureSpace();
+
+    // Passos
+    addSubtitle('Passo 1: Criar conta no Cloudflare');
+    addList([
+        'Acesse dash.cloudflare.com e crie sua conta (ou faça login).',
+        'Confirme o e-mail para ativar a conta.',
+    ]);
+
+    addSubtitle('Passo 2: Adicionar o domínio');
+    addList([
+        'Clique em “Add a Site” e informe: cgbvagas.com.br.',
+        'Selecione o plano Free.',
+        'Aguarde o scan dos registros DNS atuais.',
+    ]);
+    ensureSpace();
+
+    addSubtitle('Passo 3: Ajustar DNS');
+    addList([
+        'Confirme os registros principais:',
+        'A (root) → IP gerenciado pela Vercel; CNAME (www) → cgbvagas.com.br.',
+        'Ative o Proxy (nuvem laranja) para ambos.',
+    ]);
+
+    addSubtitle('Passo 4: Apontar os Nameservers');
+    addList([
+        'Anote os 2 nameservers fornecidos pelo Cloudflare.',
+        'No registrador do domínio, substitua pelos novos nameservers.',
+        'Aguarde a propagação (normalmente 1-2 horas).',
+    ]);
+    ensureSpace();
+
+    addSubtitle('Passo 5: Cache e Desempenho');
+    addList([
+        'Speed → Caching: Cache Level = Standard; Browser Cache TTL = 4h.',
+        'Opcional (Page Rule): Cache Everything em cgbvagas.com.br/*, Edge Cache TTL = 1mês, Browser TTL = 1dia.',
+    ]);
+
+    addSubtitle('Passo 6: Otimizações de velocidade');
+    addList([
+        'Ative Auto Minify (HTML, CSS, JS) e Brotli.',
+        'Ative HTTP/3 (QUIC) e Early Hints (se disponível).',
+    ]);
+
+    addSubtitle('Passo 7: Segurança');
+    addList([
+        'Security Level = Medium.',
+        'Ative Bot Fight Mode (gratuito).',
+        'WAF básico ativado por padrão no plano Free.',
+    ]);
+    ensureSpace();
+
+    addSubtitle('Passo 8: Verificar na Vercel');
+    addList([
+        'No projeto Vercel → Settings → Domains: confirme cgbvagas.com.br e www.',
+        'Faça um redeploy se necessário para renovar certificados.',
+    ]);
+
+    addSubtitle('Passo 9: Testes e validação');
+    addList([
+        'Abra o site e verifique nos DevTools / Network o header cf-cache-status (HIT/MISS).',
+        'Execute um Lighthouse – Performance deve aproximar-se de 90+. ',
+        'Monitore em Cloudflare → Analytics: tráfego, bandwidth, cache hit ratio.',
+    ]);
+
+    addSubtitle('Dicas finais');
+    addList([
+        'Evite regras que façam cache de rotas dinâmicas sensíveis.',
+        'Se precisar ignorar cache em uma rota, use Page Rules ou Cache Rules específicas.',
+        'Para problemas de propagação DNS, valide em dnschecker.org.',
+    ]);
+
+    // Rodapé
+    y = doc.internal.pageSize.getHeight() - margin + 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('CGB Vagas — Guia de Configuração Cloudflare + Vercel', margin, y);
+
+    const blob = doc.output('blob');
+    const fileName = `guia-cloudflare-cgbvagas-${Date.now()}.pdf`;
+    return { blob, fileName };
+}
+
+
 
 
 
