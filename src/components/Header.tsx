@@ -59,7 +59,7 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className={navLinkClasses("/")}>
+            <Link to="/" className={navLinkClasses("/" )}>
               Vagas Abertas
             </Link>
             <Link to="/cadastrar-curriculo" className={textLinkClasses}>
@@ -104,8 +104,8 @@ const Header = () => {
       </div>
       {/* Mobile Menu (Sheet) */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white z-[9999]">
-          <SheetHeader className="mb-8">
+        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white z-[9999] h-screen overflow-y-auto">
+          <SheetHeader className="mb-8 sticky top-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-10">
             <SheetTitle>
               <div className="flex items-center gap-3">
                 <img
@@ -119,7 +119,7 @@ const Header = () => {
               </div>
             </SheetTitle>
           </SheetHeader>
-          <nav className="flex flex-col space-y-4">
+          <nav className="flex flex-col space-y-4 pb-28">
             <Link
               to="/"
               className={mobileNavLinkClasses("/")}
