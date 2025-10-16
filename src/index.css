@@ -5,52 +5,57 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fix para mapa não interferir com modais - SOLUÇÃO ROBUSTA */
+/* SOLUÇÃO EXTREMA: Desabilitar TUDO quando modal aberto */
+body.modal-open {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body.modal-open * {
+  pointer-events: none !important;
+}
+
+body.modal-open [data-radix-dialog-overlay],
+body.modal-open [data-radix-dialog-content],
+body.modal-open .sheet-overlay,
+body.modal-open .sheet-content,
+body.modal-open [role="dialog"],
+body.modal-open [role="button"] {
+  pointer-events: auto !important;
+  z-index: 999999 !important;
+}
+
+/* Esconder completamente elementos problemáticos */
 body.modal-open .leaflet-container,
-body.modal-open .leaflet-container * {
-  z-index: -1 !important;
-  pointer-events: none !important;
-  position: relative !important;
+body.modal-open canvas,
+body.modal-open svg:not([data-radix-dialog-overlay] svg):not([role="dialog"] svg),
+body.modal-open iframe,
+body.modal-open embed,
+body.modal-open object {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  z-index: -99999 !important;
 }
 
-body.modal-open .leaflet-map-pane,
-body.modal-open .leaflet-tile-pane,
-body.modal-open .leaflet-overlay-pane,
-body.modal-open .leaflet-marker-pane,
-body.modal-open .leaflet-popup-pane,
-body.modal-open .leaflet-tooltip-pane,
-body.modal-open .leaflet-control-container,
-body.modal-open .leaflet-control-zoom {
-  z-index: -1 !important;
-  pointer-events: none !important;
+/* Forçar Sheet para frente */
+[data-radix-dialog-overlay] {
+  z-index: 999998 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Overlay escuro sobre o mapa quando modal aberto */
-body.modal-open .leaflet-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 1;
-  pointer-events: none;
+[data-radix-dialog-content] {
+  z-index: 999999 !important;
 }
 
-/* Forçar z-index alto para Sheet/Modal components */
-[data-radix-popper-content-wrapper],
-[data-radix-dialog-overlay],
-[data-radix-dialog-content],
-.sheet-overlay,
-.sheet-content {
-  z-index: 99999 !important;
-}
-
-/* Garantir que backdrop do Sheet tenha z-index alto */
-body.modal-open [data-radix-dialog-overlay] {
-  z-index: 99998 !important;
-  background: rgba(0, 0, 0, 0.5) !important;
+/* Garantir que botões do Sheet funcionem */
+body.modal-open [data-radix-dialog-content] *,
+body.modal-open [data-radix-dialog-content] button,
+body.modal-open [data-radix-dialog-content] a,
+body.modal-open [data-radix-dialog-content] input {
+  pointer-events: auto !important;
 }
 
 @layer base {

@@ -13,38 +13,64 @@ const Header = () => {
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      
       // Adicionar classe para indicar que um modal está aberto
       document.body.classList.add('modal-open');
       
-      // Esconder completamente todos os mapas
+      // SOLUÇÃO DRÁSTICA: Remover mapas do DOM temporariamente
       const mapContainers = document.querySelectorAll('.leaflet-container');
-      mapContainers.forEach(container => {
-        (container as HTMLElement).style.visibility = 'hidden';
-        (container as HTMLElement).style.opacity = '0';
+      mapContainers.forEach((container, index) => {
+        const parent = container.parentElement;
+        if (parent) {
+          // Criar placeholder invisível
+          const placeholder = document.createElement('div');
+          placeholder.id = `map-placeholder-${index}`;
+          placeholder.style.display = 'none';
+          
+          // Substituir mapa por placeholder
+          parent.insertBefore(placeholder, container);
+          container.remove();
+        }
       });
+      
+      // Desabilitar todos os elementos interativos da página
+      const interactiveElements = document.querySelectorAll('canvas, svg, iframe, embed, object');
+      interactiveElements.forEach(el => {
+        (el as HTMLElement).style.pointerEvents = 'none';
+        (el as HTMLElement).style.zIndex = '-9999';
+      });
+      
     } else {
       document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+      document.body.style.height = 'unset';
+      
       document.body.classList.remove('modal-open');
       
-      // Mostrar mapas novamente
-      const mapContainers = document.querySelectorAll('.leaflet-container');
-      mapContainers.forEach(container => {
-        (container as HTMLElement).style.visibility = 'visible';
-        (container as HTMLElement).style.opacity = '1';
+      // Reabilitar elementos interativos
+      const interactiveElements = document.querySelectorAll('canvas, svg, iframe, embed, object');
+      interactiveElements.forEach(el => {
+        (el as HTMLElement).style.pointerEvents = 'auto';
+        (el as HTMLElement).style.zIndex = 'auto';
       });
+      
+      // Forçar reload da página para restaurar mapas corretamente
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     }
     
     // Cleanup
     return () => {
       document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+      document.body.style.height = 'unset';
       document.body.classList.remove('modal-open');
-      
-      // Garantir que mapas estejam visíveis
-      const mapContainers = document.querySelectorAll('.leaflet-container');
-      mapContainers.forEach(container => {
-        (container as HTMLElement).style.visibility = 'visible';
-        (container as HTMLElement).style.opacity = '1';
-      });
     };
   }, [isMenuOpen]);
 
