@@ -442,12 +442,13 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
     const zoom = 4;
 
     return (
-        <div className="w-full h-96 rounded-xl overflow-hidden border border-gray-200 shadow-lg">
+        <div className="w-full h-96 rounded-xl overflow-hidden border border-gray-200 shadow-lg relative z-0">
             <MapContainer
                 center={center}
                 zoom={zoom}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
+                className="z-0"
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

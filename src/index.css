@@ -5,6 +5,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix para mapa não interferir com modais */
+body.modal-open .leaflet-container {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+body.modal-open .leaflet-map-pane,
+body.modal-open .leaflet-tile-pane,
+body.modal-open .leaflet-overlay-pane,
+body.modal-open .leaflet-marker-pane,
+body.modal-open .leaflet-popup-pane,
+body.modal-open .leaflet-tooltip-pane {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

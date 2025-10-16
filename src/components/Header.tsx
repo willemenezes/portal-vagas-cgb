@@ -1,13 +1,31 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, ExternalLink, Menu } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 
 const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Desabilitar scroll do body quando menu mobile estiver aberto
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      // Adicionar classe para indicar que um modal está aberto
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.classList.remove('modal-open');
+    }
+    
+    // Cleanup
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.classList.remove('modal-open');
+    };
+  }, [isMenuOpen]);
 
   const navLinkClasses = (path: string) =>
     `relative px-4 py-2 text-sm font-medium transition-colors duration-300 ${location.pathname === path
@@ -86,7 +104,7 @@ const Header = () => {
       </div>
       {/* Mobile Menu (Sheet) */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white">
+        <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white z-[9999]">
           <SheetHeader className="mb-8">
             <SheetTitle>
               <div className="flex items-center gap-3">
