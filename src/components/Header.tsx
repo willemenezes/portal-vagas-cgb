@@ -9,82 +9,82 @@ const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // SOLUÇÃO EXTREMA: Desabilitar scroll e remover mapas quando menu mobile estiver aberto
+  // SOLUÇÃO DEFINITIVA: Remover mapas do DOM completamente quando menu mobile aberto
   useEffect(() => {
     if (isMenuOpen) {
-      // Salvar posição atual do scroll
+      // Salvar posição do scroll
       const scrollY = window.scrollY;
       
-      // Travar body completamente
+      // Travar body
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
-      document.body.style.height = '100vh';
       
-      // Adicionar classe para indicar que um modal está aberto
-      document.body.classList.add('modal-open');
+      // SOLUÇÃO DEFINITIVA: REMOVER MAPAS DO DOM
+      const mapContainers = document.querySelectorAll('.leaflet-container');
+      const removedMaps: { element: Element; parent: Element; nextSibling: Node | null }[] = [];
       
-      // FORÇA BRUTA: Esconder TUDO que pode interferir
-      const problematicElements = document.querySelectorAll(`
-        .leaflet-container,
-        .leaflet-map-pane,
-        .leaflet-tile-pane,
-        .leaflet-overlay-pane,
-        .leaflet-marker-pane,
-        .leaflet-popup-pane,
-        .leaflet-tooltip-pane,
-        .leaflet-control-container,
-        canvas,
-        svg:not([data-radix-dialog-overlay] svg):not([role="dialog"] svg),
-        iframe,
-        embed,
-        object
-      `);
-      
-      problematicElements.forEach((el) => {
-        const element = el as HTMLElement;
-        element.style.display = 'none';
-        element.style.visibility = 'hidden';
-        element.style.opacity = '0';
-        element.style.zIndex = '-99999';
-        element.style.pointerEvents = 'none';
-        element.setAttribute('data-hidden-by-modal', 'true');
+      mapContainers.forEach((mapContainer) => {
+        const parent = mapContainer.parentElement;
+        const nextSibling = mapContainer.nextSibling;
+        
+        if (parent) {
+          // Salvar referência para restaurar depois
+          removedMaps.push({ element: mapContainer, parent, nextSibling });
+          
+          // REMOVER COMPLETAMENTE DO DOM
+          parent.removeChild(mapContainer);
+          
+          // Criar placeholder temporário
+          const placeholder = document.createElement('div');
+          placeholder.id = 'map-removed-placeholder';
+          placeholder.style.cssText = `
+            height: 400px;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+            border-radius: 12px;
+          `;
+          placeholder.textContent = 'Mapa temporariamente oculto';
+          
+          if (nextSibling) {
+            parent.insertBefore(placeholder, nextSibling);
+          } else {
+            parent.appendChild(placeholder);
+          }
+        }
       });
       
-      // Criar overlay escuro sobre toda a página
-      const overlay = document.createElement('div');
-      overlay.id = 'modal-overlay-backdrop';
-      overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 99997;
-        pointer-events: none;
-      `;
-      document.body.appendChild(overlay);
+      // Salvar no window para restaurar depois
+      (window as any).__removedMaps = removedMaps;
       
     } else {
-      // Restaurar elementos escondidos
-      const hiddenElements = document.querySelectorAll('[data-hidden-by-modal="true"]');
-      hiddenElements.forEach((el) => {
-        const element = el as HTMLElement;
-        element.style.display = '';
-        element.style.visibility = '';
-        element.style.opacity = '';
-        element.style.zIndex = '';
-        element.style.pointerEvents = '';
-        element.removeAttribute('data-hidden-by-modal');
+      // RESTAURAR MAPAS NO DOM
+      const removedMaps = (window as any).__removedMaps || [];
+      
+      // Remover placeholders
+      const placeholders = document.querySelectorAll('#map-removed-placeholder');
+      placeholders.forEach(p => p.remove());
+      
+      // Restaurar mapas
+      removedMaps.forEach(({ element, parent, nextSibling }: any) => {
+        try {
+          if (nextSibling && nextSibling.parentNode === parent) {
+            parent.insertBefore(element, nextSibling);
+          } else {
+            parent.appendChild(element);
+          }
+        } catch (error) {
+          console.warn('Erro ao restaurar mapa:', error);
+        }
       });
       
-      // Remover overlay
-      const overlay = document.getElementById('modal-overlay-backdrop');
-      if (overlay) {
-        overlay.remove();
-      }
+      // Limpar referências
+      delete (window as any).__removedMaps;
       
       // Restaurar scroll
       const scrollY = document.body.style.top;
@@ -92,43 +92,46 @@ const Header = () => {
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.width = '';
-      document.body.style.height = '';
-      
-      document.body.classList.remove('modal-open');
       
       // Restaurar posição do scroll
       if (scrollY) {
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
       }
+      
+      // Forçar re-render dos mapas após 100ms
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
     }
     
     // Cleanup
     return () => {
-      // Restaurar elementos escondidos
-      const hiddenElements = document.querySelectorAll('[data-hidden-by-modal="true"]');
-      hiddenElements.forEach((el) => {
-        const element = el as HTMLElement;
-        element.style.display = '';
-        element.style.visibility = '';
-        element.style.opacity = '';
-        element.style.zIndex = '';
-        element.style.pointerEvents = '';
-        element.removeAttribute('data-hidden-by-modal');
+      // Restaurar tudo se componente for desmontado
+      const removedMaps = (window as any).__removedMaps || [];
+      const placeholders = document.querySelectorAll('#map-removed-placeholder');
+      
+      placeholders.forEach(p => p.remove());
+      
+      removedMaps.forEach(({ element, parent, nextSibling }: any) => {
+        try {
+          if (parent && element) {
+            if (nextSibling && nextSibling.parentNode === parent) {
+              parent.insertBefore(element, nextSibling);
+            } else {
+              parent.appendChild(element);
+            }
+          }
+        } catch (error) {
+          console.warn('Erro no cleanup:', error);
+        }
       });
       
-      // Remover overlay
-      const overlay = document.getElementById('modal-overlay-backdrop');
-      if (overlay) {
-        overlay.remove();
-      }
+      delete (window as any).__removedMaps;
       
-      // Restaurar body
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.width = '';
-      document.body.style.height = '';
-      document.body.classList.remove('modal-open');
     };
   }, [isMenuOpen]);
 
