@@ -9,67 +9,125 @@ const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Desabilitar scroll do body quando menu mobile estiver aberto
+  // SOLUÇÃO EXTREMA: Desabilitar scroll e remover mapas quando menu mobile estiver aberto
   useEffect(() => {
     if (isMenuOpen) {
+      // Salvar posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Travar body completamente
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
-      document.body.style.height = '100%';
+      document.body.style.height = '100vh';
       
       // Adicionar classe para indicar que um modal está aberto
       document.body.classList.add('modal-open');
       
-      // SOLUÇÃO DRÁSTICA: Remover mapas do DOM temporariamente
-      const mapContainers = document.querySelectorAll('.leaflet-container');
-      mapContainers.forEach((container, index) => {
-        const parent = container.parentElement;
-        if (parent) {
-          // Criar placeholder invisível
-          const placeholder = document.createElement('div');
-          placeholder.id = `map-placeholder-${index}`;
-          placeholder.style.display = 'none';
-          
-          // Substituir mapa por placeholder
-          parent.insertBefore(placeholder, container);
-          container.remove();
-        }
+      // FORÇA BRUTA: Esconder TUDO que pode interferir
+      const problematicElements = document.querySelectorAll(`
+        .leaflet-container,
+        .leaflet-map-pane,
+        .leaflet-tile-pane,
+        .leaflet-overlay-pane,
+        .leaflet-marker-pane,
+        .leaflet-popup-pane,
+        .leaflet-tooltip-pane,
+        .leaflet-control-container,
+        canvas,
+        svg:not([data-radix-dialog-overlay] svg):not([role="dialog"] svg),
+        iframe,
+        embed,
+        object
+      `);
+      
+      problematicElements.forEach((el) => {
+        const element = el as HTMLElement;
+        element.style.display = 'none';
+        element.style.visibility = 'hidden';
+        element.style.opacity = '0';
+        element.style.zIndex = '-99999';
+        element.style.pointerEvents = 'none';
+        element.setAttribute('data-hidden-by-modal', 'true');
       });
       
-      // Desabilitar todos os elementos interativos da página
-      const interactiveElements = document.querySelectorAll('canvas, svg, iframe, embed, object');
-      interactiveElements.forEach(el => {
-        (el as HTMLElement).style.pointerEvents = 'none';
-        (el as HTMLElement).style.zIndex = '-9999';
-      });
+      // Criar overlay escuro sobre toda a página
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-overlay-backdrop';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 99997;
+        pointer-events: none;
+      `;
+      document.body.appendChild(overlay);
       
     } else {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = 'unset';
-      document.body.style.width = 'unset';
-      document.body.style.height = 'unset';
+      // Restaurar elementos escondidos
+      const hiddenElements = document.querySelectorAll('[data-hidden-by-modal="true"]');
+      hiddenElements.forEach((el) => {
+        const element = el as HTMLElement;
+        element.style.display = '';
+        element.style.visibility = '';
+        element.style.opacity = '';
+        element.style.zIndex = '';
+        element.style.pointerEvents = '';
+        element.removeAttribute('data-hidden-by-modal');
+      });
+      
+      // Remover overlay
+      const overlay = document.getElementById('modal-overlay-backdrop');
+      if (overlay) {
+        overlay.remove();
+      }
+      
+      // Restaurar scroll
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
       
       document.body.classList.remove('modal-open');
       
-      // Reabilitar elementos interativos
-      const interactiveElements = document.querySelectorAll('canvas, svg, iframe, embed, object');
-      interactiveElements.forEach(el => {
-        (el as HTMLElement).style.pointerEvents = 'auto';
-        (el as HTMLElement).style.zIndex = 'auto';
-      });
-      
-      // Forçar reload da página para restaurar mapas corretamente
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Restaurar posição do scroll
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
     
     // Cleanup
     return () => {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = 'unset';
-      document.body.style.width = 'unset';
-      document.body.style.height = 'unset';
+      // Restaurar elementos escondidos
+      const hiddenElements = document.querySelectorAll('[data-hidden-by-modal="true"]');
+      hiddenElements.forEach((el) => {
+        const element = el as HTMLElement;
+        element.style.display = '';
+        element.style.visibility = '';
+        element.style.opacity = '';
+        element.style.zIndex = '';
+        element.style.pointerEvents = '';
+        element.removeAttribute('data-hidden-by-modal');
+      });
+      
+      // Remover overlay
+      const overlay = document.getElementById('modal-overlay-backdrop');
+      if (overlay) {
+        overlay.remove();
+      }
+      
+      // Restaurar body
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
       document.body.classList.remove('modal-open');
     };
   }, [isMenuOpen]);

@@ -5,57 +5,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SOLUÇÃO EXTREMA: Desabilitar TUDO quando modal aberto */
+/* SOLUÇÃO ULTRA EXTREMA: Destruir TUDO quando modal aberto */
 body.modal-open {
   position: fixed !important;
   width: 100% !important;
-  height: 100% !important;
+  height: 100vh !important;
   overflow: hidden !important;
+  touch-action: none !important;
 }
 
+/* Desabilitar TODOS os elementos por padrão */
 body.modal-open * {
   pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
 }
 
+/* Reabilitar APENAS elementos do Sheet/Dialog */
 body.modal-open [data-radix-dialog-overlay],
 body.modal-open [data-radix-dialog-content],
+body.modal-open [data-radix-dialog-content] *,
 body.modal-open .sheet-overlay,
 body.modal-open .sheet-content,
 body.modal-open [role="dialog"],
-body.modal-open [role="button"] {
+body.modal-open [role="dialog"] *,
+body.modal-open [role="button"],
+body.modal-open button,
+body.modal-open a,
+body.modal-open input,
+body.modal-open [data-radix-dialog-close] {
   pointer-events: auto !important;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+  -moz-user-select: auto !important;
+  -ms-user-select: auto !important;
   z-index: 999999 !important;
 }
 
-/* Esconder completamente elementos problemáticos */
+/* ANIQUILAR elementos problemáticos */
 body.modal-open .leaflet-container,
+body.modal-open .leaflet-container *,
+body.modal-open .leaflet-map-pane,
+body.modal-open .leaflet-tile-pane,
+body.modal-open .leaflet-overlay-pane,
+body.modal-open .leaflet-marker-pane,
+body.modal-open .leaflet-popup-pane,
+body.modal-open .leaflet-tooltip-pane,
+body.modal-open .leaflet-control-container,
 body.modal-open canvas,
 body.modal-open svg:not([data-radix-dialog-overlay] svg):not([role="dialog"] svg),
 body.modal-open iframe,
 body.modal-open embed,
-body.modal-open object {
+body.modal-open object,
+[data-hidden-by-modal="true"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
-  z-index: -99999 !important;
+  z-index: -999999 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
-/* Forçar Sheet para frente */
+/* Forçar Sheet/Dialog para o topo absoluto */
 [data-radix-dialog-overlay] {
   z-index: 999998 !important;
-  background: rgba(0, 0, 0, 0.8) !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  position: fixed !important;
+  inset: 0 !important;
 }
 
 [data-radix-dialog-content] {
   z-index: 999999 !important;
+  position: fixed !important;
 }
 
-/* Garantir que botões do Sheet funcionem */
-body.modal-open [data-radix-dialog-content] *,
-body.modal-open [data-radix-dialog-content] button,
-body.modal-open [data-radix-dialog-content] a,
-body.modal-open [data-radix-dialog-content] input {
-  pointer-events: auto !important;
+/* Overlay adicional para garantir cobertura total */
+#modal-overlay-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  z-index: 999997 !important;
+  pointer-events: none !important;
 }
 
 @layer base {
