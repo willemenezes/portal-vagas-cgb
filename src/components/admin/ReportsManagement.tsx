@@ -1,8 +1,8 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileDown, Users, UserCheck, Archive, Loader2, LayoutDashboard, ThumbsUp, UserX } from "lucide-react";
-import { useCandidates } from "@/hooks/useCandidates";
-import { useResumes } from "@/hooks/useResumes";
+import { useAllCandidates } from "@/hooks/useCandidates";
+import { useAllResumes } from "@/hooks/useResumes";
 import { useAllJobs } from "@/hooks/useJobs";
 import { useToast } from "@/hooks/use-toast";
 import { format, subMonths, differenceInDays } from 'date-fns';
@@ -10,8 +10,8 @@ import { ptBR } from 'date-fns/locale';
 import { useAllRejectionNotes } from "@/hooks/useAllRejectionNotes";
 
 const ReportsManagement = () => {
-    const { data: candidates = [], isLoading: isLoadingCandidates } = useCandidates();
-    const { data: resumes = [], isLoading: isLoadingResumes } = useResumes();
+    const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates();
+    const { data: resumes = [], isLoading: isLoadingResumes } = useAllResumes();
     const { data: jobs = [], isLoading: isLoadingJobs } = useAllJobs();
     const { data: rejectionNotes = [], isLoading: isLoadingRejectionNotes } = useAllRejectionNotes();
     const { toast } = useToast();
@@ -174,16 +174,27 @@ const ReportsManagement = () => {
                 break;
 
             case 'approvedJobs':
-                headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação', 'Status no Portal'];
+                headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação', 'Status no Portal', 'Quantidade de Vagas'];
                 rows = jobs
                     .filter(j => j.approval_status === 'active')
-                    .map(j => [
-                        j.title || '',
-                        j.department || '',
-                        `${j.city || ''}, ${j.state || ''}`,
-                        format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
-                        getJobPortalStatus(j)
-                    ]);
+                    .flatMap(j => {
+                        const quantity = j.quantity || 1; // Se não tiver quantidade, assume 1
+                        const jobRows = [];
+
+                        // Criar uma linha para cada vaga individual
+                        for (let i = 1; i <= quantity; i++) {
+                            jobRows.push([
+                                j.title || '',
+                                j.department || '',
+                                `${j.city || ''}, ${j.state || ''}`,
+                                format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
+                                getJobPortalStatus(j),
+                                `${i}/${quantity}` // Ex: "1/3", "2/3", "3/3"
+                            ]);
+                        }
+
+                        return jobRows;
+                    });
                 filename = "relatorio_vagas_aprovadas.csv";
                 break;
 

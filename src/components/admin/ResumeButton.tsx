@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
+import { useMemo } from "react";
 import { useResumeByEmail } from "@/hooks/useCandidates";
 
 interface ResumeButtonProps {
@@ -16,24 +17,25 @@ interface ResumeButtonProps {
   children?: React.ReactNode;
 }
 
-export const ResumeButton = ({ 
-  candidate, 
-  variant = "outline", 
+export const ResumeButton = ({
+  candidate,
+  variant = "outline",
   size = "sm",
   showIcon = true,
   iconType = "file",
   className = "",
   children
 }: ResumeButtonProps) => {
-  // Buscar currículo por email se não tiver URL direta
-  const { data: resumeFromBank } = useResumeByEmail(candidate.email);
-  
+  // Evitar chamadas desnecessárias: só buscar no banco se não houver URL direta
+  const shouldFetch = useMemo(() => !candidate.resume_file_url && !!candidate.email, [candidate.resume_file_url, candidate.email]);
+  const { data: resumeFromBank } = useResumeByEmail(shouldFetch ? candidate.email : "");
+
   // Determinar qual URL usar
   const resumeUrl = candidate.resume_file_url || resumeFromBank?.resume_file_url;
   const isDisabled = !resumeUrl;
-  
+
   const Icon = iconType === "download" ? Download : FileText;
-  
+
   if (isDisabled) {
     return (
       <Button variant={variant} size={size} disabled className={className}>

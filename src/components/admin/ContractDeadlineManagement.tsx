@@ -16,7 +16,9 @@ import {
     Filter,
     RefreshCw,
     Eye,
-    Edit
+    Edit,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useUpdateJob } from '@/hooks/useJobs';
@@ -40,6 +42,14 @@ export const ContractDeadlineManagement: React.FC = () => {
         quantity: 1,
         expires_at: ''
     });
+
+    // Paginação (cliente)
+    const [currentPage, setCurrentPage] = useState(0);
+    const pageSize = 50;
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     // Deduplicar Banco de Talentos (preferir ativo; senão, o mais recente)
     const normalizedTitle = (t: string | undefined) => (t || '').trim().toLowerCase();
@@ -103,6 +113,13 @@ export const ContractDeadlineManagement: React.FC = () => {
         completed: jobsFilteredByRegion.filter(job => job.flow_status === 'concluida').length,
         congelada: jobsFilteredByRegion.filter(job => job.flow_status === 'congelada').length
     };
+
+    // Paginação baseada na lista filtrada
+    const totalCount = filteredJobs.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const startIndex = currentPage * pageSize;
+    const endIndex = Math.min(totalCount, startIndex + pageSize);
+    const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
     // Função para calcular dias até expiração
     const getDaysUntilExpiry = (expiryDate: string) => {
@@ -346,7 +363,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredJobs.map((job) => {
+                            {paginatedJobs.map((job) => {
                                 const expiryInfo = job.expires_at ? getExpiryStatus(job.expires_at, job.flow_status) : null;
                                 const remainingPositions = (job.quantity || 1) - (job.quantity_filled || 0);
 
@@ -427,6 +444,26 @@ export const ContractDeadlineManagement: React.FC = () => {
                             })}
                         </TableBody>
                     </Table>
+
+                    {/* Paginação */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-6 px-2">
+                            <div className="text-sm text-gray-600">
+                                Mostrando {startIndex + 1} a {endIndex} de {totalCount} vagas
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(0)} disabled={currentPage === 0}>Primeira</Button>
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
+                                    <ChevronLeft className="w-4 h-4" /> Anterior
+                                </Button>
+                                <span className="px-3 py-1 text-sm font-medium">Página {currentPage + 1} de {totalPages}</span>
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))} disabled={currentPage >= totalPages - 1}>
+                                    Próxima <ChevronRight className="w-4 h-4" />
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages - 1)} disabled={currentPage >= totalPages - 1}>Última</Button>
+                            </div>
+                        </div>
+                    )}
 
                     {filteredJobs.length === 0 && (
                         <div className="text-center py-8">

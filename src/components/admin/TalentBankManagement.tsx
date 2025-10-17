@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useResumes, Resume, useDeleteResume } from '@/hooks/useResumes';
+import { useResumes, Resume, useDeleteResume, useResumesCount } from '@/hooks/useResumes';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useCreateCandidate, useCandidates } from '@/hooks/useCandidates';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,9 +16,17 @@ import { useToast } from "@/hooks/use-toast";
 import { INVITED_STATUS, INVITED_STATUS_COLOR } from '@/lib/constants';
 
 const TalentBankManagement = () => {
-    const { data: resumes = [], isLoading: isLoadingResumes, error: resumesError } = useResumes();
+    // Paginação para currículos
+    const [currentPage, setCurrentPage] = useState(0);
+    const pageSize = 50;
+
+    const { data: resumesData, isLoading: isLoadingResumes, error: resumesError } = useResumes(currentPage, pageSize);
+    const resumes = resumesData?.resumes || [];
+    const totalCount = resumesData?.totalCount || 0;
+    const totalPages = resumesData?.totalPages || 0;
     const { data: allJobs = [], isLoading: isLoadingJobs, error: jobsError } = useAllJobs();
-    const { data: candidates = [] } = useCandidates();
+    const { data: candidatesData = [] } = useCandidates();
+    const candidates = candidatesData?.candidates || [];
     const createCandidate = useCreateCandidate();
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
@@ -36,6 +44,13 @@ const TalentBankManagement = () => {
     const [resumeToInvite, setResumeToInvite] = useState<Resume | null>(null);
     const [selectedJobId, setSelectedJobId] = useState<string>('');
     const [isInviting, setIsInviting] = useState(false);
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        // Scroll para o topo da lista quando mudar de página
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    // Contagem total de currículos no sistema (para cabeçalho)
+    const { data: totalResumesCount } = useResumesCount();
 
     const talentBankJobId = useMemo(() => {
         const talentJob = allJobs.find(job => job.title === "Banco de Talentos");
@@ -259,7 +274,7 @@ const TalentBankManagement = () => {
                         <div className="flex items-center gap-2 text-sm">
                             <Archive className="w-4 h-4 text-green-500" />
                             <span className="text-green-600 font-medium">
-                                {filteredResumes.length} talentos disponíveis
+                                {totalResumesCount ?? filteredResumes.length} talentos disponíveis (total no sistema)
                             </span>
                         </div>
                         {availableJobs.length > 0 && (
@@ -401,13 +416,26 @@ const TalentBankManagement = () => {
                         </Table>
                     </div>
                     <div className="pt-4 text-sm text-gray-600">
-                        Mostrando {filteredResumes.length} de {resumes.length} talentos.
+                        Mostrando {currentPage * pageSize + 1} a {Math.min((currentPage + 1) * pageSize, totalCount)} de {totalCount} talentos.
                         {!showInvited && invitedCount > 0 && (
                             <span className="ml-2 text-blue-600">
                                 ({invitedCount} oculto{invitedCount > 1 ? 's' : ''} - em processo)
                             </span>
                         )}
                     </div>
+
+                    {/* Paginação */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(0)} disabled={currentPage === 0}>Primeira</Button>
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>Anterior</Button>
+                                <span className="px-2">Página {currentPage + 1} de {totalPages}</span>
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))} disabled={currentPage >= totalPages - 1}>Próxima</Button>
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages - 1)} disabled={currentPage >= totalPages - 1}>Última</Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

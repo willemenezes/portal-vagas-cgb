@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import JobManagement from "@/components/admin/JobManagement";
 import JobRequestManagement from "@/components/admin/JobRequestManagement";
+import JobRequestsManagement from "@/components/admin/JobRequestsManagement";
 import CandidateManagement from "@/components/admin/CandidateManagement";
 import ResumeManagement from "@/components/admin/ResumeManagement";
 import Dashboard from "@/components/admin/Dashboard";
@@ -102,6 +103,8 @@ const Admin = () => {
         return <UnifiedApprovals />;
       case "legal-validation":
         return <LegalValidation />;
+      case "job-requests":
+        return rhProfile?.role === 'admin' ? <JobRequestsManagement /> : null;
       case "jobs":
         return rhProfile?.role === 'solicitador' ? <JobRequestManagement /> : <JobManagement />;
       case "contract-deadlines":
@@ -118,8 +121,6 @@ const Admin = () => {
         return <ReportsManagement />;
       case "rh":
         return rhProfile?.role === 'admin' ? <RHManagement /> : null;
-      case "selection-process":
-        return <SelectionProcess />;
       default:
         return <Dashboard />;
     }

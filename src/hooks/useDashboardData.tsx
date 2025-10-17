@@ -114,18 +114,21 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
     console.log('✅ [useDashboardData] Total de candidatos:', totalCandidates);
 
     // CORREÇÃO CRÍTICA: Buscar TODOS os candidatos em lotes para não ocultar dados
-    console.log('🔄 [useDashboardData] Buscando TODOS os candidatos para gráficos (SEM LIMITES - até 200.000)...');
+    console.log('🔄 [useDashboardData] Buscando candidatos para gráficos (LIMITADO para performance)...');
 
+    // OTIMIZAÇÃO CRÍTICA: Limitar a 10.000 candidatos para performance
+    const MAX_CANDIDATES = 10000;
     let allCandidates: any[] = [];
     let from = 0;
     const batchSize = 1000;
     let hasMore = true;
 
-    while (hasMore) {
+    while (hasMore && allCandidates.length < MAX_CANDIDATES) {
         let candidatesQuery = supabase
             .from('candidates')
             .select('applied_date, status, city, state')
-            .range(from, from + batchSize - 1);
+            .range(from, from + batchSize - 1)
+            .limit(batchSize);
 
         // Aplicar filtro de data APENAS se selecionado
         if (hasDateFilter) {
@@ -153,9 +156,9 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
             hasMore = false;
         }
 
-        // Limite de segurança para evitar loops infinitos - AUMENTADO para suportar grande volume
-        if (from >= 200000) {
-            console.warn('⚠️ Limite de segurança atingido (200.000 candidatos)');
+        // Limite de performance para evitar delays
+        if (allCandidates.length >= MAX_CANDIDATES) {
+            console.warn(`⚠️ Limite de performance atingido (${MAX_CANDIDATES} candidatos) - Dashboard otimizado`);
             hasMore = false;
         }
     }
@@ -384,7 +387,7 @@ export const useDashboardData = (rhProfile: RHUser | null, dateRange?: DateRange
         queryKey: ['dashboardData', 'unlimited', 'v5', 'all-periods', rhProfile?.user_id, dateRange], // CORREÇÃO CRÍTICA: Nova queryKey v5 - sem limite de data padrão
         queryFn: () => fetchDashboardData(rhProfile, dateRange),
         enabled: !!rhProfile, // A query só será executada se o perfil do RH estiver carregado
-        staleTime: 2 * 60 * 1000, // 2 minutos (reduzido para atualizações mais frequentes)
-        refetchOnWindowFocus: true, // Atualiza quando o usuário volta para a aba
+        staleTime: 5 * 60 * 1000, // 5 minutos (aumentado para reduzir queries)
+        refetchOnWindowFocus: false, // Desabilitado para melhor performance
     });
 }; 

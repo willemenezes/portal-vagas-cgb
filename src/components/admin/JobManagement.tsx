@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,6 +50,14 @@ const JobManagement = () => {
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 50;
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Hook para job requests (apenas para RH Admin/Admin)
   const {
@@ -114,6 +122,13 @@ const JobManagement = () => {
       return matchesSearch && matchesStatus;
     });
   }, [jobsDeduped, searchTerm, statusFilter]);
+
+  // Paginação baseada na lista filtrada
+  const totalCount = filteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const startIndex = currentPage * pageSize;
+  const endIndex = Math.min(totalCount, startIndex + pageSize);
+  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
   // Calcular estatísticas
   const stats = React.useMemo(() => {
@@ -539,7 +554,8 @@ const JobManagement = () => {
         </Card>
 
         {/* Seção de Job Requests Aprovadas - visível para Admin e Recrutadores da região */}
-        {approvedRequests.length > 0 && (
+        {/* Seção de Solicitações Aprovadas removida - agora está na aba "Solicitações de Vagas" */}
+        {false && (
           <div className="mb-6">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
               <CardHeader className="pb-4">
@@ -687,7 +703,7 @@ const JobManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredJobs.map((job) => {
+                {paginatedJobs.map((job) => {
                   const statusKey = (job.approval_status || 'draft') as keyof typeof approvalStatusConfig;
                   const statusInfo = approvalStatusConfig[statusKey] || { text: job.approval_status || job.status || 'N/D', variant: 'secondary' as const };
                   return (
@@ -764,6 +780,26 @@ const JobManagement = () => {
               </TableBody>
             </Table>
           </TooltipProvider>
+        )}
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 px-2">
+            <div className="text-sm text-gray-600">
+              Mostrando {startIndex + 1} a {endIndex} de {totalCount} vagas
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(0)} disabled={currentPage === 0}>Primeira</Button>
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
+                <ChevronLeft className="w-4 h-4" /> Anterior
+              </Button>
+              <span className="px-3 py-1 text-sm font-medium">Página {currentPage + 1} de {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))} disabled={currentPage >= totalPages - 1}>
+                Próxima <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages - 1)} disabled={currentPage >= totalPages - 1}>Última</Button>
+            </div>
+          </div>
         )}
       </CardContent>
 

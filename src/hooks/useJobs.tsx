@@ -29,6 +29,15 @@ export interface Job {
   tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
   nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
   flow_status?: 'ativa' | 'concluida' | 'congelada'; // Status do fluxo da vaga (controla visibilidade)
+  // Campos de criação e aprovação
+  created_by?: string; // ID do usuário que criou
+  created_by_name?: string; // Nome do usuário que criou
+  approved_by?: string; // ID do usuário que aprovou
+  approved_by_name?: string; // Nome do usuário que aprovou
+  approved_at?: string; // Data de aprovação
+  // Campos de justificativa
+  is_justificativa?: boolean; // Se tem justificativa
+  justification?: string; // Texto da justificativa
 }
 
 export const useJobs = () => {

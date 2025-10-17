@@ -30,18 +30,94 @@ export interface Resume {
   updated_at: string;
 }
 
-export const useResumes = () => {
+// Hook para buscar currículos com paginação inteligente
+export const useResumes = (page = 0, pageSize = 100) => {
   return useQuery({
-    queryKey: ['resumes'],
+    queryKey: ['resumes', 'paginated', page, pageSize],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log(`🔄 useResumes: Carregando página ${page + 1} (${pageSize} currículos)...`);
+
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
         .from('resumes')
-        .select('*')
-        .order('submitted_date', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('submitted_date', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
-      return data || [];
+
+      console.log(`✅ useResumes: ${data?.length || 0} currículos carregados (Página ${page + 1})`);
+
+      return {
+        resumes: data || [],
+        totalCount: count || 0,
+        hasMore: (data?.length || 0) === pageSize,
+        currentPage: page,
+        totalPages: Math.ceil((count || 0) / pageSize)
+      };
     },
+    staleTime: 2 * 60 * 1000, // 2 minutos de cache
+    refetchOnWindowFocus: false,
+  });
+};
+
+// Hook para buscar TODOS os currículos (para relatórios e exportações)
+export const useAllResumes = () => {
+  return useQuery({
+    queryKey: ['resumes', 'all', 'v2'],
+    queryFn: async () => {
+      console.log('🔄 useAllResumes: Buscando TODOS os currículos (sem limites)...');
+
+      let allResumes: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('resumes')
+          .select('*')
+          .order('submitted_date', { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allResumes = [...allResumes, ...data];
+          console.log(`📥 Lote ${Math.floor(from / batchSize) + 1}: ${data.length} currículos (Total: ${allResumes.length})`);
+          from += batchSize;
+
+          if (data.length < batchSize) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+
+      console.log(`✅ useAllResumes: ${allResumes.length} currículos carregados (TOTAL COMPLETO)`);
+      return allResumes;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutos de cache
+    refetchOnWindowFocus: false,
+  });
+};
+
+// Hook para obter contagem total de currículos (talentos)
+export const useResumesCount = () => {
+  return useQuery({
+    queryKey: ['resumes', 'count', 'v1'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('resumes')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 

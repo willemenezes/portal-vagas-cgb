@@ -9,18 +9,29 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send } from 'lucide-react';
+import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ResumeButton } from './ResumeButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
+import { useCandidatesCounts } from '@/hooks/useCandidates';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const CandidateManagement = () => {
   const { user } = useAuth();
   const { data: rhProfile } = useRHProfile(user?.id);
-  const { data: candidates = [], isLoading, error } = useCandidates();
+
+  // Paginação inteligente
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 50; // 50 candidatos por página para melhor performance
+
+  const { data: candidatesData, isLoading, error } = useCandidates(currentPage, pageSize);
+  const candidates = candidatesData?.candidates || [];
+  const totalCount = candidatesData?.totalCount || 0;
+  const totalPages = candidatesData?.totalPages || 0;
+  const hasMore = candidatesData?.hasMore || false;
+
   const { data: jobs = [] } = useAllJobs();
   const deleteCandidate = useDeleteCandidate();
   const inviteCandidate = useInviteCandidate();
@@ -37,7 +48,18 @@ const CandidateManagement = () => {
 
   const talentBankJobId = useMemo(() => jobs.find(job => job.title === "Banco de Talentos")?.id, [jobs]);
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // Scroll para o topo da lista quando mudar de página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Totais do sistema (não paginados) para exibir nos cards
+  const { data: totalCounts } = useCandidatesCounts();
+
   const filteredCandidates = useMemo(() => {
+    console.log('🔄 [filteredCandidates] Recalculando para página:', currentPage + 1, 'com', candidates.length, 'candidatos');
+
     if (!Array.isArray(candidates)) return [];
 
     let result = candidates;
@@ -130,47 +152,46 @@ const CandidateManagement = () => {
       });
     }
 
+    console.log('✅ [filteredCandidates] Resultado final:', result.length, 'candidatos filtrados');
     return result;
   }, [candidates, searchTerm, filters, talentBankJobId, rhProfile]);
 
   const jobsForFilter = useMemo(() => jobs.filter(job => job.id !== talentBankJobId), [jobs, talentBankJobId]);
 
   const summary = useMemo(() => {
-    if (!Array.isArray(candidates)) return { Total: 0 };
+    if (!Array.isArray(filteredCandidates)) return { Total: 0 };
 
-    // CORREÇÃO CRÍTICA: Para ADMIN, mostrar TODOS os candidatos (incluindo Banco de Talentos)
-    // Para RECRUTADOR, remover Banco de Talentos e aplicar filtros de região
-    let relevantCandidates = candidates;
+    // Usar apenas os candidatos da página atual (já filtrados)
+    const relevantCandidates = filteredCandidates;
 
-    if (rhProfile && !rhProfile.is_admin) {
-      // Recrutador: remover Banco de Talentos E aplicar filtros de região
-      relevantCandidates = candidates.filter(c => c.job_id !== talentBankJobId);
-      relevantCandidates = relevantCandidates.filter(c => {
-        const candidateState = c.state || c.job?.state;
-        const candidateCity = c.city || c.job?.city;
-        if (rhProfile.assigned_states?.length) return rhProfile.assigned_states.includes(candidateState);
-        if (rhProfile.assigned_cities?.length) return rhProfile.assigned_cities.includes(candidateCity);
-        return true;
-      });
-    }
-    // Admin: não aplicar filtros, mostrar TODOS os candidatos (incluindo Banco de Talentos)
-
-    const summaryData = SELECTION_STATUSES.reduce((acc, status) => {
+    // Contagem por status exato (conforme SELECTION_STATUSES)
+    const statusCounts = SELECTION_STATUSES.reduce((acc, status) => {
       acc[status] = relevantCandidates.filter(c => c.status === status).length;
       return acc;
     }, {} as Record<SelectionStatus, number>);
-    summaryData['Total'] = relevantCandidates.length;
 
-    console.log('📊 [CandidateManagement] Resumo calculado:', {
-      totalCandidates: candidates.length,
-      relevantCandidates: relevantCandidates.length,
+    // Mapeamento para os cards do painel
+    const uiSummary = {
+      Total: relevantCandidates.length,
+      'Análise de Currículo': statusCounts['Análise de Currículo'] || 0,
+      // Somar as entrevistas (RH + Gestor) para o card "Em Entrevista"
+      'Em Entrevista': (statusCounts['Entrevista com RH'] || 0) + (statusCounts['Entrevista com Gestor'] || 0),
+      Aprovado: statusCounts['Aprovado'] || 0,
+    } as Record<string, number>;
+
+    console.log('📊 [CandidateManagement] Resumo da página atual:', {
+      paginaAtual: currentPage + 1,
+      candidatosVisiveis: relevantCandidates.length,
+      totalCandidatos: totalCount,
       role: rhProfile?.role,
       isAdmin: rhProfile?.is_admin,
-      bancoTalentosRemovido: rhProfile && !rhProfile.is_admin
+      candidatosOriginais: candidates.length,
+      candidatosFiltrados: filteredCandidates.length,
+      uiSummary
     });
 
-    return summaryData;
-  }, [candidates, talentBankJobId, rhProfile]);
+    return uiSummary;
+  }, [filteredCandidates, currentPage, totalCount, rhProfile]);
 
   const uniqueStates = useMemo(() => {
     if (!Array.isArray(candidates)) return [];
@@ -236,10 +257,26 @@ const CandidateManagement = () => {
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gray-100 p-4 rounded-lg"><h3>Total de Candidatos</h3><p className="text-3xl font-bold">{summary.Total || 0}</p></div>
-          <div className="bg-blue-100 p-4 rounded-lg"><h3>Análise de Currículo</h3><p className="text-3xl font-bold">{summary['Análise de Currículo'] || 0}</p></div>
-          <div className="bg-purple-100 p-4 rounded-lg"><h3>Em Entrevista</h3><p className="text-3xl font-bold">{summary['Em Entrevista'] || 0}</p></div>
-          <div className="bg-green-100 p-4 rounded-lg"><h3>Aprovados</h3><p className="text-3xl font-bold">{summary.Aprovado || 0}</p></div>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700">Total de Candidatos</h3>
+            <p className="text-3xl font-bold">{totalCounts?.total ?? summary.Total ?? 0}</p>
+            <p className="text-xs text-gray-500 mt-1">Total no sistema</p>
+          </div>
+          <div className="bg-blue-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-700">Análise de Currículo</h3>
+            <p className="text-3xl font-bold text-blue-800">{totalCounts?.analise ?? summary['Análise de Currículo'] ?? 0}</p>
+            <p className="text-xs text-blue-600 mt-1">Total no sistema</p>
+          </div>
+          <div className="bg-purple-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-purple-700">Em Entrevista</h3>
+            <p className="text-3xl font-bold text-purple-800">{totalCounts?.entrevista ?? summary['Em Entrevista'] ?? 0}</p>
+            <p className="text-xs text-purple-600 mt-1">Total no sistema</p>
+          </div>
+          <div className="bg-green-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-green-700">Aprovados</h3>
+            <p className="text-3xl font-bold text-green-800">{totalCounts?.aprovado ?? summary.Aprovado ?? 0}</p>
+            <p className="text-xs text-green-600 mt-1">Total no sistema</p>
+          </div>
         </CardContent>
       </Card>
 
@@ -396,6 +433,59 @@ const CandidateManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Controles de Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 px-6 py-4 bg-gray-50 rounded-lg">
+          <div className="text-sm text-gray-600">
+            Mostrando {currentPage * pageSize + 1} a {Math.min((currentPage + 1) * pageSize, totalCount)} de {totalCount} candidatos
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(0)}
+              disabled={currentPage === 0}
+            >
+              Primeira
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Anterior
+            </Button>
+
+            <span className="px-3 py-1 text-sm font-medium">
+              Página {currentPage + 1} de {totalPages}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Próxima
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(totalPages - 1)}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Última
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

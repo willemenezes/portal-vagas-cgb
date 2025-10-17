@@ -16,7 +16,8 @@ import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
 const ResumeManagement = () => {
   const { user } = useAuth();
   const { data: rhProfile } = useRHProfile(user?.id);
-  const { data: candidates = [], isLoading, error } = useCandidates();
+  const { data: candidatesData, isLoading, error } = useCandidates();
+  const candidates = candidatesData?.candidates || [];
   const updateStatus = useUpdateCandidateStatus();
   const createNote = useCreateCandidateNote();
   const { toast } = useToast();

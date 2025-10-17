@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useCandidates } from '@/hooks/useCandidates';
+import { useAllCandidates } from '@/hooks/useCandidates';
 import { useAllJobs } from '@/hooks/useJobs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +11,8 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 
 const HiredManagement = () => {
-    const { data: candidates = [], isLoading: isLoadingCandidates } = useCandidates();
+    // Para contratados, precisamos de todos para não perder registros
+    const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates();
     const { data: jobs = [], isLoading: isLoadingJobs } = useAllJobs();
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({

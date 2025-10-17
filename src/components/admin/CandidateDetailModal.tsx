@@ -25,7 +25,7 @@ import { useRHProfile } from '@/hooks/useRH';
 import { Card, CardContent } from '@/components/ui/card';
 import { maskCPF, maskRG } from '@/utils/legal-validation';
 import { useCandidateReport } from '@/hooks/useCandidateReport';
-import { generateCandidateReportPDF } from '@/utils/pdf';
+// import { generateCandidateReportPDF } from '@/utils/pdf'; // Removido - função PDF desabilitada
 import { useCandidateReports, useSaveCandidateReport } from '@/hooks/useReports';
 
 // Props do componente
@@ -323,6 +323,15 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
     const canExportPDF = rhProfile && ['admin', 'recruiter', 'manager'].includes(rhProfile.role) && candidate.status === 'Aprovado';
 
     const handleGeneratePDF = async () => {
+        // Função PDF desabilitada temporariamente
+        toast({
+            title: 'Função PDF Desabilitada',
+            description: 'A geração de PDF foi temporariamente desabilitada.',
+            variant: 'default'
+        });
+        return;
+
+        /* CÓDIGO ORIGINAL COMENTADO - REATIVAR QUANDO NECESSÁRIO
         if (!reportData) return;
         try {
             const { blob, fileName } = await generateCandidateReportPDF(reportData);
@@ -351,6 +360,7 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
             console.error('Erro ao gerar PDF:', err);
             toast({ title: 'Erro ao gerar PDF', description: 'Tente novamente.', variant: 'destructive' });
         }
+        */
     };
 
     const getLegalStatusBadge = () => {

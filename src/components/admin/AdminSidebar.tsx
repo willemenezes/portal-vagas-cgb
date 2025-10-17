@@ -83,6 +83,11 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
             { id: "reports", icon: FileText, text: "Relatórios", action: () => setActiveTab("reports") },
         ];
 
+        // Adiciona Solicitações de Vagas apenas para Admin
+        if (userRole === 'admin') {
+            menuItems.splice(1, 0, { id: "job-requests", icon: Send, text: "Solicitações de Vagas", action: () => setActiveTab("job-requests") });
+        }
+
         // Adiciona Gestão de RH apenas para Admin
         if (userRole === 'admin') {
             menuItems.push({ id: "rh", icon: Shield, text: "Gestão de RH", action: () => setActiveTab("rh") });

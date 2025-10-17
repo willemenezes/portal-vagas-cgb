@@ -272,7 +272,7 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
             // Carregar cache de geocodificação com expiração
             const CACHE_KEY = 'cgb-geocoded-cities';
             const CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 dias
-            
+
             let geocodedCache: Record<string, [number, number]> = {};
             try {
                 const cachedData = localStorage.getItem(CACHE_KEY);
@@ -330,12 +330,12 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                 });
 
                 console.log(`🗺️ Geocodificando ${citiesToGeocode.size} cidades automaticamente...`);
-                
+
                 const promises = Array.from(citiesToGeocode).map(async (city, index) => {
                     try {
-                        // Delay entre requests para respeitar rate limits
-                        await new Promise(resolve => setTimeout(resolve, 300 * index));
-                        
+                        // Delay otimizado para performance (reduzido de 300ms para 100ms)
+                        await new Promise(resolve => setTimeout(resolve, 100 * index));
+
                         const state = cityToState[city] || 'PA';
                         const query = encodeURIComponent(`${city}, ${state}, Brasil`);
                         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&countrycodes=br`, {
@@ -343,11 +343,11 @@ const JobsMap: React.FC<JobsMapProps> = ({ jobs, onRefresh }) => {
                                 'User-Agent': 'CGB-Vagas-Portal/1.0'
                             }
                         });
-                        
+
                         if (!response.ok) {
                             throw new Error(`HTTP ${response.status}`);
                         }
-                        
+
                         const data = await response.json();
                         if (data && data.length > 0) {
                             const { lat, lon, display_name } = data[0];

@@ -7,7 +7,7 @@ import MapStats from "@/components/MapStats";
 import { useJobsRobust } from "@/hooks/useJobsRobust";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Briefcase, MapPin, Filter, ArrowRight, AlertTriangle, X, Users, TrendingUp, Star, CheckCircle } from "lucide-react";
+import { Search, Briefcase, MapPin, Filter, ArrowRight, AlertTriangle, X, Users, TrendingUp, Star, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 
@@ -26,6 +26,18 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showAntiScamPopup, setShowAntiScamPopup] = useState<boolean>(false);
+
+  // Paginação para vagas
+  const [currentPage, setCurrentPage] = useState(0);
+  const jobsPerPage = 6;
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // Scroll para a seção de vagas quando trocar de página
+    const allJobsSection = document.getElementById('all-jobs');
+    if (allJobsSection) {
+      allJobsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     city: "all",
@@ -79,6 +91,18 @@ const Index = () => {
 
     return matchesDepartment && matchesState && matchesType && matchesCity && matchesSearch;
   });
+
+  // Paginação baseada na lista filtrada
+  const totalJobs = filteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalJobs / jobsPerPage));
+  const startIndex = currentPage * jobsPerPage;
+  const endIndex = Math.min(totalJobs, startIndex + jobsPerPage);
+  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+  // Reset para primeira página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [filters, searchTerm]);
 
   const handleSearch = () => {
     // Aplicar termo de busca nos filtros
@@ -487,7 +511,7 @@ const Index = () => {
                         </div>
                       ))
                     ) : filteredJobs.length > 0 ? (
-                      filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                      paginatedJobs.map((job) => <JobCard key={job.id} job={job} />)
                     ) : (
                       <div className="text-center py-20">
                         <div className="bg-cgb-pearl rounded-3xl p-16 max-w-lg mx-auto">
@@ -510,6 +534,62 @@ const Index = () => {
                             Limpar Filtros
                           </Button>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Controles de Paginação */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center mt-12 gap-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(0)}
+                          disabled={currentPage === 0}
+                          className="flex items-center gap-2"
+                        >
+                          Primeira
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(Math.max(0, currentPage - 1))}
+                          disabled={currentPage === 0}
+                          className="flex items-center gap-2"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          Anterior
+                        </Button>
+
+                        <div className="flex items-center gap-2 px-4 py-2 bg-cgb-pearl rounded-lg">
+                          <span className="text-sm font-medium text-gray-700">
+                            Página {currentPage + 1} de {totalPages}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({startIndex + 1}-{endIndex} de {totalJobs} vagas)
+                          </span>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))}
+                          disabled={currentPage >= totalPages - 1}
+                          className="flex items-center gap-2"
+                        >
+                          Próxima
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(totalPages - 1)}
+                          disabled={currentPage >= totalPages - 1}
+                          className="flex items-center gap-2"
+                        >
+                          Última
+                        </Button>
                       </div>
                     )}
                   </div>
