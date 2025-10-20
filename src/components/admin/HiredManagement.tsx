@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, FileText, UserCheck, Briefcase, MapPin, FileSpreadsheet } from 'lucide-react';
+import { Loader2, Search, FileText, UserCheck, Briefcase, MapPin, FileSpreadsheet, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const HiredManagement = () => {
     // Para contratados, precisamos de todos para não perder registros
@@ -88,50 +90,76 @@ const HiredManagement = () => {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nome</TableHead>
-                                <TableHead>Vaga</TableHead>
-                                <TableHead>Contato</TableHead>
-                                <TableHead>Data da Aprovação</TableHead>
-                                <TableHead className="text-right">Currículo</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {hiredCandidates.length > 0 ? (
-                                hiredCandidates.map(candidate => (
-                                    <TableRow key={candidate.id}>
-                                        <TableCell className="font-medium">{candidate.name}</TableCell>
-                                        <TableCell>{candidate.job?.title || 'N/A'}</TableCell>
-                                        <TableCell>
-                                            <div>{candidate.email}</div>
-                                            <div className="text-gray-500">{candidate.phone}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {format(new Date(candidate.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" asChild disabled={!candidate.resume_file_url}>
-                                                <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    Ver
-                                                </a>
-                                            </Button>
+                <TooltipProvider>
+                    <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nome</TableHead>
+                                    <TableHead>Vaga</TableHead>
+                                    <TableHead>Contato</TableHead>
+                                    <TableHead>Data da Aprovação</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Currículo</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {hiredCandidates.length > 0 ? (
+                                    hiredCandidates.map(candidate => {
+                                        const hasRestriction = candidate.legal_validation_comment && candidate.legal_validation_comment.trim() !== '';
+                                        return (
+                                            <TableRow key={candidate.id}>
+                                                <TableCell className="font-medium">{candidate.name}</TableCell>
+                                                <TableCell>{candidate.job?.title || 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    <div>{candidate.email}</div>
+                                                    <div className="text-gray-500">{candidate.phone}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {format(new Date(candidate.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {hasRestriction ? (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300 cursor-help flex items-center gap-1 w-fit">
+                                                                    <AlertTriangle className="w-3 h-3" />
+                                                                    Aprovado com Restrição
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-sm">
+                                                                <p className="font-semibold mb-1">Restrições:</p>
+                                                                <p className="text-sm">{candidate.legal_validation_comment}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
+                                                            Aprovado
+                                                        </Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="outline" size="sm" asChild disabled={!candidate.resume_file_url}>
+                                                        <a href={candidate.resume_file_url || '#'} target="_blank" rel="noopener noreferrer">
+                                                            <FileText className="w-4 h-4 mr-2" />
+                                                            Ver
+                                                        </a>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-10">
+                                            Nenhum candidato contratado encontrado.
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-10">
-                                        Nenhum candidato contratado encontrado.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TooltipProvider>
             </CardContent>
         </Card>
     );
