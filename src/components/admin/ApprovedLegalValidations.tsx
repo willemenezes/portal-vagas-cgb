@@ -80,6 +80,15 @@ const ApprovedLegalValidations = () => {
                                     const hasRestriction = approval.candidate?.legal_validation_comment && approval.candidate.legal_validation_comment.trim() !== '';
                                     const statusInfo = getStatusInfo(approval.review_status, hasRestriction);
                                     
+                                    // Debug log para verificar os dados
+                                    console.log('🔍 [ApprovedLegalValidations] Debug:', {
+                                        candidateName: approval.candidate?.name,
+                                        reviewStatus: approval.review_status,
+                                        legalComment: approval.candidate?.legal_validation_comment,
+                                        hasRestriction,
+                                        statusInfo
+                                    });
+                                    
                                     return (
                                         <TableRow key={approval.id}>
                                             <TableCell className="font-medium">{approval.candidate?.name || 'Candidato não encontrado'}</TableCell>
