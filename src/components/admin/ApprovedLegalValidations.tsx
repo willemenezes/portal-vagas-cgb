@@ -11,14 +11,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, CheckCircle, User, Briefcase, MapPin, Calendar, XCircle, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 
 const ApprovedLegalValidations = () => {
     const { data: approvals, isLoading, error } = useMyApprovedValidations();
 
-    const getStatusInfo = (status) => {
+    const getStatusInfo = (status, hasRestriction = false) => {
         switch (status) {
             case 'approved':
+                if (hasRestriction) {
+                    return { 
+                        text: 'Aprovado com Restrição', 
+                        variant: 'outline', 
+                        icon: <AlertTriangle className="w-4 h-4 text-yellow-500" />,
+                        className: 'bg-yellow-50 text-yellow-800 border-yellow-300'
+                    };
+                }
                 return { text: 'Aprovado', variant: 'default', icon: <CheckCircle className="w-4 h-4 text-green-500" /> };
             case 'rejected':
                 return { text: 'Rejeitado', variant: 'destructive', icon: <XCircle className="w-4 h-4 text-red-500" /> };
@@ -68,7 +77,9 @@ const ApprovedLegalValidations = () => {
                         <TableBody>
                             {approvals && approvals.length > 0 ? (
                                 approvals.map((approval) => {
-                                    const statusInfo = getStatusInfo(approval.review_status);
+                                    const hasRestriction = approval.candidate?.legal_validation_comment && approval.candidate.legal_validation_comment.trim() !== '';
+                                    const statusInfo = getStatusInfo(approval.review_status, hasRestriction);
+                                    
                                     return (
                                         <TableRow key={approval.id}>
                                             <TableCell className="font-medium">{approval.candidate?.name || 'Candidato não encontrado'}</TableCell>
@@ -76,10 +87,27 @@ const ApprovedLegalValidations = () => {
                                             <TableCell>{`${approval.candidate?.job?.city || 'N/A'} - ${approval.candidate?.job?.state || 'N/A'}`}</TableCell>
                                             <TableCell>{approval.reviewed_at ? format(new Date(approval.reviewed_at), 'dd/MM/yyyy HH:mm') : 'N/A'}</TableCell>
                                             <TableCell className="text-right">
-                                                <Badge variant={statusInfo.variant} className="flex items-center justify-center gap-1.5">
-                                                    {statusInfo.icon}
-                                                    <span>{statusInfo.text}</span>
-                                                </Badge>
+                                                {hasRestriction ? (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Badge variant={statusInfo.variant} className={`flex items-center justify-center gap-1.5 cursor-help ${statusInfo.className}`}>
+                                                                    {statusInfo.icon}
+                                                                    <span>{statusInfo.text}</span>
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-sm">
+                                                                <p className="font-semibold mb-1">Restrições:</p>
+                                                                <p className="text-sm">{approval.candidate?.legal_validation_comment}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : (
+                                                    <Badge variant={statusInfo.variant} className="flex items-center justify-center gap-1.5">
+                                                        {statusInfo.icon}
+                                                        <span>{statusInfo.text}</span>
+                                                    </Badge>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     );
