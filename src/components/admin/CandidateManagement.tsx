@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { ResumeButton } from './ResumeButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -310,9 +311,26 @@ const CandidateManagement = () => {
                         <TableCell><ResumeButton candidate={candidate} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge className={`${statusColor} border-none font-semibold`}>
-                              {currentStatus}
-                            </Badge>
+                            {currentStatus === 'Aprovado' && candidate.legal_validation_comment && candidate.legal_validation_comment.trim() !== '' ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300 cursor-help flex items-center gap-1 w-fit">
+                                      <AlertTriangle className="w-3 h-3" />
+                                      Aprovado com Restrição
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm">
+                                    <p className="font-semibold mb-1">Restrições:</p>
+                                    <p className="text-sm">{candidate.legal_validation_comment}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Badge className={`${statusColor} border-none font-semibold`}>
+                                {currentStatus}
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
