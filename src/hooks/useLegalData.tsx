@@ -386,6 +386,7 @@ export const useMyApprovedValidations = () => {
                         id,
                         name,
                         email,
+                        legal_validation_comment,
                         job:jobs (
                             title,
                             city,
