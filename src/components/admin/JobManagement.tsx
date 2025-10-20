@@ -554,8 +554,7 @@ const JobManagement = () => {
         </Card>
 
         {/* Seção de Job Requests Aprovadas - visível para Admin e Recrutadores da região */}
-        {/* Seção de Solicitações Aprovadas removida - agora está na aba "Solicitações de Vagas" */}
-        {false && (
+        {approvedRequests.length > 0 && (
           <div className="mb-6">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
               <CardHeader className="pb-4">

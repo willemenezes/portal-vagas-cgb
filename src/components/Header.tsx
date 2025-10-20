@@ -14,28 +14,28 @@ const Header = () => {
     if (isMenuOpen) {
       // Salvar posição do scroll
       const scrollY = window.scrollY;
-      
+
       // Travar body
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
-      
+
       // SOLUÇÃO DEFINITIVA: REMOVER MAPAS DO DOM
       const mapContainers = document.querySelectorAll('.leaflet-container');
       const removedMaps: { element: Element; parent: Element; nextSibling: Node | null }[] = [];
-      
+
       mapContainers.forEach((mapContainer) => {
         const parent = mapContainer.parentElement;
         const nextSibling = mapContainer.nextSibling;
-        
+
         if (parent) {
           // Salvar referência para restaurar depois
           removedMaps.push({ element: mapContainer, parent, nextSibling });
-          
+
           // REMOVER COMPLETAMENTE DO DOM
           parent.removeChild(mapContainer);
-          
+
           // Criar placeholder temporário
           const placeholder = document.createElement('div');
           placeholder.id = 'map-removed-placeholder';
@@ -50,7 +50,7 @@ const Header = () => {
             border-radius: 12px;
           `;
           placeholder.textContent = 'Mapa temporariamente oculto';
-          
+
           if (nextSibling) {
             parent.insertBefore(placeholder, nextSibling);
           } else {
@@ -58,18 +58,18 @@ const Header = () => {
           }
         }
       });
-      
+
       // Salvar no window para restaurar depois
       (window as any).__removedMaps = removedMaps;
-      
+
     } else {
       // RESTAURAR MAPAS NO DOM
       const removedMaps = (window as any).__removedMaps || [];
-      
+
       // Remover placeholders
       const placeholders = document.querySelectorAll('#map-removed-placeholder');
       placeholders.forEach(p => p.remove());
-      
+
       // Restaurar mapas
       removedMaps.forEach(({ element, parent, nextSibling }: any) => {
         try {
@@ -82,36 +82,36 @@ const Header = () => {
           console.warn('Erro ao restaurar mapa:', error);
         }
       });
-      
+
       // Limpar referências
       delete (window as any).__removedMaps;
-      
+
       // Restaurar scroll
       const scrollY = document.body.style.top;
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.width = '';
-      
+
       // Restaurar posição do scroll
       if (scrollY) {
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
       }
-      
+
       // Forçar re-render dos mapas após 100ms
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
       }, 100);
     }
-    
+
     // Cleanup
     return () => {
       // Restaurar tudo se componente for desmontado
       const removedMaps = (window as any).__removedMaps || [];
       const placeholders = document.querySelectorAll('#map-removed-placeholder');
-      
+
       placeholders.forEach(p => p.remove());
-      
+
       removedMaps.forEach(({ element, parent, nextSibling }: any) => {
         try {
           if (parent && element) {
@@ -125,9 +125,9 @@ const Header = () => {
           console.warn('Erro no cleanup:', error);
         }
       });
-      
+
       delete (window as any).__removedMaps;
-      
+
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.top = '';
@@ -167,7 +167,7 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className={navLinkClasses("/" )}>
+            <Link to="/" className={navLinkClasses("/")}>
               Vagas Abertas
             </Link>
             <Link to="/cadastrar-curriculo" className={textLinkClasses}>
@@ -212,8 +212,8 @@ const Header = () => {
       </div>
       {/* Mobile Menu (Sheet) */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent 
-          side="left" 
+        <SheetContent
+          side="left"
           className="w-[300px] sm:w-[400px] bg-white z-[99999] h-screen overflow-y-auto fixed"
           aria-describedby="mobile-menu-description"
         >
