@@ -158,11 +158,24 @@ const JobManagement = () => {
   const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<JobRequest | null>(null);
 
   // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
-  // Filtro de região - REMOVIDO para evitar problemas
   const approvedRequests = (jobRequests?.filter((request) => {
     if (request.status !== 'aprovado' || request.job_created) return false;
     return true; // Todos veem todas
   })) || [];
+
+  // DEBUG: Verificar todas as solicitações para admin
+  React.useEffect(() => {
+    if (rhProfile?.role === 'admin' && jobRequests) {
+      console.log('🔍 [JobManagement] DEBUG Admin - Todas as solicitações:', jobRequests.length);
+      console.log('🔍 [JobManagement] DEBUG Admin - Solicitações por status:', {
+        pendente: jobRequests.filter(r => r.status === 'pendente').length,
+        aprovado: jobRequests.filter(r => r.status === 'aprovado').length,
+        rejeitado: jobRequests.filter(r => r.status === 'rejeitado').length
+      });
+      console.log('🔍 [JobManagement] DEBUG Admin - TESTETI:', jobRequests.find(r => r.title === 'TESTETI'));
+      console.log('🔍 [JobManagement] DEBUG Admin - ApprovedRequests:', approvedRequests.length);
+    }
+  }, [jobRequests, rhProfile, approvedRequests]);
 
   const talentBankJobExists = jobsDeduped.some(job => job.title === "Banco de Talentos");
 
