@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { CookieBanner } from "@/components/CookieBanner";
-import { useInternalUser } from "@/hooks/useInternalUser";
 import { lazy, Suspense } from "react";
 
 // Lazy loading de componentes pesados
@@ -39,11 +38,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Componente wrapper para gerenciar cookies de usuários internos
-const AppWrapper = () => {
-  // Hook para gerenciar cookies de usuários internos
-  useInternalUser();
-
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
@@ -87,10 +82,6 @@ const AppWrapper = () => {
       </Router>
     </QueryClientProvider>
   );
-};
-
-function App() {
-  return <AppWrapper />;
 }
 
 export default App;
