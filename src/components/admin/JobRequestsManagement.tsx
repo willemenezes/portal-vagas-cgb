@@ -359,21 +359,12 @@ const JobRequestsManagement = () => {
         return 'Indefinido';
     };
 
-    // Filtrar vagas pendentes (criadas por solicitadores ou recrutadores aguardando aprovação)
-    const pendingJobs = allJobs.filter(job =>
-        job.approval_status === 'pending_approval' ||
-        job.approval_status === 'pending'
-    ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // BUG FIX: Usar jobRequests em vez de allJobs
+    // Filtrar solicitações pendentes
+    const pendingJobs = pendingRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Filtrar vagas aprovadas/publicadas (incluindo todas as ativas e concluídas)
-    const approvedJobs = allJobs.filter(job =>
-        job.approval_status === 'active' ||
-        job.approval_status === 'ativo' ||
-        job.status === 'active' ||
-        job.status === 'ativo' ||
-        job.status === 'concluded' ||
-        job.flow_status === 'concluida'
-    ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Filtrar solicitações aprovadas
+    const approvedJobs = approvedRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Paginação para vagas pendentes
     const totalPendingJobs = pendingJobs.length;
@@ -415,7 +406,7 @@ const JobRequestsManagement = () => {
         return <Badge className="bg-gray-500">Indefinido</Badge>;
     };
 
-    if (isLoading) {
+    if (isLoadingRequests) {
         return (
             <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-cgb-primary mr-2" />
