@@ -163,6 +163,14 @@ const JobManagement = () => {
     return true; // Todos veem todas
   })) || [];
 
+  // BUG FIX: Admin deve ver TODAS as solicitações (pendentes + aprovadas)
+  const allRequestsForAdmin = rhProfile?.role === 'admin' 
+    ? (jobRequests?.filter((request) => {
+        if (request.job_created) return false; // Excluir apenas as já convertidas em vagas
+        return true; // Admin vê todas (pendentes + aprovadas)
+      })) || []
+    : approvedRequests;
+
   // DEBUG: Verificar todas as solicitações para admin
   React.useEffect(() => {
     if (rhProfile?.role === 'admin' && jobRequests) {
@@ -174,6 +182,7 @@ const JobManagement = () => {
       });
       console.log('🔍 [JobManagement] DEBUG Admin - TESTETI:', jobRequests.find(r => r.title === 'TESTETI'));
       console.log('🔍 [JobManagement] DEBUG Admin - ApprovedRequests:', approvedRequests.length);
+      console.log('🔍 [JobManagement] DEBUG Admin - AllRequestsForAdmin:', allRequestsForAdmin.length);
     }
   }, [jobRequests, rhProfile, approvedRequests]);
 
@@ -567,7 +576,7 @@ const JobManagement = () => {
         </Card>
 
         {/* Seção de Job Requests Aprovadas - visível para Admin e Recrutadores da região */}
-        {approvedRequests.length > 0 && (
+        {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length > 0 && (
           <div className="mb-6">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
               <CardHeader className="pb-4">
@@ -584,13 +593,13 @@ const JobManagement = () => {
                     </div>
                   </CardTitle>
                   <Badge variant="secondary" className="bg-green-100 text-green-800 text-lg px-3 py-1">
-                    {approvedRequests.length}
+                    {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="grid gap-4">
-                  {approvedRequests.map((request) => (
+                  {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).map((request) => (
                     <Card key={request.id} className="bg-white border border-green-200 shadow-md hover:shadow-lg transition-shadow duration-200">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between mb-4">
