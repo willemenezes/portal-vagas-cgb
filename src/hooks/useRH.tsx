@@ -12,6 +12,7 @@ export interface RHUser {
     assigned_cities?: string[] | null;
     assigned_departments?: string[] | null;
     role: 'admin' | 'recruiter' | 'manager' | 'juridico' | 'solicitador';
+    is_admin: boolean;
     created_at: string;
     updated_at: string;
 }
