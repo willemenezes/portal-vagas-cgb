@@ -39,7 +39,8 @@ const LoadingFallback = () => (
   </div>
 );
 
-function App() {
+// Componente wrapper para gerenciar cookies de usuários internos
+const AppWrapper = () => {
   // Hook para gerenciar cookies de usuários internos
   useInternalUser();
 
@@ -86,6 +87,10 @@ function App() {
       </Router>
     </QueryClientProvider>
   );
+};
+
+function App() {
+  return <AppWrapper />;
 }
 
 export default App;
