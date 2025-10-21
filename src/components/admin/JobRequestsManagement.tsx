@@ -359,12 +359,19 @@ const JobRequestsManagement = () => {
         return 'Indefinido';
     };
 
-    // BUG FIX: Usar jobRequests em vez de allJobs
-    // Filtrar solicitações pendentes
+    // BUG FIX: Usar jobRequests para pendentes, allJobs para aprovadas
+    // Filtrar solicitações pendentes (usar jobRequests)
     const pendingJobs = pendingRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Filtrar solicitações aprovadas
-    const approvedJobs = approvedRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Filtrar vagas aprovadas/publicadas (usar allJobs - vagas já criadas)
+    const approvedJobs = allJobs.filter(job =>
+        job.approval_status === 'active' ||
+        job.approval_status === 'ativo' ||
+        job.status === 'active' ||
+        job.status === 'ativo' ||
+        job.status === 'concluded' ||
+        job.flow_status === 'concluida'
+    ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Paginação para vagas pendentes
     const totalPendingJobs = pendingJobs.length;
