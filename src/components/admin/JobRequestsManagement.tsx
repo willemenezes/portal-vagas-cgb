@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck } from 'lucide-react';
 import { Job, useUpdateJob, useAllJobs, useDeleteJob } from '@/hooks/useJobs';
+import { useJobRequests } from '@/hooks/useJobRequests';
+import { useAuth } from '@/hooks/useAuth';
+import { useRHProfile } from '@/hooks/useRH';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +17,28 @@ import { supabase } from '@/integrations/supabase/client';
 
 const JobRequestsManagement = () => {
     const { toast } = useToast();
+    const { user } = useAuth();
+    const { data: rhProfile } = useRHProfile(user?.id);
     const { data: allJobs = [], isLoading } = useAllJobs();
     const updateJob = useUpdateJob();
     const deleteJob = useDeleteJob();
+    
+    // BUG FIX: Usar o hook correto para solicitações de vagas
+    const { jobRequests, isLoading: isLoadingRequests } = useJobRequests();
+
+    // Filtrar solicitações por status
+    const pendingRequests = jobRequests?.filter(req => req.status === 'pendente') || [];
+    const approvedRequests = jobRequests?.filter(req => req.status === 'aprovado' && !req.job_created) || [];
+    
+    // DEBUG: Log para admin
+    useEffect(() => {
+        if (rhProfile?.role === 'admin' && jobRequests) {
+            console.log('🔍 [JobRequestsManagement] DEBUG Admin - Todas as solicitações:', jobRequests.length);
+            console.log('🔍 [JobRequestsManagement] DEBUG Admin - Pendentes:', pendingRequests.length);
+            console.log('🔍 [JobRequestsManagement] DEBUG Admin - Aprovadas:', approvedRequests.length);
+            console.log('🔍 [JobRequestsManagement] DEBUG Admin - TESTETI:', jobRequests.find(r => r.title === 'TESTETI'));
+        }
+    }, [jobRequests, rhProfile, pendingRequests, approvedRequests]);
 
     const [activeView, setActiveView] = useState<'pending' | 'approved'>('pending');
     const [rejectionReason, setRejectionReason] = useState('');
