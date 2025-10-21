@@ -163,6 +163,15 @@ export const useJobRequests = () => {
                 query = query.in('city', rhProfile.assigned_cities);
             }
 
+            // DEBUG: Buscar TODAS as solicitações antes dos filtros para comparar
+            const { data: allRequests } = await supabase
+                .from('job_requests')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            console.log('🔍 [useJobRequests] TODAS as solicitações:', allRequests?.length || 0);
+            console.log('🔍 [useJobRequests] Solicitação TESTETI:', allRequests?.find(r => r.title === 'TESTETI'));
+
             query = query.order('created_at', { ascending: false});
 
             const { data, error } = await query;
