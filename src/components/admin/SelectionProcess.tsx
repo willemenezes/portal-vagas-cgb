@@ -5,7 +5,7 @@ import { useAllJobs, Job, useUpdateJobFlowStatus } from '@/hooks/useJobs';
 import { useCandidates, Candidate, useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { useCandidatesByJob } from '@/hooks/useCandidatesByJob';
 import { SELECTION_STATUSES, SelectionStatus, STATUS_COLORS } from '@/lib/constants';
-import { Loader2, PlusCircle, Linkedin, Gavel, Grid3X3, ArrowRightLeft } from 'lucide-react';
+import { Loader2, PlusCircle, Linkedin, Gavel, Grid3X3, ArrowRightLeft, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import CandidateDetailModal from './CandidateDetailModal';
 import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
@@ -99,7 +99,16 @@ const SelectionProcess = () => {
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
     // BUG FIX: Hook otimizado que busca apenas candidatos da vaga selecionada (server-side)
-    const { data: jobCandidates = [], isLoading: isLoadingCandidates } = useCandidatesByJob(selectedJobId);
+    const { data: jobCandidates = [], isLoading: isLoadingCandidates, error: candidatesError } = useCandidatesByJob(selectedJobId);
+
+    // Debug: Log para monitorar mudanças
+    useEffect(() => {
+        console.log(`🔍 [SelectionProcess] Vaga selecionada: ${selectedJobId}`);
+        console.log(`📊 [SelectionProcess] Candidatos carregados: ${jobCandidates.length}`);
+        if (candidatesError) {
+            console.error(`❌ [SelectionProcess] Erro ao carregar candidatos:`, candidatesError);
+        }
+    }, [selectedJobId, jobCandidates.length, candidatesError]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [candidateToReject, setCandidateToReject] = useState<Candidate | null>(null);
@@ -376,9 +385,14 @@ const SelectionProcess = () => {
                                 toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
                             } else {
                                 // BUG FIX: Invalidar queries para atualização automática da UI
-                                queryClient.invalidateQueries({ queryKey: ['candidates'] });
-                                queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
-                                queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+                                await Promise.all([
+                                    queryClient.invalidateQueries({ queryKey: ['candidates'] }),
+                                    queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] }),
+                                    queryClient.invalidateQueries({ queryKey: ['dashboardData'] }),
+                                    queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }),
+                                    queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }),
+                                    queryClient.invalidateQueries({ queryKey: ['candidatesCounts'] }),
+                                ]);
 
                                 if (isMovingBackward) {
                                     toast({
@@ -422,12 +436,12 @@ const SelectionProcess = () => {
             return;
         }
         const { id: candidateId } = candidateToReject;
-        
+
         // Combinar motivo selecionado com observação adicional
-        const fullRejectionNote = selectedRejectionMotif 
+        const fullRejectionNote = selectedRejectionMotif
             ? (rejectionReason.trim() ? `${selectedRejectionMotif} - ${rejectionReason}` : selectedRejectionMotif)
             : rejectionReason;
-            
+
         try {
             await updateStatus.mutateAsync({ id: candidateId, status: 'Reprovado' });
             if (user) await createNote.mutateAsync({ candidate_id: candidateId, author_id: user.id, note: `Motivo da reprovação: ${fullRejectionNote}`, activity_type: 'Reprovação' });
@@ -511,6 +525,20 @@ const SelectionProcess = () => {
 
                 <div className="flex items-center gap-2 ml-4">
                     <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            // Forçar refresh dos dados
+                            queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+                            toast({ title: "Dados atualizados!", description: "Lista de candidatos foi atualizada." });
+                        }}
+                        className="flex items-center gap-2"
+                        disabled={isLoadingCandidates}
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isLoadingCandidates ? 'animate-spin' : ''}`} />
+                        Atualizar
+                    </Button>
+                    <Button
                         variant={layoutMode === 'grid' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setLayoutMode('grid')}
@@ -541,6 +569,24 @@ const SelectionProcess = () => {
 
             {selectedJobId ? (
                 <>
+                    {/* Indicador de erro */}
+                    {candidatesError && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                            <p className="text-sm text-red-700">
+                                <strong>⚠️ Erro ao carregar candidatos:</strong> {candidatesError.message || 'Erro desconhecido'}
+                            </p>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] })}
+                                className="mt-2"
+                            >
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Tentar Novamente
+                            </Button>
+                        </div>
+                    )}
+
                     {activeTab === 'reprovados' && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                             <p className="text-sm text-blue-700">
@@ -687,7 +733,7 @@ const SelectionProcess = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         <div>
                             <label className="text-sm font-medium text-gray-700 mb-2 block">
                                 Observações Adicionais (Opcional)

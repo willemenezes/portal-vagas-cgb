@@ -52,6 +52,8 @@ export const useCandidatesByJob = (jobId: string | null) => {
         queryFn: async () => {
             if (!jobId) return [];
 
+            console.log(`🔍 [useCandidatesByJob] Buscando candidatos para vaga: ${jobId}`);
+
             // BUG FIX: Buscar apenas candidatos da vaga específica (filtro server-side)
             const { data, error } = await supabase
                 .from('candidates')
@@ -63,15 +65,18 @@ export const useCandidatesByJob = (jobId: string | null) => {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error(`Erro ao buscar candidatos da vaga ${jobId}:`, error);
+                console.error(`❌ [useCandidatesByJob] Erro ao buscar candidatos da vaga ${jobId}:`, error);
                 throw error;
             }
 
+            console.log(`✅ [useCandidatesByJob] Encontrados ${data?.length || 0} candidatos para vaga ${jobId}`);
             return (data || []) as CandidateByJob[];
         },
         enabled: !!jobId,
-        staleTime: 2 * 60 * 1000, // 2 minutos
+        staleTime: 1 * 60 * 1000, // 1 minuto (reduzido para atualizações mais frequentes)
         refetchOnWindowFocus: true,
+        refetchOnMount: true, // Sempre buscar dados frescos ao montar
+        retry: 2, // Tentar novamente em caso de erro
     });
 };
 

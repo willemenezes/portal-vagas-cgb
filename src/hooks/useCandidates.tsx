@@ -233,13 +233,16 @@ export const useCreateCandidate = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // BUG FIX: Invalidar TODAS as queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['candidates'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboardData'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesCounts'] }),
+      ]);
     },
   });
 };
@@ -280,11 +283,14 @@ export const useUpdateCandidateStatus = () => {
     },
     onSuccess: async (data, variables) => {
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] }); // Processo Seletivo
-      queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); // Dashboard
-      queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }); // Estatísticas
-      queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }); // Contagens
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['candidates'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] }), // Processo Seletivo
+        queryClient.invalidateQueries({ queryKey: ['dashboardData'] }), // Dashboard
+        queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }), // Estatísticas
+        queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }), // Contagens
+        queryClient.invalidateQueries({ queryKey: ['candidatesCounts'] }), // Contagens globais
+      ]);
 
       // Opcional: atualizar o candidato específico no cache para uma resposta mais rápida da UI
       queryClient.setQueryData(['candidate', variables.id], data);
@@ -374,13 +380,16 @@ export const useDeleteCandidate = () => {
 
       return candidate.id;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // BUG FIX: Invalidar TODAS as queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] });
-      queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['candidates'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboardData'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesStatsByJob'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidatesCounts'] }),
+      ]);
     },
   });
 };
