@@ -28,6 +28,7 @@ const JobApplication = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [submissionProgress, setSubmissionProgress] = useState<string>("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -168,85 +169,156 @@ const JobApplication = () => {
       }
     }
 
-    try {
-      let resumeFileUrl = "";
-      let resumeFileName = "";
-      if (selectedFile) {
-        const sanitizedName = sanitizeFilename(selectedFile.name);
-        const fileName = `${Date.now()}-${sanitizedName}`;
-        const uploadResult = await uploadResume.mutateAsync({ file: selectedFile, fileName });
-        resumeFileUrl = uploadResult.publicUrl;
-        resumeFileName = selectedFile.name;
-      }
+    // 🔧 MELHORIA: Implementar retry automático para resolver "Failed to fetch"
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      // Criar candidato (incluindo URL do currículo)
-      const candidate = await createCandidate.mutateAsync({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        city: formData.city,
-        state: formData.state,
-        job_id: targetJobId,
-        status: 'pending' as const,
-        // Persistir informações críticas para filtros e decisões
-        pcd: formData.pcd || null,
-        travel: formData.travel || null,
-        age: formData.age || null,
-        cnh: formData.cnh || null,
-        vehicle: formData.vehicle || null,
-        vehicle_model: formData.vehicleModel || null,
-        vehicle_year: formData.vehicleYear || null,
-        resume_file_url: resumeFileUrl || null,
-        resume_file_name: resumeFileName || null
-      });
-
-      // Salvar dados jurídicos - com tratamento de erro melhorado
+    const attemptSubmission = async (): Promise<void> => {
       try {
-        await saveLegalData.mutateAsync({
-          candidateId: candidate.id,
-          data: {
-            full_name: formData.name,
-            birth_date: formData.birthDate,
-            rg: formData.rg,
-            cpf: formData.cpf,
-            mother_name: formData.motherName,
-            father_name: formData.fatherName || '',
-            birth_city: formData.birthCity,
-            birth_state: formData.state,
-            cnh: formData.cnh,
-            work_history: [
-              ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
-              ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
-            ],
-            is_former_employee: formData.workedAtCGB === 'Sim',
-            former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
-            is_pcd: formData.pcd === 'Sim',
-            pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
-            desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
-            responsible_name: null
+        console.log(`🔄 [JobApplication] Tentativa ${retryCount + 1}/${maxRetries} de envio da candidatura`);
+
+        let resumeFileUrl = "";
+        let resumeFileName = "";
+        
+        // Upload do currículo com retry
+        if (selectedFile) {
+          setSubmissionProgress("📤 Fazendo upload do currículo...");
+          const sanitizedName = sanitizeFilename(selectedFile.name);
+          const fileName = `${Date.now()}-${sanitizedName}`;
+          
+          try {
+            const uploadResult = await uploadResume.mutateAsync({ file: selectedFile, fileName });
+            resumeFileUrl = uploadResult.publicUrl;
+            resumeFileName = selectedFile.name;
+            console.log(`✅ [JobApplication] Upload do currículo realizado com sucesso`);
+            setSubmissionProgress("✅ Currículo enviado com sucesso!");
+          } catch (uploadError: any) {
+            console.error(`❌ [JobApplication] Erro no upload do currículo:`, uploadError);
+            throw new Error(`Erro ao fazer upload do currículo: ${uploadError.message || 'Falha na conexão'}`);
           }
+        }
+
+        // Criar candidato com retry
+        setSubmissionProgress("👤 Criando perfil do candidato...");
+        const candidate = await createCandidate.mutateAsync({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          city: formData.city,
+          state: formData.state,
+          job_id: targetJobId,
+          status: 'pending' as const,
+          // Persistir informações críticas para filtros e decisões
+          pcd: formData.pcd || null,
+          travel: formData.travel || null,
+          age: formData.age || null,
+          cnh: formData.cnh || null,
+          vehicle: formData.vehicle || null,
+          vehicle_model: formData.vehicleModel || null,
+          vehicle_year: formData.vehicleYear || null,
+          resume_file_url: resumeFileUrl || null,
+          resume_file_name: resumeFileName || null
         });
-      } catch (legalDataError: any) {
-        console.warn('⚠️ [JobApplication] Erro ao salvar dados jurídicos, mas candidato foi criado:', legalDataError);
-        // Candidato já foi criado com sucesso, continua o fluxo
+
+        console.log(`✅ [JobApplication] Candidato criado com sucesso: ${candidate.id}`);
+        setSubmissionProgress("✅ Perfil criado com sucesso!");
+
+        // Salvar dados jurídicos - com tratamento de erro melhorado
+        setSubmissionProgress("⚖️ Salvando dados jurídicos...");
+        try {
+          await saveLegalData.mutateAsync({
+            candidateId: candidate.id,
+            data: {
+              full_name: formData.name,
+              birth_date: formData.birthDate,
+              rg: formData.rg,
+              cpf: formData.cpf,
+              mother_name: formData.motherName,
+              father_name: formData.fatherName || '',
+              birth_city: formData.birthCity,
+              birth_state: formData.state,
+              cnh: formData.cnh,
+              work_history: [
+                ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
+                ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
+              ],
+              is_former_employee: formData.workedAtCGB === 'Sim',
+              former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
+              is_pcd: formData.pcd === 'Sim',
+              pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
+              desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
+              responsible_name: null
+            }
+          });
+          console.log(`✅ [JobApplication] Dados jurídicos salvos com sucesso`);
+          setSubmissionProgress("✅ Dados jurídicos salvos!");
+        } catch (legalDataError: any) {
+          console.warn('⚠️ [JobApplication] Erro ao salvar dados jurídicos, mas candidato foi criado:', legalDataError);
+          setSubmissionProgress("⚠️ Candidato criado, mas dados jurídicos com problema");
+          // Candidato já foi criado com sucesso, continua o fluxo
+        }
+
+        // Sucesso! Não precisa mais tentar
+        setSubmissionProgress("🎉 Candidatura enviada com sucesso!");
+        toast({
+          title: "Candidatura enviada com sucesso!",
+          description: "Seu currículo foi enviado. Entraremos em contato em breve.",
+        });
+        navigate("/");
+
+      } catch (error: any) {
+        console.error(`❌ [JobApplication] Erro na tentativa ${retryCount + 1}:`, error);
+        
+        // Verificar se é um erro de rede que vale a pena tentar novamente
+        const isRetryableError = error?.message?.includes('fetch') || 
+                                 error?.message?.includes('network') ||
+                                 error?.message?.includes('timeout') ||
+                                 error?.code === 'NETWORK_ERROR' ||
+                                 error?.name === 'TypeError';
+
+        if (isRetryableError && retryCount < maxRetries - 1) {
+          retryCount++;
+          console.log(`🔄 [JobApplication] Tentando novamente em 2 segundos... (${retryCount}/${maxRetries})`);
+          
+          // Aguardar antes de tentar novamente
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return attemptSubmission();
+        } else {
+          // Erro final ou não é retryable
+          throw error;
+        }
+      }
+    };
+
+    try {
+      await attemptSubmission();
+    } catch (error: any) {
+      console.error('❌ [JobApplication] Erro final após todas as tentativas:', error);
+
+      // Mensagens de erro mais específicas para o usuário
+      let errorMessage = "Tente novamente mais tarde.";
+      
+      if (error?.message?.includes('fetch') || error?.message?.includes('Failed to fetch')) {
+        errorMessage = "Problema de conexão. Verifique sua internet e tente novamente.";
+      } else if (error?.message?.includes('timeout')) {
+        errorMessage = "A operação demorou muito para responder. Tente novamente.";
+      } else if (error?.message?.includes('network')) {
+        errorMessage = "Erro de rede. Verifique sua conexão e tente novamente.";
+      } else if (error?.message) {
+        errorMessage = error.message;
       }
 
-      toast({
-        title: "Candidatura enviada com sucesso!",
-        description: "Seu currículo foi enviado. Entraremos em contato em breve.",
-      });
-      navigate("/");
-    } catch (error: any) {
-      console.error('Erro detalhado na candidatura:', error);
-
-      // Mostrar erro real para o usuário
       toast({
         title: "Erro ao enviar candidatura",
-        description: error?.message || "Tente novamente mais tarde.",
+        description: errorMessage,
         variant: "destructive",
       });
+
+      // Mostrar erro também no formulário
+      setFormError(`Erro: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
+      setSubmissionProgress("");
     }
   };
 
@@ -580,6 +652,15 @@ const JobApplication = () => {
                     </div>
                   )}
 
+                  {isSubmitting && submissionProgress && (
+                    <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{submissionProgress}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <Label htmlFor="desiredJob">Vaga que deseja concorrer *</Label>
                     {jobIdFromUrl && job ? (
@@ -745,8 +826,9 @@ const JobApplication = () => {
                   <div className="flex gap-4 pt-6 justify-end border-t border-gray-100 pb-4 mt-8">
                     <button
                       type="submit"
+                      disabled={isSubmitting}
                       style={{
-                        background: '#6a0b27',
+                        background: isSubmitting ? '#999' : '#6a0b27',
                         color: 'white',
                         fontWeight: 'bold',
                         fontSize: '18px',
@@ -754,14 +836,22 @@ const JobApplication = () => {
                         borderRadius: '999px',
                         boxShadow: '0 2px 8px rgba(106,11,39,0.12)',
                         border: 'none',
-                        cursor: 'pointer',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         transition: 'background 0.2s, box-shadow 0.2s',
                         outline: 'none',
+                        opacity: isSubmitting ? 0.7 : 1,
                       }}
-                      onMouseOver={e => e.currentTarget.style.background = '#4a0820'}
-                      onMouseOut={e => e.currentTarget.style.background = '#6a0b27'}
+                      onMouseOver={e => !isSubmitting && (e.currentTarget.style.background = '#4a0820')}
+                      onMouseOut={e => !isSubmitting && (e.currentTarget.style.background = '#6a0b27')}
                     >
-                      Enviar Currículo
+                      {isSubmitting ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Enviando...
+                        </div>
+                      ) : (
+                        'Enviar Currículo'
+                      )}
                     </button>
                   </div>
                 </form>
