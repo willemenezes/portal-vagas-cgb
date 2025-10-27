@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, Eye, EyeOff, Shield, Zap, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, Eye, EyeOff, Shield, AlertTriangle } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -65,9 +65,20 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Clean Background with Subtle Pattern - Same as Index */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgba(106,11,39,0.02)_1px,_transparent_0)] bg-[length:40px_40px]"></div>
+      {/* Background same as Index page */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cgb-cream via-white to-cgb-pearl"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(106,11,39,0.05)_0%,transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(196,83,111,0.03)_0%,transparent_50%)]"></div>
+      
+      {/* Background Image - Same as Index */}
+      <div className="absolute inset-0 opacity-30 z-0">
+        <img
+          src="/CGBRH2.png"
+          alt="CGB Background"
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
 
       <div className="w-full max-w-md relative z-10 mx-auto flex flex-col justify-center min-h-screen">
         {/* Back Button - Modern Design */}
