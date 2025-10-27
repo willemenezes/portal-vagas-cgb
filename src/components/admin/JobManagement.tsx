@@ -164,11 +164,11 @@ const JobManagement = () => {
   })) || [];
 
   // BUG FIX: Admin deve ver TODAS as solicitações (pendentes + aprovadas)
-  const allRequestsForAdmin = rhProfile?.role === 'admin' 
+  const allRequestsForAdmin = rhProfile?.role === 'admin'
     ? (jobRequests?.filter((request) => {
-        if (request.job_created) return false; // Excluir apenas as já convertidas em vagas
-        return true; // Admin vê todas (pendentes + aprovadas)
-      })) || []
+      if (request.job_created) return false; // Excluir apenas as já convertidas em vagas
+      return true; // Admin vê todas (pendentes + aprovadas)
+    })) || []
     : approvedRequests;
 
   // DEBUG: Verificar todas as solicitações para admin
@@ -1217,7 +1217,7 @@ const JobForm = ({
                 name="solicitante_funcao"
                 value={job.solicitante_funcao || ''}
                 onChange={onFormChange}
-                placeholder="Ex: Gerente - CT 02.150"
+                placeholder="Ex: Fernando Sousa - Gerente Tático - CT .150.35"
               />
               <p className="text-xs text-gray-500">
                 ℹ️ Para controle interno - função e tipo de contrato
@@ -1524,7 +1524,7 @@ const JobRequestEditForm = ({
               id="solicitante_funcao"
               value={formData.solicitante_funcao || ''}
               onChange={(e) => handleChange('solicitante_funcao', e.target.value)}
-              placeholder="Ex: Gerente - CT 02.150"
+              placeholder="Ex: Fernando Sousa - Gerente Tático - CT .150.35"
             />
           </div>
         </div>

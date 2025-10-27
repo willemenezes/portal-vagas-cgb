@@ -506,7 +506,7 @@ export default function JobRequestManagement() {
                                         id="solicitante_funcao"
                                         value={newRequest.solicitante_funcao}
                                         onChange={(e) => setNewRequest({ ...newRequest, solicitante_funcao: e.target.value })}
-                                        placeholder="Ex: Gerente - CT 02.150"
+                                        placeholder="Ex: Fernando Sousa - Gerente Tático - CT .150.35"
                                     />
                                     <p className="text-xs text-gray-500">
                                         ℹ️ Para controle interno - função e tipo de contrato
