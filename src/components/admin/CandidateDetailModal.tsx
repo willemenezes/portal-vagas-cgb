@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -33,6 +33,7 @@ interface CandidateDetailModalProps {
     candidate: Candidate | null;
     isOpen: boolean;
     onClose: () => void;
+    shouldAutoOpenLegalForm?: boolean; // Nova prop para controlar abertura automática do formulário legal
 }
 
 // --- SUB-COMPONENTES PARA ORGANIZAÇÃO ---
@@ -296,7 +297,7 @@ const HistoryView = ({ candidate }: { candidate: Candidate }) => {
 };
 
 // Componente para a visão de "Detalhes"
-const DetailsView = ({ candidate }: { candidate: Candidate }) => {
+const DetailsView = ({ candidate, shouldAutoOpenLegalForm = false }: { candidate: Candidate, shouldAutoOpenLegalForm?: boolean }) => {
     const { user } = useAuth();
     const { data: rhProfile } = useRHProfile(user?.id);
     const { data: legalData, isLoading: isLoadingLegal } = useLegalData(candidate.id);
@@ -307,9 +308,66 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
     const [showLegalForm, setShowLegalForm] = useState(false);
     const { toast } = useToast();
 
-    const canCollectLegalData = candidate.status === 'Validação TJ' &&
+    // 🔥 Flag para controlar se o formulário já foi aberto automaticamente
+    const hasAutoOpened = useRef(false);
+
+    // 🎯 Auto-abrir formulário de dados jurídicos se candidato está em Validação TJ
+    useEffect(() => {
+        console.log('🔄 [DetailsView] useEffect rodou:', {
+            status: candidate.status,
+            rhProfileExiste: !!rhProfile,
+            role: rhProfile?.role,
+            isLoadingLegal,
+            legalDataExiste: !!legalData,
+            shouldAutoOpenLegalForm,
+            hasAutoOpened: hasAutoOpened.current
+        });
+
+        const isInValidation = candidate.status === 'Validação TJ' ||
+            candidate.status === 'Validação Frota' ||
+            candidate.status === 'Teste de Atenção' ||
+            candidate.status === 'Validação SESMT';
+
+        const hasPermission = rhProfile && ['admin', 'recruiter', 'manager'].includes(rhProfile.role);
+
+        console.log('🔄 [DetailsView] Verificando condições:', {
+            isInValidation,
+            hasPermission,
+            showLegalForm,
+            shouldAutoOpenLegalForm,
+            hasAutoOpened: hasAutoOpened.current
+        });
+
+        // 🔥 CORREÇÃO DO LOOP: Só abrir automaticamente se NÃO foi aberto ainda
+        const shouldAutoOpen = shouldAutoOpenLegalForm || (isInValidation && hasPermission);
+
+        if (shouldAutoOpen && !hasAutoOpened.current) {
+            console.log('🎯 [DetailsView] Condições atendidas! Abrindo formulário legal...');
+            hasAutoOpened.current = true; // Marcar que já foi aberto
+            setShowLegalForm(true);
+        } else if (!shouldAutoOpen) {
+            // Resetar a flag se não deve abrir mais
+            hasAutoOpened.current = false;
+        } else {
+            console.log('⚠️ [DetailsView] Formulário já foi aberto automaticamente, não abrir novamente.');
+        }
+    }, [candidate.status, legalData, rhProfile, isLoadingLegal, shouldAutoOpenLegalForm]);
+
+    // 🔥 ATENÇÃO: Mostrar botão "Editar Dados" para QUALQUER status se for Validação TJ ou posterior
+    const canCollectLegalData = (candidate.status === 'Validação TJ' ||
+        candidate.status === 'Validação Frota' ||
+        candidate.status === 'Teste de Atenção' ||
+        candidate.status === 'Validação SESMT') &&
         rhProfile &&
         ['admin', 'recruiter', 'manager'].includes(rhProfile.role);
+
+    // 🔍 DEBUG: Log para verificar condições
+    console.log('🔍 [CandidateDetailModal] Debug:', {
+        candidateStatus: candidate.status,
+        canCollectLegalData,
+        rhProfileRole: rhProfile?.role,
+        legalDataExists: !!legalData
+    });
 
     const canViewLegalData = legalData &&
         rhProfile &&
@@ -637,6 +695,15 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                     ) : legalData ? (
                         <Card>
                             <CardContent className="p-6 space-y-4">
+                                {/* Badge de Status */}
+                                {legalData.review_status === 'pending' && (
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+                                            Pendente
+                                        </Badge>
+                                    </div>
+                                )}
+
                                 {/* Dados detalhados ocultos - mantendo apenas status */}
                                 {legalData.review_notes && (
                                     <div className="pt-4 border-t">
@@ -663,6 +730,9 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
                         <Card className="border-dashed">
                             <CardContent className="p-6 text-center">
                                 <Shield className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300 mb-4">
+                                    Pendente
+                                </Badge>
                                 <p className="text-gray-600 mb-4">
                                     Dados jurídicos ainda não coletados para este candidato.
                                 </p>
@@ -719,10 +789,10 @@ const DetailsView = ({ candidate }: { candidate: Candidate }) => {
 };
 
 // Conteúdo Principal que renderiza a view correta
-const MainContent = ({ view, candidate }: { view: string, candidate: Candidate }) => {
+const MainContent = ({ view, candidate, shouldAutoOpenLegalForm = false }: { view: string, candidate: Candidate, shouldAutoOpenLegalForm?: boolean }) => {
     switch (view) {
         case 'details':
-            return <DetailsView candidate={candidate} />;
+            return <DetailsView candidate={candidate} shouldAutoOpenLegalForm={shouldAutoOpenLegalForm} />;
         case 'history':
             return <HistoryView candidate={candidate} />;
         case 'communication':
@@ -774,7 +844,7 @@ const ActivitySidebar = ({ candidate }: { candidate: Candidate }) => {
 
 // --- COMPONENTE PRINCIPAL ---
 
-const CandidateDetailModal = ({ candidate, isOpen, onClose }: CandidateDetailModalProps) => {
+const CandidateDetailModal = ({ candidate, isOpen, onClose, shouldAutoOpenLegalForm = false }: CandidateDetailModalProps) => {
     const [activeView, setActiveView] = useState('details');
 
     if (!candidate) return null;
@@ -787,7 +857,7 @@ const CandidateDetailModal = ({ candidate, isOpen, onClose }: CandidateDetailMod
                     <div className="flex-grow flex overflow-hidden">
                         <LeftNav activeView={activeView} setActiveView={setActiveView} />
                         <main className="flex-grow overflow-y-auto bg-white">
-                            <MainContent view={activeView} candidate={candidate} />
+                            <MainContent view={activeView} candidate={candidate} shouldAutoOpenLegalForm={shouldAutoOpenLegalForm} />
                         </main>
                         <ActivitySidebar candidate={candidate} />
                     </div>

@@ -271,6 +271,8 @@ export const useUpdateCandidateStatus = () => {
         updateData.legal_validation_comment = legal_validation_comment;
       }
 
+      console.log('🔄 [useUpdateCandidateStatus] Atualizando status:', { id, status, updateData });
+
       const { data, error } = await supabase
         .from('candidates')
         .update(updateData)
@@ -278,7 +280,12 @@ export const useUpdateCandidateStatus = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useUpdateCandidateStatus] Erro ao atualizar:', error);
+        throw error;
+      }
+
+      console.log('✅ [useUpdateCandidateStatus] Status atualizado com sucesso:', data);
       return data;
     },
     onSuccess: async (data, variables) => {
@@ -302,6 +309,9 @@ export const useUpdateCandidateStatus = () => {
 
       // Enviar notificações para status importantes
       try {
+        // 🔥 TEMPORARIAMENTE DESABILITADO: Email automático para Validação TJ
+        // O modal agora abre automaticamente no SelectionProcess, tornando o email desnecessário
+        /*
         if (variables.status === 'Validação TJ') {
           // Notificar jurídico quando candidato chega para validação
           const juridicos = await getUsersByRole('juridico');
@@ -321,7 +331,8 @@ export const useUpdateCandidateStatus = () => {
               silent: true
             });
           }
-        } else if (variables.status === 'Contratado') {
+        } else */
+        if (variables.status === 'Contratado') {
           // Notificar stakeholders quando candidato é contratado
           const rhUsers = await getRHByCandidate(data.id);
           if (rhUsers.length > 0) {

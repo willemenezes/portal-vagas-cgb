@@ -157,6 +157,11 @@ export const LegalDataForm = ({
             newErrors.desired_position = 'Função pretendida é obrigatória';
         }
 
+        // 🔥 NOVO: Campo Contrato da Empresa é OBRIGATÓRIO para validação jurídica
+        if (!formData.company_contract || formData.company_contract.trim() === '') {
+            newErrors.company_contract = 'Contrato da empresa é obrigatório para identificar qual contrato o candidato está concorrendo';
+        }
+
         // Validar histórico profissional
         formData.work_history.forEach((work, index) => {
             if (!work.company) {
@@ -167,6 +172,8 @@ export const LegalDataForm = ({
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
 
     const handleSubmit = async () => {
         if (!validate()) {
@@ -181,11 +188,19 @@ export const LegalDataForm = ({
         setLoading(true);
         try {
             await onSubmit(formData);
+
+            // Marcar que foi salvo com sucesso
+            setHasBeenSaved(true);
+
             toast({
                 title: "Dados salvos com sucesso",
                 description: "As informações foram registradas para validação jurídica"
             });
-            onClose();
+
+            // Aguardar um momento para mostrar o toast e fechar o modal
+            setTimeout(() => {
+                onClose();
+            }, 500);
         } catch (error) {
             toast({
                 title: "Erro ao salvar",
@@ -198,7 +213,25 @@ export const LegalDataForm = ({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog
+            open={isOpen}
+            onOpenChange={(open) => {
+                // 🔒 BLOQUEAR fechamento se "Contrato da Empresa" não estiver preenchido
+                // MAS permitir fechar se os dados foram salvos com sucesso
+                if (!open) {
+                    if (!hasBeenSaved && (!formData.company_contract || formData.company_contract.trim() === '')) {
+                        toast({
+                            title: "Campo obrigatório",
+                            description: "Por favor, preencha o campo 'Contrato da Empresa' antes de fechar.",
+                            variant: "destructive",
+                            duration: 5000
+                        });
+                        return; // Não fecha o modal
+                    }
+                }
+                onClose();
+            }}
+        >
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -418,13 +451,15 @@ export const LegalDataForm = ({
                             </div>
 
                             <div>
-                                <Label htmlFor="company_contract">Contrato da Empresa</Label>
+                                <Label htmlFor="company_contract">Contrato da Empresa *</Label>
                                 <Input
                                     id="company_contract"
                                     value={formData.company_contract || ''}
                                     onChange={(e) => handleInputChange('company_contract', e.target.value)}
-                                    placeholder="Ex: CT 150.30"
+                                    placeholder="Ex: CT .150.35"
+                                    className={errors.company_contract ? 'border-red-500' : ''}
                                 />
+                                {errors.company_contract && <p className="text-sm text-red-500 mt-1">{errors.company_contract}</p>}
                                 <p className="text-xs text-gray-500 mt-1">
                                     Especifique de qual contrato da empresa o candidato está concorrendo
                                 </p>

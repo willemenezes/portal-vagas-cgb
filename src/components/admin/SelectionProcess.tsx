@@ -111,6 +111,7 @@ const SelectionProcess = () => {
     }, [selectedJobId, jobCandidates.length, candidatesError]);
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [shouldAutoOpenLegalForm, setShouldAutoOpenLegalForm] = useState(false);
     const [candidateToReject, setCandidateToReject] = useState<Candidate | null>(null);
     const [rejectionReason, setRejectionReason] = useState("");
     const [selectedRejectionMotif, setSelectedRejectionMotif] = useState("");
@@ -229,6 +230,7 @@ const SelectionProcess = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedCandidate(null);
+        setShouldAutoOpenLegalForm(false); // Resetar flag ao fechar modal
     };
 
     // BUG FIX: Não precisa mais filtrar localmente, pois jobCandidates já vem filtrado do servidor
@@ -370,10 +372,41 @@ const SelectionProcess = () => {
             const isMovingBackward = shouldResetLegalStatus && source.droppableId !== 'Validação TJ';
 
             updateStatus.mutate({ id: draggableId, status: newStatus }, {
-                onSuccess: async () => {
-                    // Se movido para Validação TJ (especialmente se voltando de uma etapa posterior), 
-                    // resetar o status legal para reativar o bloqueio
+                onSuccess: async (updatedCandidate) => {
+                    console.log('✅ [SelectionProcess] Status atualizado com sucesso:', {
+                        candidateId: draggableId,
+                        newStatus,
+                        oldStatus: source.droppableId
+                    });
+
+                    // Se movido para Validação TJ, mostrar alerta e abrir modal
                     if (shouldResetLegalStatus) {
+                        // 🔥 Alerta especial para Validação TJ - SEMPRE mostrar
+                        console.log('🔥 [SelectionProcess] Mostrando alerta para Validação TJ');
+                        toast({
+                            title: "⚠️ ATENÇÃO: Preencha o Contrato da Empresa",
+                            description: "O campo 'Contrato da Empresa' é ESSENCIAL para a avaliação do departamento jurídico. Por favor, preencha este campo nos dados jurídicos do candidato.",
+                            variant: "destructive",
+                            duration: 8000
+                        });
+
+                        // 🔥 NOVA FUNCIONALIDADE: Abrir modal automaticamente para preencher dados jurídicos
+                        // Usar o candidato ATUALIZADO com o novo status
+                        const updatedCandidateWithStatus = {
+                            ...candidate,
+                            status: newStatus
+                        };
+
+                        console.log('🔥 [SelectionProcess] Abrindo modal para candidato:', updatedCandidateWithStatus.name, 'com status:', newStatus);
+                        // Aguardar um breve momento para que o toast apareça e as queries sejam atualizadas
+                        setTimeout(() => {
+                            setSelectedCandidate(updatedCandidateWithStatus);
+                            setShouldAutoOpenLegalForm(true); // 🔥 FLAG para abrir formulário legal automaticamente
+                            setIsModalOpen(true);
+                            console.log('🔥 [SelectionProcess] Modal aberto para:', updatedCandidateWithStatus.name);
+                        }, 500);
+
+                        // Resetar status legal se necessário
                         try {
                             const { error } = await supabase
                                 .from('candidates')
@@ -382,7 +415,6 @@ const SelectionProcess = () => {
 
                             if (error) {
                                 console.error('Erro ao resetar legal_status:', error);
-                                toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
                             } else {
                                 // BUG FIX: Invalidar queries para atualização automática da UI
                                 await Promise.all([
@@ -395,22 +427,11 @@ const SelectionProcess = () => {
                                 ]);
 
                                 if (isMovingBackward) {
-                                    toast({
-                                        title: "Status atualizado!",
-                                        description: `${candidate.name} retornou para Validação TJ. Nova validação jurídica será necessária.`,
-                                        duration: 6000
-                                    });
-                                } else {
-                                    toast({
-                                        title: "Status atualizado!",
-                                        description: `${candidate.name} foi movido para Validação TJ. Validação jurídica necessária.`,
-                                        duration: 5000
-                                    });
+                                    console.log('🔥 [SelectionProcess] Candidato retornou para Validação TJ');
                                 }
                             }
                         } catch (error) {
                             console.error('Erro ao resetar legal_status:', error);
-                            toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
                         }
                     } else {
                         toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
@@ -701,7 +722,12 @@ const SelectionProcess = () => {
                 </div>
             )}
 
-            <CandidateDetailModal candidate={selectedCandidate} isOpen={isModalOpen} onClose={handleCloseModal} />
+            <CandidateDetailModal
+                candidate={selectedCandidate}
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                shouldAutoOpenLegalForm={shouldAutoOpenLegalForm}
+            />
 
             <Dialog open={!!candidateToReject} onOpenChange={() => {
                 setCandidateToReject(null);
