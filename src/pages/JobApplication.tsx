@@ -174,97 +174,97 @@ const JobApplication = () => {
     let retryCount = 0;
 
     const attemptSubmission = async (): Promise<void> => {
-      try {
+    try {
         console.log(`🔄 [JobApplication] Tentativa ${retryCount + 1}/${maxRetries} de envio da candidatura`);
 
-        let resumeFileUrl = "";
-        let resumeFileName = "";
+      let resumeFileUrl = "";
+      let resumeFileName = "";
         
         // Upload do currículo com retry
-        if (selectedFile) {
+      if (selectedFile) {
           setSubmissionProgress("📤 Fazendo upload do currículo...");
-          const sanitizedName = sanitizeFilename(selectedFile.name);
-          const fileName = `${Date.now()}-${sanitizedName}`;
+        const sanitizedName = sanitizeFilename(selectedFile.name);
+        const fileName = `${Date.now()}-${sanitizedName}`;
           
           try {
-            const uploadResult = await uploadResume.mutateAsync({ file: selectedFile, fileName });
-            resumeFileUrl = uploadResult.publicUrl;
-            resumeFileName = selectedFile.name;
+        const uploadResult = await uploadResume.mutateAsync({ file: selectedFile, fileName });
+        resumeFileUrl = uploadResult.publicUrl;
+        resumeFileName = selectedFile.name;
             console.log(`✅ [JobApplication] Upload do currículo realizado com sucesso`);
             setSubmissionProgress("✅ Currículo enviado com sucesso!");
           } catch (uploadError: any) {
             console.error(`❌ [JobApplication] Erro no upload do currículo:`, uploadError);
             throw new Error(`Erro ao fazer upload do currículo: ${uploadError.message || 'Falha na conexão'}`);
           }
-        }
+      }
 
         // Criar candidato com retry
         setSubmissionProgress("👤 Criando perfil do candidato...");
-        const candidate = await createCandidate.mutateAsync({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          city: formData.city,
-          state: formData.state,
-          job_id: targetJobId,
-          status: 'pending' as const,
-          // Persistir informações críticas para filtros e decisões
-          pcd: formData.pcd || null,
-          travel: formData.travel || null,
-          age: formData.age || null,
-          cnh: formData.cnh || null,
-          vehicle: formData.vehicle || null,
-          vehicle_model: formData.vehicleModel || null,
-          vehicle_year: formData.vehicleYear || null,
-          resume_file_url: resumeFileUrl || null,
-          resume_file_name: resumeFileName || null
-        });
+      const candidate = await createCandidate.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        city: formData.city,
+        state: formData.state,
+        job_id: targetJobId,
+        status: 'pending' as const,
+        // Persistir informações críticas para filtros e decisões
+        pcd: formData.pcd || null,
+        travel: formData.travel || null,
+        age: formData.age || null,
+        cnh: formData.cnh || null,
+        vehicle: formData.vehicle || null,
+        vehicle_model: formData.vehicleModel || null,
+        vehicle_year: formData.vehicleYear || null,
+        resume_file_url: resumeFileUrl || null,
+        resume_file_name: resumeFileName || null
+      });
 
         console.log(`✅ [JobApplication] Candidato criado com sucesso: ${candidate.id}`);
         setSubmissionProgress("✅ Perfil criado com sucesso!");
 
-        // Salvar dados jurídicos - com tratamento de erro melhorado
+      // Salvar dados jurídicos - com tratamento de erro melhorado
         setSubmissionProgress("⚖️ Salvando dados jurídicos...");
-        try {
-          await saveLegalData.mutateAsync({
-            candidateId: candidate.id,
-            data: {
-              full_name: formData.name,
-              birth_date: formData.birthDate,
-              rg: formData.rg,
-              cpf: formData.cpf,
-              mother_name: formData.motherName,
-              father_name: formData.fatherName || '',
-              birth_city: formData.birthCity,
-              birth_state: formData.state,
-              cnh: formData.cnh,
-              work_history: [
-                ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
-                ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
-              ],
-              is_former_employee: formData.workedAtCGB === 'Sim',
-              former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
-              is_pcd: formData.pcd === 'Sim',
-              pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
-              desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
-              responsible_name: null
-            }
-          });
+      try {
+        await saveLegalData.mutateAsync({
+          candidateId: candidate.id,
+          data: {
+            full_name: formData.name,
+            birth_date: formData.birthDate,
+            rg: formData.rg,
+            cpf: formData.cpf,
+            mother_name: formData.motherName,
+            father_name: formData.fatherName || '',
+            birth_city: formData.birthCity,
+            birth_state: formData.state,
+            cnh: formData.cnh,
+            work_history: [
+              ...(formData.lastCompany1 ? [{ company: formData.lastCompany1, position: '', start_date: '', end_date: '', is_current: false }] : []),
+              ...(formData.lastCompany2 ? [{ company: formData.lastCompany2, position: '', start_date: '', end_date: '', is_current: false }] : [])
+            ],
+            is_former_employee: formData.workedAtCGB === 'Sim',
+            former_employee_details: formData.workedAtCGB === 'Sim' ? 'Informado no formulário' : '',
+            is_pcd: formData.pcd === 'Sim',
+            pcd_details: formData.pcd === 'Sim' ? 'Informado no formulário' : '',
+            desired_position: formData.desiredJob || job?.title || 'Vaga não especificada',
+            responsible_name: null
+          }
+        });
           console.log(`✅ [JobApplication] Dados jurídicos salvos com sucesso`);
           setSubmissionProgress("✅ Dados jurídicos salvos!");
-        } catch (legalDataError: any) {
-          console.warn('⚠️ [JobApplication] Erro ao salvar dados jurídicos, mas candidato foi criado:', legalDataError);
+      } catch (legalDataError: any) {
+        console.warn('⚠️ [JobApplication] Erro ao salvar dados jurídicos, mas candidato foi criado:', legalDataError);
           setSubmissionProgress("⚠️ Candidato criado, mas dados jurídicos com problema");
-          // Candidato já foi criado com sucesso, continua o fluxo
-        }
+        // Candidato já foi criado com sucesso, continua o fluxo
+      }
 
         // Sucesso! Não precisa mais tentar
         setSubmissionProgress("🎉 Candidatura enviada com sucesso!");
-        toast({
-          title: "Candidatura enviada com sucesso!",
-          description: "Seu currículo foi enviado. Entraremos em contato em breve.",
-        });
-        navigate("/");
+      toast({
+        title: "Candidatura enviada com sucesso!",
+        description: "Seu currículo foi enviado. Entraremos em contato em breve.",
+      });
+      navigate("/");
 
       } catch (error: any) {
         console.error(`❌ [JobApplication] Erro na tentativa ${retryCount + 1}:`, error);

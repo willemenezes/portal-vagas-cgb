@@ -1078,7 +1078,8 @@ const JobForm = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="title">Título da Vaga</Label>
-            <Input name="title" value={job.title} onChange={onFormChange} required />
+            <Input name="title" value={job.title} onChange={onFormChange} required maxLength={255} />
+            <p className="text-xs text-gray-500">{(job.title?.length || 0)}/255</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="department">Departamento</Label>
@@ -1217,8 +1218,10 @@ const JobForm = ({
                 name="solicitante_funcao"
                 value={job.solicitante_funcao || ''}
                 onChange={onFormChange}
+                maxLength={255}
                 placeholder="Ex: Fernando Sousa - Gerente Tático - CT .150.35"
               />
+              <p className="text-xs text-gray-500">{(job.solicitante_funcao?.length || 0)}/255</p>
               <p className="text-xs text-gray-500">
                 ℹ️ Para controle interno - função e tipo de contrato
               </p>
@@ -1261,16 +1264,22 @@ const JobForm = ({
           {/* Campo condicional para substituição */}
           {job.tipo_solicitacao === "substituicao" && (
             <div className="space-y-2 mt-4">
-              <Label htmlFor="nome_substituido">Nome da Pessoa que Saiu *</Label>
-              <Input
+              <Label htmlFor="nome_substituido">Nomes das Pessoas que Sairam *</Label>
+              <Textarea
                 name="nome_substituido"
                 value={job.nome_substituido || ''}
                 onChange={onFormChange}
-                placeholder="Ex: Maria Santos"
+                placeholder="Digite 1 nome por linha (até 20 nomes recomendados)"
+                rows={6}
               />
-              <p className="text-xs text-gray-500">
-                ℹ️ Nome da pessoa que está sendo substituída
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  ℹ️ Insira um nome por linha. Este campo aceita múltiplos nomes.
+                </p>
+                <p className={`text-xs ${((job.nome_substituido || '').split('\n').filter(n => n.trim()).length > 20) ? 'text-red-600' : 'text-gray-500'}`}>
+                  {((job.nome_substituido || '').split('\n').filter(n => n.trim()).length)} nomes {((job.nome_substituido || '').split('\n').filter(n => n.trim()).length > 20) ? '(recomendado até 20)' : ''}
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -1559,13 +1568,20 @@ const JobRequestEditForm = ({
         {/* Campo condicional para substituição */}
         {formData.tipo_solicitacao === "substituicao" && (
           <div className="space-y-2 mt-4">
-            <Label htmlFor="nome_substituido">Nome da Pessoa que Saiu</Label>
-            <Input
+            <Label htmlFor="nome_substituido">Nomes das Pessoas que Sairam</Label>
+            <Textarea
               id="nome_substituido"
               value={formData.nome_substituido || ''}
               onChange={(e) => handleChange('nome_substituido', e.target.value)}
-              placeholder="Ex: Maria Santos"
+              placeholder="Digite 1 nome por linha (até 20 nomes recomendados)"
+              rows={6}
             />
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-500">ℹ️ Um nome por linha. Campo aceita múltiplos nomes.</p>
+              <p className={`text-xs ${((formData.nome_substituido || '').split('\n').filter(n => n.trim()).length > 20) ? 'text-red-600' : 'text-gray-500'}`}>
+                {((formData.nome_substituido || '').split('\n').filter(n => n.trim()).length)} nomes {((formData.nome_substituido || '').split('\n').filter(n => n.trim()).length > 20) ? '(recomendado até 20)' : ''}
+              </p>
+            </div>
           </div>
         )}
 

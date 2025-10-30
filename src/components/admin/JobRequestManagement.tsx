@@ -554,16 +554,20 @@ export default function JobRequestManagement() {
                             {/* Campo condicional para substituição */}
                             {newRequest.tipo_solicitacao === "substituicao" && (
                                 <div className="space-y-2 mt-4">
-                                    <Label htmlFor="nome_substituido">Nome da Pessoa que Saiu *</Label>
-                                    <Input
+                                    <Label htmlFor="nome_substituido">Nomes das Pessoas que Sairam *</Label>
+                                    <Textarea
                                         id="nome_substituido"
                                         value={newRequest.nome_substituido}
                                         onChange={(e) => setNewRequest({ ...newRequest, nome_substituido: e.target.value })}
-                                        placeholder="Ex: Maria Santos"
+                                        placeholder="Digite 1 nome por linha (até 20 nomes recomendados)"
+                                        rows={6}
                                     />
-                                    <p className="text-xs text-gray-500">
-                                        ℹ️ Nome da pessoa que está sendo substituída
-                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs text-gray-500">ℹ️ Um nome por linha. Campo aceita múltiplos nomes.</p>
+                                        <p className={`text-xs ${(newRequest.nome_substituido.split('\n').filter(n => n.trim()).length > 20) ? 'text-red-600' : 'text-gray-500'}`}>
+                                            {newRequest.nome_substituido.split('\n').filter(n => n.trim()).length} nomes {(newRequest.nome_substituido.split('\n').filter(n => n.trim()).length > 20) ? '(recomendado até 20)' : ''}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>

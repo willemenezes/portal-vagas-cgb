@@ -96,6 +96,43 @@ const EMAIL_TEMPLATES = {
         </footer>
       </div>
     `
+  },
+
+  candidate_legal_validation: {
+    subject: '⚠️ Validação Legal Pendente - {{candidateName}}',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <header style="background: linear-gradient(135deg, #ff9800, #ff5722); color: white; padding: 30px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">⚠️ Validação Legal Pendente</h1>
+        </header>
+        <main style="padding: 30px 20px; background: white;">
+          <p>Olá <strong>{{recipientName}}</strong>,</p>
+          
+          <p>Um candidato foi movido para <strong>Validação TJ</strong> e necessita de sua atenção urgente.</p>
+          
+          <div style="background: #fff3cd; border-left: 4px solid #ff9800; padding: 20px; margin: 20px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #856404;">📋 Informações do Candidato</h3>
+            <p><strong>Nome:</strong> {{candidateName}}</p>
+            <p><strong>Vaga:</strong> {{jobTitle}}</p>
+            <p><strong>Localização:</strong> {{city}}, {{state}}</p>
+          </div>
+          
+          <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #721c24;">🚨 AÇÃO NECESSÁRIA</h3>
+            <p style="margin: 0; color: #721c24;"><strong>Por favor, preencha o campo "Contrato da Empresa" nos dados jurídicos do candidato.</strong> Este campo é ESSENCIAL para a avaliação do departamento jurídico.</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://cgbvagas.com.br/admin" style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              📝 Editar Dados Jurídicos
+            </a>
+          </div>
+        </main>
+        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+          <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+        </footer>
+      </div>
+    `
   }
 };
 
@@ -255,7 +292,13 @@ async function sendEmailDirect(to: string, subject: string, html: string) {
       const textContent = html.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n');
       const mailtoLink = `mailto:${to}?subject=${encodeURIComponent(`Portal CGB Vagas: ${subject}`)}&body=${encodeURIComponent(textContent)}&cc=ti.belem@cgbengenharia.com.br`;
 
-      // Mostrar notificação visual para o usuário
+      // 🔥 DESABILITADO: Não mostrar pop-up de confirmação - apenas logar o erro
+      console.log(`📧 Não foi possível enviar email para ${to}`);
+      console.log(`📧 Assunto: ${subject}`);
+      console.log(`📧 O email será enviado automaticamente quando o serviço estiver disponível`);
+
+      // Não mostrar window.confirm para não interromper o fluxo do usuário
+      /*
       if (typeof window !== 'undefined' && window.confirm) {
         const shouldOpen = window.confirm(
           `Não foi possível enviar email automaticamente para ${to}.\n\n` +
@@ -275,6 +318,7 @@ async function sendEmailDirect(to: string, subject: string, html: string) {
           return { success: true, method: 'mailto', manual: true };
         }
       }
+      */
 
       console.log(`📧 Link mailto preparado para ${to} (não aberto)`);
       return { success: true, method: 'mailto-prepared', manual: false };

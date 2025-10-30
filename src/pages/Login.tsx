@@ -69,7 +69,7 @@ const Login = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-cgb-cream via-white to-cgb-pearl"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(106,11,39,0.05)_0%,transparent_50%)]"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(196,83,111,0.03)_0%,transparent_50%)]"></div>
-      
+
       {/* Background Image - Same as Index */}
       <div className="absolute inset-0 opacity-30 z-0">
         <img
