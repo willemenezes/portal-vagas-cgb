@@ -18,8 +18,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useLegalData, useReviewLegalData, useMyApprovedValidations, useCandidatesForLegalValidation, ExtendedCandidate } from '@/hooks/useLegalData';
 import { useRHProfile } from '@/hooks/useRH';
 import { useUpdateCandidateStatus } from '@/hooks/useCandidates';
-import { maskCPF, maskRG } from '@/utils/legal-validation';
-import { format, isValid, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
+import { maskCPF, maskRG, calculateBusinessDaysElapsed } from '@/utils/legal-validation';
+import { format, isValid, parseISO } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -42,33 +42,16 @@ const safeFormatDate = (dateString: string | null | undefined, formatString: str
     }
 };
 
-// Função helper para calcular tempo decorrido e status do prazo (48h)
+// Função helper para calcular tempo decorrido e status do prazo (48h = 2 dias úteis)
+// Agora usa cálculo de dias úteis com regra das 16h
 const getTimeElapsed = (startDate: string | null | undefined): { text: string; isOverdue: boolean; hours: number } => {
-    if (!startDate) return { text: 'Sem registro', isOverdue: false, hours: 0 };
-
-    try {
-        const start = typeof startDate === 'string' ? parseISO(startDate) : new Date(startDate);
-        if (!isValid(start)) return { text: 'Data inválida', isOverdue: false, hours: 0 };
-
-        const now = new Date();
-        const hours = differenceInHours(now, start);
-        const minutes = differenceInMinutes(now, start) % 60;
-
-        const isOverdue = hours >= 48;
-
-        if (hours < 1) {
-            return { text: `${minutes} min`, isOverdue: false, hours: 0 };
-        } else if (hours < 24) {
-            return { text: `${hours}h ${minutes}min`, isOverdue, hours };
-        } else {
-            const days = Math.floor(hours / 24);
-            const remainingHours = hours % 24;
-            return { text: `${days}d ${remainingHours}h`, isOverdue, hours };
-        }
-    } catch (error) {
-        console.warn('Erro ao calcular tempo:', startDate, error);
-        return { text: 'Erro no cálculo', isOverdue: false, hours: 0 };
-    }
+    const result = calculateBusinessDaysElapsed(startDate);
+    // Manter compatibilidade com a interface antiga (hours será 0 para dias úteis)
+    return {
+        text: result.text,
+        isOverdue: result.isOverdue,
+        hours: result.businessDays * 24 // Aproximação para manter compatibilidade
+    };
 };
 
 

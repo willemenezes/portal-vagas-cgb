@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCandidates, useDeleteCandidate, Candidate } from '@/hooks/useCandidates';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useRHProfile } from '@/hooks/useRH';
@@ -27,12 +27,6 @@ const CandidateManagement = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 50; // 50 candidatos por página para melhor performance
 
-  const { data: candidatesData, isLoading, error } = useCandidates(currentPage, pageSize);
-  const candidates = candidatesData?.candidates || [];
-  const totalCount = candidatesData?.totalCount || 0;
-  const totalPages = candidatesData?.totalPages || 0;
-  const hasMore = candidatesData?.hasMore || false;
-
   const { data: jobs = [] } = useAllJobs();
   const deleteCandidate = useDeleteCandidate();
   const inviteCandidate = useInviteCandidate();
@@ -42,6 +36,18 @@ const CandidateManagement = () => {
   const [filters, setFilters] = useState({
     status: 'all', jobId: 'all', state: 'all', cnh: 'all', vehicle: 'all',
   });
+
+  // 🔥 CORREÇÃO: Passar filtro de vaga para o hook aplicar no servidor
+  // MOVIDO PARA DEPOIS da declaração de filters para evitar erro de inicialização
+  const { data: candidatesData, isLoading, error } = useCandidates(
+    currentPage, 
+    pageSize, 
+    { jobId: filters.jobId !== 'all' ? filters.jobId : null }
+  );
+  const candidates = candidatesData?.candidates || [];
+  const totalCount = candidatesData?.totalCount || 0;
+  const totalPages = candidatesData?.totalPages || 0;
+  const hasMore = candidatesData?.hasMore || false;
   const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
   const [candidateToInvite, setCandidateToInvite] = useState<Candidate | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string>('');
@@ -54,6 +60,14 @@ const CandidateManagement = () => {
     // Scroll para o topo da lista quando mudar de página
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // 🔥 CORREÇÃO: Resetar paginação para página 1 quando filtros mudarem
+  // Isso garante que ao filtrar por vaga, os candidatos apareçam imediatamente
+  useEffect(() => {
+    setCurrentPage(0);
+    // Scroll para o topo quando filtros mudarem
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [filters.jobId, filters.status, filters.state, filters.cnh, filters.vehicle, searchTerm]);
 
   // Totais do sistema (não paginados) para exibir nos cards
   const { data: totalCounts } = useCandidatesCounts();
@@ -111,10 +125,8 @@ const CandidateManagement = () => {
       result = result.filter(c => c.status === filters.status);
     }
 
-    // 5. Filtro por vaga
-    if (filters.jobId !== 'all') {
-      result = result.filter(c => c.job_id === filters.jobId);
-    }
+    // 5. Filtro por vaga - REMOVIDO: Agora aplicado no servidor via useCandidates
+    // O filtro de vaga já foi aplicado na query do servidor, então não precisa filtrar localmente
 
     // 6. Filtro por estado
     if (filters.state !== 'all') {

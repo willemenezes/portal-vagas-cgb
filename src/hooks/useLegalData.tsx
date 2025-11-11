@@ -360,7 +360,8 @@ export const usePendingLegalValidations = () => {
             reviewed_at
                     )
                 `)
-                .eq('status', 'Validação TJ');
+                .eq('status', 'Validação TJ')
+                .order('tj_validation_started_at', { ascending: false });
             if (error) throw error;
             return data || [];
         }
@@ -435,7 +436,7 @@ export const useCandidatesForLegalValidation = () => {
                         )
                     `)
                     .eq('status', 'Validação TJ')
-                    .order('created_at', { ascending: false });
+                    .order('tj_validation_started_at', { ascending: false });
 
                 if (error) {
                     console.error('❌ [useCandidatesForLegalValidation] Erro na query:', error);

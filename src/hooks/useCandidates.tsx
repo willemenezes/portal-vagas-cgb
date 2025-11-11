@@ -53,21 +53,29 @@ export type NewCandidate = Omit<Candidate, 'id' | 'created_at' | 'updated_at' | 
  * - Qualquer tela que precise de todos os dados
  */
 // Hook para buscar candidatos com paginação inteligente
-export const useCandidates = (page = 0, pageSize = 100) => {
+// Agora aceita filtros opcionais para aplicar no servidor
+export const useCandidates = (page = 0, pageSize = 100, filters?: { jobId?: string | null }) => {
   return useQuery({
-    queryKey: ['candidates', 'paginated', page, pageSize],
+    queryKey: ['candidates', 'paginated', page, pageSize, filters?.jobId],
     queryFn: async () => {
-      console.log(`🔄 useCandidates: Carregando página ${page + 1} (${pageSize} candidatos)...`);
+      console.log(`🔄 useCandidates: Carregando página ${page + 1} (${pageSize} candidatos)...`, filters);
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
 
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('candidates')
         .select(`
           *,
           job:jobs(title, city, state, department)
-        `, { count: 'exact' })
+        `, { count: 'exact' });
+
+      // 🔥 CORREÇÃO: Aplicar filtro de vaga no servidor quando fornecido
+      if (filters?.jobId && filters.jobId !== 'all') {
+        query = query.eq('job_id', filters.jobId);
+      }
+
+      const { data, error, count } = await query
         .order('created_at', { ascending: false })
         .range(from, to);
 
