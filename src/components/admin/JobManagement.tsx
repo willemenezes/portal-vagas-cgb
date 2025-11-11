@@ -839,6 +839,7 @@ const JobManagement = () => {
               onSave={handleSaveEditRequest}
               onCancel={() => setIsEditModalOpen(false)}
               isLoading={updateJobRequest.isPending}
+              rhProfile={rhProfile}
             />
           )}
         </DialogContent>
@@ -1367,17 +1368,20 @@ const JobRequestEditForm = ({
   request,
   onSave,
   onCancel,
-  isLoading
+  isLoading,
+  rhProfile
 }: {
   request: JobRequest;
   onSave: (data: Partial<CreateJobRequestData>) => void;
   onCancel: () => void;
   isLoading: boolean;
+  rhProfile?: RHUser | null;
 }) => {
   const [formData, setFormData] = useState({
     title: request.title || '',
     department: request.department || '',
-    city: request.city || '',
+    // Limpar distrito se a cidade tiver formato "Cidade - Distrito"
+    city: request.city ? request.city.split(' - ')[0] : '',
     state: request.state || '',
     type: request.type || 'CLT',
     description: request.description || '',
@@ -1394,8 +1398,86 @@ const JobRequestEditForm = ({
     quantity: request.quantity || 1
   });
 
+  // Estados para lista suspensa de estados e cidades
+  const [states, setStates] = useState<State[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingStates, setLoadingStates] = useState(true);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [openCityPopover, setOpenCityPopover] = useState(false);
+
+  // Buscar estados
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        setLoadingStates(true);
+        const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+        let data = await response.json();
+
+        // Filtrar estados se o usuário tiver restrições
+        if (rhProfile && !rhProfile.is_admin && rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+          data = data.filter((state: State) => rhProfile.assigned_states.includes(state.sigla));
+        }
+
+        setStates(data);
+      } catch (error) {
+        console.error("Erro ao buscar estados:", error);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+    fetchStates();
+  }, [rhProfile]);
+
+  // Buscar cidades quando estado é selecionado
+  useEffect(() => {
+    if (!formData.state) {
+      setCities([]);
+      return;
+    }
+
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+
+        // Primeiro buscar o ID do estado pela sigla
+        const stateResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${formData.state}`);
+        const stateData = await stateResponse.json();
+
+        if (stateData && stateData.id) {
+          // Agora buscar as cidades usando o ID do estado
+          const citiesResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateData.id}/municipios?orderBy=nome`);
+          const citiesData = await citiesResponse.json();
+          setCities(citiesData);
+        } else {
+          console.error("Estado não encontrado:", formData.state);
+          setCities([]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar cidades:", error);
+        setCities([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+    fetchCities();
+  }, [formData.state]);
+
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Se mudou o estado, resetar cidade
+    if (field === 'state') {
+      setFormData(prev => ({ ...prev, [field]: value, city: '' }));
+    }
+  };
+
+  const handleStateChange = (value: string) => {
+    handleChange('state', value);
+  };
+
+  const handleCitySelect = (cityName: string) => {
+    setFormData(prev => ({ ...prev, city: cityName }));
+    setOpenCityPopover(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1430,24 +1512,31 @@ const JobRequestEditForm = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="city">Cidade *</Label>
-          <Input
-            id="city"
-            value={formData.city}
-            onChange={(e) => handleChange('city', e.target.value)}
-            required
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="state">Estado *</Label>
-          <Input
-            id="state"
-            value={formData.state}
-            onChange={(e) => handleChange('state', e.target.value)}
-            required
-          />
+          <Select 
+            value={formData.state} 
+            onValueChange={handleStateChange}
+            disabled={loadingStates}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={loadingStates ? "Carregando..." : "Selecione o estado"} />
+            </SelectTrigger>
+            <SelectContent>
+              {loadingStates ? (
+                <div className="flex items-center justify-center p-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              ) : (
+                states.map(state => (
+                  <SelectItem key={state.sigla} value={state.sigla}>
+                    {state.nome}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="workload">Carga Horária *</Label>
@@ -1465,6 +1554,63 @@ const JobRequestEditForm = ({
               <SelectItem value="Período integral">Período integral</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="city">Cidade *</Label>
+          <Popover open={openCityPopover} onOpenChange={setOpenCityPopover}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openCityPopover}
+                className="w-full justify-between"
+                disabled={!formData.state || loadingCities}
+              >
+                <span className="truncate">
+                  {loadingCities
+                    ? "Carregando cidades..."
+                    : (formData.city ? formData.city : "Selecione a cidade")
+                  }
+                </span>
+                {loadingCities ? (
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <Command>
+                <CommandInput placeholder="Buscar cidade..." />
+                <CommandList>
+                  {loadingCities ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <span>Carregando cidades...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
+                      <CommandGroup>
+                        {cities.map((city) => (
+                          <CommandItem
+                            key={city.id}
+                            value={city.nome}
+                            onSelect={() => handleCitySelect(city.nome)}
+                          >
+                            {city.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
