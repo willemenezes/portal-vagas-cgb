@@ -383,6 +383,7 @@ export const useMyApprovedValidations = () => {
                     id,
                     reviewed_at,
                     review_status,
+                    review_notes,
                     candidate:candidates (
                         id,
                         name,
@@ -396,7 +397,7 @@ export const useMyApprovedValidations = () => {
                     )
                 `)
                 .eq('reviewed_by', user.id)
-                .in('review_status', ['approved', 'rejected', 'request_changes'])
+                .in('review_status', ['approved', 'rejected', 'request_changes', 'approved_with_restrictions'])
                 .order('reviewed_at', { ascending: false });
 
             if (error) {
@@ -410,13 +411,22 @@ export const useMyApprovedValidations = () => {
     });
 };
 
-// Hook para buscar candidatos em validação com dados completos
-export const useCandidatesForLegalValidation = () => {
-    return useQuery<ExtendedCandidate[], Error>({
-        queryKey: ['candidatesForLegalValidation'],
+// Hook para buscar candidatos em validação com dados completos (com paginação)
+export const useCandidatesForLegalValidation = (page = 0, pageSize = 50) => {
+    return useQuery<{
+        candidates: ExtendedCandidate[];
+        totalCount: number;
+        totalPages: number;
+        currentPage: number;
+        hasMore: boolean;
+    }, Error>({
+        queryKey: ['candidatesForLegalValidation', 'paginated', page, pageSize],
         queryFn: async () => {
             try {
-                const { data, error } = await supabase
+                const from = page * pageSize;
+                const to = from + pageSize - 1;
+
+                const { data, error, count } = await supabase
                     .from('candidates')
                     .select(`
                         *,
@@ -434,17 +444,29 @@ export const useCandidatesForLegalValidation = () => {
                             review_status,
                             collected_at
                         )
-                    `)
+                    `, { count: 'exact' })
                     .eq('status', 'Validação TJ')
-                    .order('tj_validation_started_at', { ascending: false });
+                    .order('tj_validation_started_at', { ascending: false })
+                    .range(from, to);
 
                 if (error) {
                     console.error('❌ [useCandidatesForLegalValidation] Erro na query:', error);
                     throw error;
                 }
 
-                console.log('✅ [useCandidatesForLegalValidation] Dados carregados:', data?.length || 0, 'candidatos');
-                return data || [];
+                console.log(`✅ [useCandidatesForLegalValidation] ${data?.length || 0} candidatos carregados (Página ${page + 1} de ${Math.ceil((count || 0) / pageSize)})`, {
+                    totalCount: count || 0,
+                    currentPage: page + 1,
+                    totalPages: Math.ceil((count || 0) / pageSize)
+                });
+
+                return {
+                    candidates: data || [],
+                    totalCount: count || 0,
+                    totalPages: Math.ceil((count || 0) / pageSize),
+                    currentPage: page,
+                    hasMore: (data?.length || 0) === pageSize
+                };
             } catch (error) {
                 console.error('❌ [useCandidatesForLegalValidation] Erro geral:', error);
                 throw error;
@@ -452,6 +474,7 @@ export const useCandidatesForLegalValidation = () => {
         },
         retry: 2,
         staleTime: 30000, // 30 segundos
-        refetchOnWindowFocus: false // Evita refetch desnecessário
+        refetchOnWindowFocus: false, // Evita refetch desnecessário
+        refetchOnMount: true // Sempre refazer query ao montar para garantir dados atualizados
     });
 }; 

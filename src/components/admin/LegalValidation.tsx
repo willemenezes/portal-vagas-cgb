@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Candidate } from '@/hooks/useCandidates';
 import { useAuth } from '@/hooks/useAuth';
 import {
     Loader2, ThumbsUp, ThumbsDown, UserCheck, AlertTriangle, MapPin, Briefcase, Clock, User,
-    Phone, Mail, Car, Calendar, Building, FileText, ChevronDown, ChevronUp, Shield, CheckCircle, XCircle, Info, Filter
+    Phone, Mail, Car, Calendar, Building, FileText, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Shield, CheckCircle, XCircle, Info, Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -102,106 +102,106 @@ const CandidateCard = ({ candidate, onAction, contractFilter }: {
     return (
         <>
             <Card className="w-full hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                            <CardTitle className="text-xl mb-2 flex items-center gap-2">
-                                <User className="w-5 h-5" />
-                                {candidate.name}
+                <CardHeader className="pb-2 pt-3 px-4">
+                    <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                            <CardTitle className="text-base mb-1.5 flex items-center gap-1.5">
+                                <User className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{candidate.name}</span>
                             </CardTitle>
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Briefcase className="w-4 h-4" />
-                                    <span>{candidate.job?.title || 'Vaga não especificada'}</span>
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                    <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span className="truncate">{candidate.job?.title || 'Vaga não especificada'}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <MapPin className="w-4 h-4" />
+                                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                                     <span>{candidate.job?.city} - {candidate.job?.state}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Building className="w-4 h-4" />
+                                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                    <Building className="w-3.5 h-3.5 flex-shrink-0" />
                                     <span>{candidate.job?.department}</span>
                                 </div>
                                 {candidate.tj_validation_started_at && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Clock className="w-4 h-4" />
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                        <Clock className="w-3.5 h-3.5 flex-shrink-0" />
                                         <span className="font-medium">
                                             Aguardando há: {getTimeElapsed(candidate.tj_validation_started_at).text}
                                         </span>
                                         {getTimeElapsed(candidate.tj_validation_started_at).isOverdue && (
-                                            <Badge variant="destructive" className="ml-1">Prazo excedido (48h)</Badge>
+                                            <Badge variant="destructive" className="ml-1 text-xs px-1.5 py-0">Prazo excedido</Badge>
                                         )}
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <div className="flex flex-col gap-2 ml-4">
+                        <div className="flex flex-col gap-1.5 ml-2 flex-shrink-0">
                             <Badge variant={
                                 legalData?.review_status === 'approved' ? 'default' :
                                     legalData?.review_status === 'pending' ? 'secondary' :
                                         'destructive'
-                            }>
-                                {legalData?.review_status === 'approved' ? 'Dados Aprovados' :
-                                    legalData?.review_status === 'pending' ? 'Aguardando Revisão' :
-                                        'Dados Pendentes'}
+                            } className="text-xs">
+                                {legalData?.review_status === 'approved' ? 'Aprovado' :
+                                    legalData?.review_status === 'pending' ? 'Aguardando' :
+                                        'Pendente'}
                             </Badge>
                             {legalData?.company_contract && (
-                                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                                <Badge variant="outline" className="text-blue-600 border-blue-200 text-xs">
                                     {legalData.company_contract}
                                 </Badge>
                             )}
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="pt-0">
-                    <div className="flex gap-2 mb-4">
+                <CardContent className="pt-0 px-4 pb-3">
+                    <div className="flex gap-1.5 mb-2">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={openDetailsModal}
-                            className="flex-1"
+                            className="flex-1 text-xs h-8"
                         >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Ver Detalhes Completos
+                            <FileText className="w-3.5 h-3.5 mr-1.5" />
+                            Ver Detalhes
                         </Button>
                     </div>
 
                     {legalData?.review_status !== 'approved' && (
-                        <Alert className="mb-4">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>
-                                <strong>Atenção:</strong> Revise dados do candidato antes de aprovar.
+                        <Alert className="mb-2 py-1.5 px-2">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            <AlertDescription className="text-xs">
+                                <strong>Atenção:</strong> Revise dados antes de aprovar.
                             </AlertDescription>
                         </Alert>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                         <Button
                             size="sm"
                             onClick={() => onAction(candidate, 'aprovado')}
                             disabled={legalData?.review_status !== 'approved'}
-                            className="bg-green-600 hover:bg-green-700 flex-1"
+                            className="bg-green-600 hover:bg-green-700 flex-1 text-xs h-8"
                         >
-                            <ThumbsUp className="w-4 h-4 mr-1" />
-                            Aprovar Candidato
+                            <ThumbsUp className="w-3.5 h-3.5 mr-1" />
+                            Aprovar
                         </Button>
                         <Button
                             size="sm"
                             onClick={() => onAction(candidate, 'aprovado_com_restricao')}
                             disabled={legalData?.review_status !== 'approved'}
-                            className="bg-yellow-600 hover:bg-yellow-700 flex-1"
+                            className="bg-yellow-600 hover:bg-yellow-700 flex-1 text-xs h-8"
                         >
-                            <AlertTriangle className="w-4 h-4 mr-1" />
-                            Aprovar com Restrições
+                            <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                            Com Restrições
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onAction(candidate, 'reprovado')}
-                            className="text-red-600 border-red-200 hover:bg-red-50 flex-1"
+                            className="text-red-600 border-red-200 hover:bg-red-50 flex-1 text-xs h-8"
                         >
-                            <ThumbsDown className="w-4 h-4 mr-1" />
-                            Reprovar Candidato
+                            <ThumbsDown className="w-3.5 h-3.5 mr-1" />
+                            Reprovar
                         </Button>
                     </div>
                 </CardContent>
@@ -395,22 +395,44 @@ const CandidateCard = ({ candidate, onAction, contractFilter }: {
 };
 
 const LegalValidation = () => {
-    const { data: candidates, isLoading, error } = useCandidatesForLegalValidation();
+    // Paginação
+    const [currentPage, setCurrentPage] = useState(0);
+    const pageSize = 50; // 50 candidatos por página para melhor performance
+
+    const { data: candidatesData, isLoading, error } = useCandidatesForLegalValidation(currentPage, pageSize);
+    const candidates = candidatesData?.candidates || [];
+    const totalCount = candidatesData?.totalCount || 0;
+    const totalPages = candidatesData?.totalPages || Math.ceil(totalCount / pageSize) || 1;
+
+    // Debug: Log para verificar valores de paginação
+    console.log('🔍 [LegalValidation] Paginação:', {
+        currentPage,
+        pageSize,
+        totalCount,
+        totalPages,
+        candidatesCount: candidates.length
+    });
+
     const updateCandidateStatus = useUpdateCandidateStatus();
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [selectedCandidate, setSelectedCandidate] = useState<ExtendedCandidate | null>(null);
     const [contractFilter, setContractFilter] = useState<string>('');
     const [showFilter, setShowFilter] = useState(false);
-
-    // Log de debug para investigar problemas
-    console.log('🔍 [LegalValidation] Estado:', {
-        candidates: candidates?.length,
-        isLoading,
-        error: error?.message
-    });
     const [action, setAction] = useState<LegalStatus | null>(null);
     const [comments, setComments] = useState('');
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        // Scroll para o topo da lista quando mudar de página
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Resetar paginação quando filtro de contrato mudar
+    useEffect(() => {
+        setCurrentPage(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [contractFilter]);
 
     const handleActionClick = (candidate: ExtendedCandidate, newAction: LegalStatus) => {
         setSelectedCandidate(candidate);
@@ -518,7 +540,7 @@ const LegalValidation = () => {
     return (
         <Tabs defaultValue="pending" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="pending">Pendentes <Badge className="ml-2">{candidates?.length || 0}</Badge></TabsTrigger>
+                <TabsTrigger value="pending">Pendentes <Badge className="ml-2">{totalCount || 0}</Badge></TabsTrigger>
                 <TabsTrigger value="history">Meu Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending" className="mt-6">
@@ -576,17 +598,78 @@ const LegalValidation = () => {
                         <span className="ml-2">Carregando candidatos...</span>
                     </div>
                 ) : (
-                    <div className="space-y-4 mt-4">
-                        {candidates && candidates.length > 0 ? candidates.map(c => (
-                            <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} contractFilter={contractFilter} />
-                        )) : (
-                            <Card>
-                                <CardContent className="py-12 text-center">
-                                    <p className="text-gray-500">Nenhum candidato aguardando validação.</p>
-                                </CardContent>
-                            </Card>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                            {candidates && candidates.length > 0 ? candidates.map(c => (
+                                <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} contractFilter={contractFilter} />
+                            )) : (
+                                <Card className="col-span-full">
+                                    <CardContent className="py-12 text-center">
+                                        <p className="text-gray-500">Nenhum candidato aguardando validação.</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        {/* Controles de Paginação */}
+                        {totalCount > 0 && (
+                            <div className="flex items-center justify-between mt-6 px-6 py-4 bg-gray-50 rounded-lg">
+                                <div className="text-sm text-gray-600">
+                                    Mostrando {currentPage * pageSize + 1} a {Math.min((currentPage + 1) * pageSize, totalCount)} de {totalCount} candidatos
+                                </div>
+
+                                {totalPages > 1 ? (
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(0)}
+                                            disabled={currentPage === 0}
+                                        >
+                                            Primeira
+                                        </Button>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 0}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                            Anterior
+                                        </Button>
+
+                                        <span className="px-3 py-1 text-sm font-medium">
+                                            Página {currentPage + 1} de {totalPages}
+                                        </span>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage >= totalPages - 1}
+                                        >
+                                            Próxima
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Button>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(totalPages - 1)}
+                                            disabled={currentPage >= totalPages - 1}
+                                        >
+                                            Última
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-gray-500">
+                                        Todos os candidatos estão nesta página
+                                    </div>
+                                )}
+                            </div>
                         )}
-                    </div>
+                    </>
                 )}
             </TabsContent>
             <TabsContent value="history" className="mt-6">
