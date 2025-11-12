@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useCandidates, useDeleteCandidate, Candidate } from '@/hooks/useCandidates';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useRHProfile } from '@/hooks/useRH';
 import { useAuth } from '@/hooks/useAuth';
 import { useInviteCandidate } from '@/hooks/useInviteCandidate';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +23,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const CandidateManagement = () => {
   const { user } = useAuth();
   const { data: rhProfile } = useRHProfile(user?.id);
+  const queryClient = useQueryClient();
 
   // Paginação inteligente
   const [currentPage, setCurrentPage] = useState(0);
@@ -36,6 +38,9 @@ const CandidateManagement = () => {
   const [filters, setFilters] = useState({
     status: 'all', jobId: 'all', state: 'all', cnh: 'all', vehicle: 'all',
   });
+
+  // Ref para rastrear o filtro de vaga anterior e detectar mudanças
+  const previousJobIdRef = useRef<string>('all');
 
   // 🔥 CORREÇÃO: Passar filtro de vaga para o hook aplicar no servidor
   // MOVIDO PARA DEPOIS da declaração de filters para evitar erro de inicialização
@@ -61,13 +66,42 @@ const CandidateManagement = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 🔥 CORREÇÃO: Resetar paginação para página 1 quando filtros mudarem
-  // Isso garante que ao filtrar por vaga, os candidatos apareçam imediatamente
+  // 🔥 CORREÇÃO CRÍTICA: Resetar paginação e invalidar cache quando filtro de vaga mudar
+  // Isso garante que ao filtrar por vaga, os candidatos apareçam imediatamente na página 1
   useEffect(() => {
-    setCurrentPage(0);
-    // Scroll para o topo quando filtros mudarem
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [filters.jobId, filters.status, filters.state, filters.cnh, filters.vehicle, searchTerm]);
+    const jobIdChanged = previousJobIdRef.current !== filters.jobId;
+    
+    if (jobIdChanged) {
+      console.log('🔄 [CandidateManagement] Filtro de vaga mudou:', {
+        anterior: previousJobIdRef.current,
+        novo: filters.jobId
+      });
+      
+      // 1. Resetar página para 0 ANTES de invalidar
+      setCurrentPage(0);
+      
+      // 2. Invalidar todas as queries de candidatos para forçar refetch
+      queryClient.invalidateQueries({ 
+        queryKey: ['candidates', 'paginated'],
+        refetchType: 'active' // Refetch apenas queries ativas
+      });
+      
+      // 3. Atualizar referência
+      previousJobIdRef.current = filters.jobId;
+      
+      // 4. Scroll para o topo
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [filters.jobId, queryClient]);
+
+  // Resetar paginação para outros filtros também
+  useEffect(() => {
+    // Apenas resetar página se não for mudança de jobId (já tratado acima)
+    if (previousJobIdRef.current === filters.jobId) {
+      setCurrentPage(0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [filters.status, filters.state, filters.cnh, filters.vehicle, searchTerm]);
 
   // Totais do sistema (não paginados) para exibir nos cards
   const { data: totalCounts } = useCandidatesCounts();

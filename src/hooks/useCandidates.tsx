@@ -58,7 +58,11 @@ export const useCandidates = (page = 0, pageSize = 100, filters?: { jobId?: stri
   return useQuery({
     queryKey: ['candidates', 'paginated', page, pageSize, filters?.jobId],
     queryFn: async () => {
-      console.log(`🔄 useCandidates: Carregando página ${page + 1} (${pageSize} candidatos)...`, filters);
+      console.log(`🔄 useCandidates: Carregando página ${page + 1} (${pageSize} candidatos)...`, {
+        page: page + 1,
+        pageSize,
+        jobId: filters?.jobId || 'all'
+      });
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
@@ -73,6 +77,7 @@ export const useCandidates = (page = 0, pageSize = 100, filters?: { jobId?: stri
       // 🔥 CORREÇÃO: Aplicar filtro de vaga no servidor quando fornecido
       if (filters?.jobId && filters.jobId !== 'all') {
         query = query.eq('job_id', filters.jobId);
+        console.log(`🔍 [useCandidates] Aplicando filtro de vaga: ${filters.jobId}`);
       }
 
       const { data, error, count } = await query
@@ -84,7 +89,12 @@ export const useCandidates = (page = 0, pageSize = 100, filters?: { jobId?: stri
         throw error;
       }
 
-      console.log(`✅ useCandidates: ${data?.length || 0} candidatos carregados (Página ${page + 1})`);
+      console.log(`✅ useCandidates: ${data?.length || 0} candidatos carregados (Página ${page + 1} de ${Math.ceil((count || 0) / pageSize)})`, {
+        totalCount: count || 0,
+        currentPage: page + 1,
+        totalPages: Math.ceil((count || 0) / pageSize),
+        jobId: filters?.jobId || 'all'
+      });
 
       return {
         candidates: data || [],
@@ -102,8 +112,9 @@ export const useCandidates = (page = 0, pageSize = 100, filters?: { jobId?: stri
         state: c.state || c.job?.state,
       })) as Candidate[]
     }),
-    staleTime: 2 * 60 * 1000, // 2 minutos de cache
+    staleTime: 1 * 60 * 1000, // Reduzido para 1 minuto para atualizações mais frequentes
     refetchOnWindowFocus: false,
+    refetchOnMount: true, // 🔥 CORREÇÃO: Sempre refazer query ao montar para garantir dados atualizados
   });
 };
 
