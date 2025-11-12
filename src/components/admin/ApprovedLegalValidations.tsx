@@ -27,13 +27,14 @@ const ApprovedLegalValidations = () => {
             if (activeTab === 'approved') {
                 // Apenas aprovados SEM restrições
                 return approval.review_status === 'approved' && 
-                       (!approval.candidate?.legal_validation_comment || approval.candidate.legal_validation_comment.trim() === '');
+                       (!approval.candidate?.legal_validation_comment || approval.candidate.legal_validation_comment.trim() === '') &&
+                       (!approval.review_notes || approval.review_notes.trim() === '');
             } else if (activeTab === 'approved_with_restrictions') {
-                // Aprovados COM restrições (approved_with_restrictions OU approved com comentário)
+                // Aprovados COM restrições (approved_with_restrictions OU approved com comentário/notas)
                 return approval.review_status === 'approved_with_restrictions' || 
                        (approval.review_status === 'approved' && 
-                        approval.candidate?.legal_validation_comment && 
-                        approval.candidate.legal_validation_comment.trim() !== '');
+                        ((approval.candidate?.legal_validation_comment && approval.candidate.legal_validation_comment.trim() !== '') ||
+                         (approval.review_notes && approval.review_notes.trim() !== '')));
             } else if (activeTab === 'rejected') {
                 // Reprovados
                 return approval.review_status === 'rejected';
@@ -42,18 +43,39 @@ const ApprovedLegalValidations = () => {
         });
     }, [approvals, activeTab]);
 
+    // Debug: Log para verificar dados carregados e filtrados
+    console.log('🔍 [ApprovedLegalValidations] Dados:', {
+        totalApprovals: approvals?.length || 0,
+        activeTab,
+        filteredCount: filteredApprovals?.length || 0,
+        approvals: approvals?.map(a => ({
+            candidateName: a.candidate?.name,
+            reviewStatus: a.review_status,
+            reviewNotes: a.review_notes,
+            hasRestriction: a.review_status === 'approved_with_restrictions',
+            candidateId: a.candidate?.id
+        })),
+        filteredApprovals: filteredApprovals?.map(a => ({
+            candidateName: a.candidate?.name,
+            reviewStatus: a.review_status
+        }))
+    });
+
     // Contar por categoria
     const counts = useMemo(() => {
         if (!approvals) return { approved: 0, withRestrictions: 0, rejected: 0 };
         
         const approved = approvals.filter(a => 
             a.review_status === 'approved' && 
-            (!a.candidate?.legal_validation_comment || a.candidate.legal_validation_comment.trim() === '')
+            (!a.candidate?.legal_validation_comment || a.candidate.legal_validation_comment.trim() === '') &&
+            (!a.review_notes || a.review_notes.trim() === '')
         ).length;
         
         const withRestrictions = approvals.filter(a => 
             a.review_status === 'approved_with_restrictions' || 
-            (a.review_status === 'approved' && a.candidate?.legal_validation_comment && a.candidate.legal_validation_comment.trim() !== '')
+            (a.review_status === 'approved' && 
+             ((a.candidate?.legal_validation_comment && a.candidate.legal_validation_comment.trim() !== '') ||
+              (a.review_notes && a.review_notes.trim() !== '')))
         ).length;
         
         const rejected = approvals.filter(a => a.review_status === 'rejected').length;
@@ -119,7 +141,8 @@ const ApprovedLegalValidations = () => {
                         {approvalsToShow && approvalsToShow.length > 0 ? (
                             approvalsToShow.map((approval) => {
                                 const hasRestriction = approval.review_status === 'approved_with_restrictions' || 
-                                                     (approval.candidate?.legal_validation_comment && approval.candidate.legal_validation_comment.trim() !== '');
+                                                     (approval.candidate?.legal_validation_comment && approval.candidate.legal_validation_comment.trim() !== '') ||
+                                                     (approval.review_notes && approval.review_notes.trim() !== '');
                                 const statusInfo = getStatusInfo(approval.review_status, hasRestriction);
                                 
                                 return (

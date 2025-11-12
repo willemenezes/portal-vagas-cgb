@@ -479,11 +479,13 @@ const LegalValidation = () => {
             onSuccess: async () => {
                 // Atualizar também os dados jurídicos para manter consistência
                 try {
+                    const { data: { user: currentUser } } = await supabase.auth.getUser();
                     await supabase
                         .from('candidate_legal_data')
                         .update({
                             review_status: action === 'aprovado' ? 'approved' : action === 'reprovado' ? 'rejected' : 'approved_with_restrictions',
                             review_notes: comments.trim() || null,
+                            reviewed_by: currentUser?.id || null,
                             reviewed_at: new Date().toISOString()
                         })
                         .eq('candidate_id', selectedCandidate.id);
