@@ -614,11 +614,11 @@ const JobManagement = () => {
                     })
                     .map((request) => (
                     <Card key={request.id} className="bg-white border border-green-200 shadow-md hover:shadow-lg transition-shadow duration-200">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <h3 className="text-xl font-bold text-gray-900">{request.title}</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{request.title}</h3>
                               {request.status === 'aprovado' ? (
                                 <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
                                   ✓ Aprovado
@@ -634,102 +634,102 @@ const JobManagement = () => {
                               ) : null}
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <div className="p-1 bg-gray-100 rounded">
-                                  <Briefcase className="w-4 h-4" />
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                              <div className="flex items-center gap-1.5 text-gray-600">
+                                <div className="p-0.5 bg-gray-100 rounded">
+                                  <Briefcase className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500">Departamento</p>
-                                  <p className="font-medium">{request.department}</p>
+                                  <p className="text-[10px] text-gray-500">Departamento</p>
+                                  <p className="text-sm font-medium">{request.department}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <div className="p-1 bg-gray-100 rounded">
-                                  <Users className="w-4 h-4" />
+                              <div className="flex items-center gap-1.5 text-gray-600">
+                                <div className="p-0.5 bg-gray-100 rounded">
+                                  <Users className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500">Localização</p>
-                                  <p className="font-medium">{request.city}, {request.state}</p>
+                                  <p className="text-[10px] text-gray-500">Localização</p>
+                                  <p className="text-sm font-medium">{request.city}, {request.state}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <div className="p-1 bg-gray-100 rounded">
-                                  <Clock className="w-4 h-4" />
+                              <div className="flex items-center gap-1.5 text-gray-600">
+                                <div className="p-0.5 bg-gray-100 rounded">
+                                  <Clock className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500">Carga Horária</p>
-                                  <p className="font-medium">{request.workload}</p>
+                                  <p className="text-[10px] text-gray-500">Carga Horária</p>
+                                  <p className="text-sm font-medium">{request.workload}</p>
                                 </div>
                               </div>
                               {request.status === 'aprovado' && request.approved_by && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <div className="p-1 bg-green-100 rounded">
-                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <div className="p-0.5 bg-green-100 rounded">
+                                    <CheckCircle className="w-3.5 h-3.5 text-green-600" />
                                   </div>
                                   <div>
-                                    <p className="text-xs text-gray-500">Aprovado por</p>
-                                    <p className="font-medium text-green-700">{request.approved_by}</p>
+                                    <p className="text-[10px] text-gray-500">Aprovado por</p>
+                                    <p className="text-sm font-medium text-green-700">{request.approved_by}</p>
                                   </div>
                                 </div>
                               )}
                               {request.status === 'rejeitado' && request.approved_by && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <div className="p-1 bg-red-100 rounded">
-                                    <XCircle className="w-4 h-4 text-red-600" />
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <div className="p-0.5 bg-red-100 rounded">
+                                    <XCircle className="w-3.5 h-3.5 text-red-600" />
                                   </div>
                                   <div>
-                                    <p className="text-xs text-gray-500">Rejeitado por</p>
-                                    <p className="font-medium text-red-700">{request.approved_by}</p>
+                                    <p className="text-[10px] text-gray-500">Rejeitado por</p>
+                                    <p className="text-sm font-medium text-red-700">{request.approved_by}</p>
                                   </div>
                                 </div>
                               )}
                               {request.status === 'pendente' && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <div className="p-1 bg-yellow-100 rounded">
-                                    <Clock className="w-4 h-4 text-yellow-600" />
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <div className="p-0.5 bg-yellow-100 rounded">
+                                    <Clock className="w-3.5 h-3.5 text-yellow-600" />
                                   </div>
                                   <div>
-                                    <p className="text-xs text-gray-500">Status</p>
-                                    <p className="font-medium text-yellow-700">Aguardando aprovação</p>
+                                    <p className="text-[10px] text-gray-500">Status</p>
+                                    <p className="text-sm font-medium text-yellow-700">Aguardando aprovação</p>
                                   </div>
                                 </div>
                               )}
                             </div>
 
                             {request.description && (
-                              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                                <p className="text-sm font-medium text-gray-700 mb-1">Descrição:</p>
-                                <p className="text-sm text-gray-600 leading-relaxed">{request.description}</p>
+                              <div className="mb-2 p-2 bg-gray-50 rounded text-xs">
+                                <p className="text-xs font-medium text-gray-700 mb-0.5">Descrição:</p>
+                                <p className="text-xs text-gray-600 leading-snug line-clamp-2">{request.description}</p>
                               </div>
                             )}
 
                             {request.notes && (
-                              <div className="mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-200">
-                                <p className="text-sm font-medium text-blue-800 mb-1">Observações do Gerente:</p>
-                                <p className="text-sm text-blue-700">{request.notes}</p>
+                              <div className="mb-2 p-2 bg-blue-50 rounded border-l-2 border-blue-200 text-xs">
+                                <p className="text-xs font-medium text-blue-800 mb-0.5">Observações do Gerente:</p>
+                                <p className="text-xs text-blue-700 leading-snug line-clamp-2">{request.notes}</p>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 justify-end pt-4 border-t border-gray-100">
+                        <div className="flex flex-wrap gap-1.5 justify-end pt-2 border-t border-gray-100">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditRequest(request)}
-                            className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                            className="flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 h-7 text-xs px-2"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3 h-3" />
                             Editar
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteRequest(request)}
-                            className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                            className="flex items-center gap-1.5 text-red-600 border-red-200 hover:bg-red-50 h-7 text-xs px-2"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                             Cancelar
                           </Button>
                           {request.status === 'rejeitado' && rhProfile?.role === 'admin' && (
@@ -754,13 +754,13 @@ const JobManagement = () => {
                                   });
                                 }
                               }}
-                              className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white"
+                              className="flex items-center gap-1.5 bg-yellow-600 hover:bg-yellow-700 text-white h-7 text-xs px-2"
                               disabled={updateJobRequestStatus.isPending}
                             >
                               {updateJobRequestStatus.isPending ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <CheckCircle className="w-4 h-4" />
+                                <CheckCircle className="w-3 h-3" />
                               )}
                               Reaprovar
                             </Button>
@@ -769,13 +769,13 @@ const JobManagement = () => {
                             <Button
                               size="sm"
                               onClick={() => handleCreateJobFromRequest(request.id)}
-                              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white h-7 text-xs px-2"
                               disabled={createJobFromRequest.isPending}
                             >
                               {createJobFromRequest.isPending ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-3 h-3" />
                               )}
                               Publicar Vaga
                             </Button>
