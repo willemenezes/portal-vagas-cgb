@@ -397,6 +397,37 @@ export const useJobRequests = () => {
         mutationFn: async (requestId: string) => {
             if (!user) throw new Error('Usuário não autenticado');
 
+            // Verificar o status da solicitação antes de tentar criar a vaga
+            const { data: requestData, error: fetchError } = await supabase
+                .from('job_requests')
+                .select('id, status, job_created, title')
+                .eq('id', requestId)
+                .single();
+
+            if (fetchError) {
+                console.error('Erro ao buscar solicitação:', fetchError);
+                throw new Error('Não foi possível verificar a solicitação. Tente novamente.');
+            }
+
+            if (!requestData) {
+                throw new Error('Solicitação não encontrada.');
+            }
+
+            console.log('🔍 [createJobFromRequest] Status da solicitação:', {
+                id: requestData.id,
+                title: requestData.title,
+                status: requestData.status,
+                job_created: requestData.job_created
+            });
+
+            if (requestData.status !== 'aprovado') {
+                throw new Error(`A solicitação precisa estar aprovada para criar a vaga. Status atual: ${requestData.status}`);
+            }
+
+            if (requestData.job_created) {
+                throw new Error('Esta solicitação já foi convertida em vaga.');
+            }
+
             const { data, error } = await supabase.rpc('create_job_from_request', {
                 request_id: requestId
             });
@@ -519,12 +550,35 @@ export const useJobRequests = () => {
         }) => {
             if (!user) throw new Error('Usuário não autenticado');
 
+            // Buscar a solicitação atual para preservar o status
+            const { data: currentRequest, error: fetchError } = await supabase
+                .from('job_requests')
+                .select('status, job_created')
+                .eq('id', id)
+                .single();
+
+            if (fetchError) {
+                console.error('Erro ao buscar solicitação:', fetchError);
+                throw new Error('Não foi possível verificar a solicitação. Tente novamente.');
+            }
+
+            // Preparar dados de atualização, garantindo que status e job_created não sejam alterados
+            const updateData: any = {
+                ...data,
+                updated_at: new Date().toISOString()
+            };
+
+            // Preservar status e job_created se não foram explicitamente fornecidos
+            if (!('status' in data)) {
+                updateData.status = currentRequest?.status;
+            }
+            if (!('job_created' in data)) {
+                updateData.job_created = currentRequest?.job_created;
+            }
+
             const { data: updatedData, error } = await supabase
                 .from('job_requests')
-                .update({
-                    ...data,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', id)
                 .select()
                 .single();

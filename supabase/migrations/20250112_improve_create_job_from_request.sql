@@ -1,11 +1,6 @@
--- Correção da função create_job_from_request para incluir todos os campos necessários
--- Esta migração corrige o erro PGRST203 que estava ocorrendo
+-- Melhorar a função create_job_from_request com validações mais detalhadas
+-- Esta migração melhora as mensagens de erro e validações
 
--- Remover a função existente para evitar conflitos
-DROP FUNCTION IF EXISTS public.create_job_from_request(uuid);
-DROP FUNCTION IF EXISTS public.create_job_from_request(text);
-
--- Recriar a função com todos os campos necessários
 CREATE OR REPLACE FUNCTION public.create_job_from_request(request_id uuid)
 RETURNS uuid AS $$
 DECLARE
@@ -90,4 +85,5 @@ GRANT EXECUTE ON FUNCTION public.create_job_from_request(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_job_from_request(uuid) TO service_role;
 
 -- Comentário para documentação
-COMMENT ON FUNCTION public.create_job_from_request(uuid) IS 'Cria uma nova vaga a partir de uma solicitação aprovada, incluindo todos os campos necessários (quantity, expires_at, flow_status, etc.)';
+COMMENT ON FUNCTION public.create_job_from_request(uuid) IS 'Cria uma nova vaga a partir de uma solicitação aprovada, incluindo todos os campos necessários (quantity, expires_at, flow_status, etc.). Valida se a solicitação existe, está aprovada e ainda não foi convertida em vaga.';
+
