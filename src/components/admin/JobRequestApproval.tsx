@@ -609,25 +609,24 @@ export default function JobRequestApproval() {
             )}
 
             {/* Solicitações Processadas - Tabs para Aprovadas e Reprovadas */}
-            {(approvedRequests.length > 0 || rejectedRequests.length > 0) && (
-                <div className="space-y-4">
-                    <Tabs defaultValue="approved" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-4">
-                            <TabsTrigger value="approved" className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4" />
-                                Aprovadas
-                                <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
-                                    {approvedRequests.length}
-                                </Badge>
-                            </TabsTrigger>
-                            <TabsTrigger value="rejected" className="flex items-center gap-2">
-                                <XCircle className="w-4 h-4" />
-                                Reprovadas
-                                <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
-                                    {rejectedRequests.length}
-                                </Badge>
-                            </TabsTrigger>
-                        </TabsList>
+            <div className="space-y-4">
+                <Tabs defaultValue="approved" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="approved" className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            Aprovadas
+                            <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+                                {approvedRequests.length}
+                            </Badge>
+                        </TabsTrigger>
+                        <TabsTrigger value="rejected" className="flex items-center gap-2">
+                            <XCircle className="w-4 h-4" />
+                            Reprovadas
+                            <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
+                                {rejectedRequests.length}
+                            </Badge>
+                        </TabsTrigger>
+                    </TabsList>
 
                     {/* Filtros */}
                     <Card>
@@ -931,7 +930,6 @@ export default function JobRequestApproval() {
                         </TabsContent>
                     </Tabs>
                 </div>
-            )}
 
             {jobRequests.length === 0 && (
                 <Card>
