@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, XCircle
 } from "lucide-react";
 import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
@@ -662,15 +662,39 @@ const JobManagement = () => {
                                   <p className="font-medium">{request.workload}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <div className="p-1 bg-green-100 rounded">
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                              {request.status === 'aprovado' && request.approved_by && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <div className="p-1 bg-green-100 rounded">
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Aprovado por</p>
+                                    <p className="font-medium text-green-700">{request.approved_by}</p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500">Aprovado por</p>
-                                  <p className="font-medium text-green-700">{request.approved_by}</p>
+                              )}
+                              {request.status === 'rejeitado' && request.approved_by && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <div className="p-1 bg-red-100 rounded">
+                                    <XCircle className="w-4 h-4 text-red-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Rejeitado por</p>
+                                    <p className="font-medium text-red-700">{request.approved_by}</p>
+                                  </div>
                                 </div>
-                              </div>
+                              )}
+                              {request.status === 'pendente' && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <div className="p-1 bg-yellow-100 rounded">
+                                    <Clock className="w-4 h-4 text-yellow-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Status</p>
+                                    <p className="font-medium text-yellow-700">Aguardando aprovação</p>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {request.description && (
