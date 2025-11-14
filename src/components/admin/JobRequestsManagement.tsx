@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck } from 'lucide-react';
+import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle } from 'lucide-react';
 import { Job, useUpdateJob, useAllJobs, useDeleteJob } from '@/hooks/useJobs';
 import { useJobRequests } from '@/hooks/useJobRequests';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +29,7 @@ const JobRequestsManagement = () => {
     // Filtrar solicitações por status
     const pendingRequests = jobRequests?.filter(req => req.status === 'pendente') || [];
     const approvedRequests = jobRequests?.filter(req => req.status === 'aprovado' && !req.job_created) || [];
+    const rejectedRequests = jobRequests?.filter(req => req.status === 'rejeitado') || [];
     
     // DEBUG: Log para admin
     useEffect(() => {
@@ -40,7 +41,7 @@ const JobRequestsManagement = () => {
         }
     }, [jobRequests, rhProfile, pendingRequests, approvedRequests]);
 
-    const [activeView, setActiveView] = useState<'pending' | 'approved'>('pending');
+    const [activeView, setActiveView] = useState<'pending' | 'approved' | 'rejected'>('pending');
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [isRejectModalOpen, setRejectModalOpen] = useState(false);
@@ -54,6 +55,10 @@ const JobRequestsManagement = () => {
     // Paginação para vagas aprovadas
     const [approvedPage, setApprovedPage] = useState(0);
     const approvedPageSize = 10;
+
+    // Paginação para vagas reprovadas
+    const [rejectedPage, setRejectedPage] = useState(0);
+    const rejectedPageSize = 10;
 
     // Função para buscar nomes dos usuários
     const fetchUserNames = async (jobs: Job[]) => {
@@ -387,6 +392,14 @@ const JobRequestsManagement = () => {
     const approvedEndIndex = Math.min(totalApprovedJobs, approvedStartIndex + approvedPageSize);
     const paginatedApprovedJobs = approvedJobs.slice(approvedStartIndex, approvedEndIndex);
 
+    // Paginação para vagas reprovadas
+    const rejectedJobs = rejectedRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const totalRejectedJobs = rejectedJobs.length;
+    const totalRejectedPages = Math.max(1, Math.ceil(totalRejectedJobs / rejectedPageSize));
+    const rejectedStartIndex = rejectedPage * rejectedPageSize;
+    const rejectedEndIndex = Math.min(totalRejectedJobs, rejectedStartIndex + rejectedPageSize);
+    const paginatedRejectedJobs = rejectedJobs.slice(rejectedStartIndex, rejectedEndIndex);
+
     const handlePendingPageChange = (newPage: number) => {
         setPendingPage(newPage);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -394,6 +407,11 @@ const JobRequestsManagement = () => {
 
     const handleApprovedPageChange = (newPage: number) => {
         setApprovedPage(newPage);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleRejectedPageChange = (newPage: number) => {
+        setRejectedPage(newPage);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -434,7 +452,7 @@ const JobRequestsManagement = () => {
                 </div>
             </div>
 
-            {/* Toggle entre Pendentes e Aprovadas */}
+            {/* Toggle entre Pendentes, Aprovadas e Reprovadas */}
             <div className="flex gap-2 border-b border-gray-200">
                 <button
                     onClick={() => setActiveView('pending')}
@@ -463,6 +481,21 @@ const JobRequestsManagement = () => {
                         <span>Vagas Aprovadas</span>
                         {totalApprovedJobs > 0 && (
                             <Badge className="bg-green-500">{totalApprovedJobs}</Badge>
+                        )}
+                    </div>
+                </button>
+                <button
+                    onClick={() => setActiveView('rejected')}
+                    className={`px-6 py-3 font-semibold transition-all ${activeView === 'rejected'
+                        ? 'border-b-2 border-cgb-primary text-cgb-primary'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <div className="flex items-center gap-2">
+                        <XCircle className="w-5 h-5" />
+                        <span>Vagas Reprovadas</span>
+                        {totalRejectedJobs > 0 && (
+                            <Badge className="bg-red-500">{totalRejectedJobs}</Badge>
                         )}
                     </div>
                 </button>
@@ -622,7 +655,7 @@ const JobRequestsManagement = () => {
                         )}
                     </CardContent>
                 </Card>
-            ) : (
+            ) : activeView === 'approved' ? (
                 <Card className="bg-green-50 border-green-200">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-green-900">
@@ -827,6 +860,185 @@ const JobRequestsManagement = () => {
                                                 size="sm"
                                                 onClick={() => handleApprovedPageChange(totalApprovedPages - 1)}
                                                 disabled={approvedPage >= totalApprovedPages - 1}
+                                            >
+                                                Última
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="bg-red-50 border-red-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-red-900">
+                            <XCircle className="w-6 h-6" />
+                            Vagas Reprovadas
+                            <Badge className="bg-red-600 ml-auto">{totalRejectedJobs} reprovada{totalRejectedJobs !== 1 ? 's' : ''}</Badge>
+                        </CardTitle>
+                        <p className="text-sm text-red-800 mt-2">
+                            Histórico de todas as solicitações reprovadas pelos gerentes
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        {paginatedRejectedJobs.length === 0 ? (
+                            <div className="text-center py-12 bg-white rounded-lg">
+                                <XCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                                    Nenhuma vaga reprovada ainda
+                                </h3>
+                                <p className="text-gray-600">
+                                    As vagas reprovadas aparecerão aqui.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="space-y-4">
+                                    {paginatedRejectedJobs.map((request) => (
+                                        <div
+                                            key={request.id}
+                                            className="p-6 border border-red-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+                                        >
+                                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                                <div className="flex-grow">
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <h3 className="font-bold text-lg text-gray-900">{request.title}</h3>
+                                                        <Badge className="bg-red-600">Reprovado</Badge>
+                                                    </div>
+
+                                                    {/* Informações básicas */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-600 mb-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <FileText className="w-4 h-4 text-gray-500" />
+                                                            <span>{request.department}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <MapPin className="w-4 h-4 text-gray-500" />
+                                                            <span>{request.city}, {request.state}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Clock className="w-4 h-4 text-gray-500" />
+                                                            <span>{request.workload}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Informações de reprovação */}
+                                                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                                        <h4 className="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                                                            <XCircle className="w-4 h-4 text-red-500" />
+                                                            Informações de Reprovação
+                                                        </h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                            <div className="flex items-center gap-2">
+                                                                <Calendar className="w-4 h-4 text-blue-500" />
+                                                                <span className="text-gray-600">Data criação:</span>
+                                                                <span className="font-medium text-gray-900">
+                                                                    {formatFullDate(request.created_at)}
+                                                                </span>
+                                                            </div>
+                                                            {request.approved_by && (
+                                                                <>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <User className="w-4 h-4 text-red-500" />
+                                                                        <span className="text-gray-600">Rejeitado por:</span>
+                                                                        <span className="font-medium text-gray-900">
+                                                                            {request.approved_by}
+                                                                        </span>
+                                                                    </div>
+                                                                    {request.approved_at && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <XCircle className="w-4 h-4 text-red-500" />
+                                                                            <span className="text-gray-600">Data reprovação:</span>
+                                                                            <span className="font-medium text-gray-900">
+                                                                                {formatFullDate(request.approved_at)}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Observações do gerente */}
+                                                    {request.notes && (
+                                                        <div className="bg-red-50 rounded-lg p-4 border border-red-200 mt-4">
+                                                            <h4 className="font-semibold text-sm text-red-700 mb-2 flex items-center gap-2">
+                                                                <FileText className="w-4 h-4" />
+                                                                Observações do Gerente
+                                                            </h4>
+                                                            <p className="text-red-900 text-sm whitespace-pre-wrap">{request.notes}</p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Descrição */}
+                                                    {request.description && (
+                                                        <div className="mt-4">
+                                                            <h4 className="font-semibold text-sm text-gray-700 mb-2">Descrição:</h4>
+                                                            <p className="text-gray-600 text-sm">{request.description}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex-shrink-0 flex flex-col gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedJob(request as any);
+                                                            setDetailModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-1"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                        Ver Detalhes
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Paginação para Reprovadas */}
+                                {totalRejectedPages > 1 && (
+                                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-red-200">
+                                        <div className="text-sm text-gray-600">
+                                            Mostrando {rejectedStartIndex + 1} a {rejectedEndIndex} de {totalRejectedJobs} solicitações
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleRejectedPageChange(0)}
+                                                disabled={rejectedPage === 0}
+                                            >
+                                                Primeira
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleRejectedPageChange(Math.max(0, rejectedPage - 1))}
+                                                disabled={rejectedPage === 0}
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <span className="px-3 py-1 text-sm font-medium">
+                                                Página {rejectedPage + 1} de {totalRejectedPages}
+                                            </span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleRejectedPageChange(Math.min(totalRejectedPages - 1, rejectedPage + 1))}
+                                                disabled={rejectedPage >= totalRejectedPages - 1}
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleRejectedPageChange(totalRejectedPages - 1)}
+                                                disabled={rejectedPage >= totalRejectedPages - 1}
                                             >
                                                 Última
                                             </Button>
