@@ -22,6 +22,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { departments } from "@/data/departments";
 import { WORKLOAD_OPTIONS } from "@/data/workload-options";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JobQuantityBadge from "./JobQuantityBadge";
 import JobFlowStatusBadge from "./JobFlowStatusBadge";
 
@@ -164,11 +165,18 @@ const JobManagement = () => {
     return true; // Todos veem todas
   })) || [];
 
-  // BUG FIX: Admin deve ver TODAS as solicitações (pendentes + aprovadas)
+  // Filtrar job requests reprovadas (para histórico)
+  const rejectedRequests = (jobRequests?.filter((request) => {
+    if (request.status !== 'rejeitado') return false;
+    return true; // Todos veem todas as reprovadas
+  })) || [];
+
+  // BUG FIX: Admin deve ver TODAS as solicitações (pendentes + aprovadas), mas NÃO reprovadas na seção principal
   const allRequestsForAdmin = rhProfile?.role === 'admin'
     ? (jobRequests?.filter((request) => {
       if (request.job_created) return false; // Excluir apenas as já convertidas em vagas
-      return true; // Admin vê todas (pendentes + aprovadas)
+      if (request.status === 'rejeitado') return false; // Reprovadas vão para aba separada
+      return true; // Admin vê pendentes + aprovadas na seção principal
     })) || []
     : approvedRequests;
 
@@ -576,8 +584,8 @@ const JobManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Seção de Job Requests Aprovadas - visível para Admin e Recrutadores da região */}
-        {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length > 0 && (
+        {/* Seção de Job Requests - Tabs para Aprovadas e Reprovadas */}
+        {((rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length > 0 || rejectedRequests.length > 0) && (
           <div className="mb-6">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
               <CardHeader className="pb-4">
@@ -587,32 +595,39 @@ const JobManagement = () => {
                       <CheckCircle className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">Solicitações Aprovadas para Criação</h2>
+                      <h2 className="text-xl font-bold">Solicitações de Vagas</h2>
                       <p className="text-sm text-green-600 font-normal mt-1">
-                        Revise, edite ou publique as vagas aprovadas pelos gerentes
+                        Gerencie solicitações aprovadas e reprovadas pelos gerentes
                       </p>
                     </div>
                   </CardTitle>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 text-lg px-3 py-1">
-                    {(rhProfile?.role === 'admin' 
-                      ? allRequestsForAdmin.filter(r => (r.status === 'aprovado' || r.status === 'rejeitado') && !r.job_created)
-                      : approvedRequests
-                    ).length}
-                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid gap-4">
-                  {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests)
-                    .filter(request => {
-                      // Para admin: mostrar aprovadas e rejeitadas (para reaprovação)
-                      if (rhProfile?.role === 'admin') {
-                        return (request.status === 'aprovado' || request.status === 'rejeitado') && !request.job_created;
-                      }
-                      // Para outros: apenas aprovadas
-                      return request.status === 'aprovado' && !request.job_created;
-                    })
-                    .map((request) => (
+                <Tabs defaultValue="approved" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="approved" className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Aprovadas
+                      <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+                        {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length}
+                      </Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="rejected" className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4" />
+                      Reprovadas
+                      <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
+                        {rejectedRequests.length}
+                      </Badge>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Aba de Aprovadas */}
+                  <TabsContent value="approved" className="mt-0">
+                    <div className="grid gap-4">
+                      {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests)
+                        .filter(request => request.status === 'aprovado' && !request.job_created)
+                        .map((request) => (
                     <Card key={request.id} className="bg-white border border-green-200 shadow-md hover:shadow-lg transition-shadow duration-200">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
@@ -732,39 +747,6 @@ const JobManagement = () => {
                             <Trash2 className="w-3 h-3" />
                             Cancelar
                           </Button>
-                          {request.status === 'rejeitado' && rhProfile?.role === 'admin' && (
-                            <Button
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  await updateJobRequestStatus.mutateAsync({
-                                    id: request.id,
-                                    status: 'aprovado',
-                                    notes: 'Reaprovado pelo administrador'
-                                  });
-                                  toast({
-                                    title: "Solicitação reaprovada!",
-                                    description: "A solicitação foi reaprovada e pode ser publicada.",
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Erro ao reaprovar",
-                                    description: "Não foi possível reaprovar a solicitação.",
-                                    variant: "destructive"
-                                  });
-                                }
-                              }}
-                              className="flex items-center gap-1.5 bg-yellow-600 hover:bg-yellow-700 text-white h-7 text-xs px-2"
-                              disabled={updateJobRequestStatus.isPending}
-                            >
-                              {updateJobRequestStatus.isPending ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <CheckCircle className="w-3 h-3" />
-                              )}
-                              Reaprovar
-                            </Button>
-                          )}
                           {request.status === 'aprovado' && !request.job_created && (
                             <Button
                               size="sm"
@@ -783,8 +765,135 @@ const JobManagement = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                      ))}
+                    </div>
+                    {((rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).filter(r => r.status === 'aprovado' && !r.job_created).length === 0) && (
+                      <div className="text-center py-8 text-gray-500">
+                        <CheckCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                        <p>Nenhuma solicitação aprovada no momento</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Aba de Reprovadas - Apenas visualização (histórico) */}
+                  <TabsContent value="rejected" className="mt-0">
+                    <div className="grid gap-4">
+                      {rejectedRequests.map((request) => (
+                        <Card key={request.id} className="bg-white border border-red-200 shadow-md hover:shadow-lg transition-shadow duration-200">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="text-lg font-semibold text-gray-900">{request.title}</h3>
+                                  <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
+                                    ✗ Rejeitado
+                                  </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                                  <div className="flex items-center gap-1.5 text-gray-600">
+                                    <div className="p-0.5 bg-gray-100 rounded">
+                                      <Briefcase className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-gray-500">Departamento</p>
+                                      <p className="text-sm font-medium">{request.department}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-gray-600">
+                                    <div className="p-0.5 bg-gray-100 rounded">
+                                      <Users className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-gray-500">Localização</p>
+                                      <p className="text-sm font-medium">{request.city}, {request.state}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-gray-600">
+                                    <div className="p-0.5 bg-gray-100 rounded">
+                                      <Clock className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-gray-500">Carga Horária</p>
+                                      <p className="text-sm font-medium">{request.workload}</p>
+                                    </div>
+                                  </div>
+                                  {request.approved_by && (
+                                    <div className="flex items-center gap-1.5 text-gray-600">
+                                      <div className="p-0.5 bg-red-100 rounded">
+                                        <XCircle className="w-3.5 h-3.5 text-red-600" />
+                                      </div>
+                                      <div>
+                                        <p className="text-[10px] text-gray-500">Rejeitado por</p>
+                                        <p className="text-sm font-medium text-red-700">{request.approved_by}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {request.description && (
+                                  <div className="mb-2 p-2 bg-gray-50 rounded text-xs">
+                                    <p className="text-xs font-medium text-gray-700 mb-0.5">Descrição:</p>
+                                    <p className="text-xs text-gray-600 leading-snug line-clamp-2">{request.description}</p>
+                                  </div>
+                                )}
+
+                                {request.notes && (
+                                  <div className="mb-2 p-2 bg-blue-50 rounded border-l-2 border-blue-200 text-xs">
+                                    <p className="text-xs font-medium text-blue-800 mb-0.5">Observações do Gerente:</p>
+                                    <p className="text-xs text-blue-700 leading-snug">{request.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 justify-end pt-2 border-t border-gray-100">
+                              {rhProfile?.role === 'admin' && (
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await updateJobRequestStatus.mutateAsync({
+                                        id: request.id,
+                                        status: 'aprovado',
+                                        notes: 'Reaprovado pelo administrador'
+                                      });
+                                      toast({
+                                        title: "Solicitação reaprovada!",
+                                        description: "A solicitação foi reaprovada e aparecerá na aba de Aprovadas.",
+                                      });
+                                    } catch (error) {
+                                      toast({
+                                        title: "Erro ao reaprovar",
+                                        description: "Não foi possível reaprovar a solicitação.",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }}
+                                  className="flex items-center gap-1.5 bg-yellow-600 hover:bg-yellow-700 text-white h-7 text-xs px-2"
+                                  disabled={updateJobRequestStatus.isPending}
+                                >
+                                  {updateJobRequestStatus.isPending ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="w-3 h-3" />
+                                  )}
+                                  Reaprovar
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {rejectedRequests.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <XCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                        <p>Nenhuma solicitação reprovada no momento</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
