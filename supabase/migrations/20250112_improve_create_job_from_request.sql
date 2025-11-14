@@ -6,6 +6,7 @@ RETURNS uuid AS $$
 DECLARE
     request_data record;
     new_job_id uuid;
+    creator_user_id uuid;
 BEGIN
     -- Verificar se a solicitação existe
     SELECT * INTO request_data 
@@ -24,6 +25,35 @@ BEGIN
     -- Verificar se está aprovada
     IF request_data.status != 'aprovado' THEN
         RAISE EXCEPTION 'A solicitação precisa estar aprovada para criar a vaga. Status atual: %', request_data.status;
+    END IF;
+    
+    -- Resolver o UUID do criador da vaga
+    -- approved_by pode ser UUID ou nome (text)
+    IF request_data.approved_by IS NOT NULL THEN
+        -- Tentar converter para UUID primeiro
+        BEGIN
+            creator_user_id := request_data.approved_by::uuid;
+        EXCEPTION WHEN OTHERS THEN
+            -- Se falhar, é porque approved_by é um nome (text)
+            -- Buscar o UUID do usuário pelo nome na tabela rh_users
+            SELECT user_id INTO creator_user_id
+            FROM public.rh_users
+            WHERE full_name = request_data.approved_by
+            LIMIT 1;
+            
+            -- Se não encontrar pelo nome, usar o usuário atual
+            IF creator_user_id IS NULL THEN
+                creator_user_id := auth.uid();
+            END IF;
+        END;
+    ELSE
+        -- Se approved_by for NULL, usar o usuário atual
+        creator_user_id := auth.uid();
+    END IF;
+    
+    -- Se ainda não tiver UUID, usar o usuário atual como fallback
+    IF creator_user_id IS NULL THEN
+        creator_user_id := auth.uid();
     END IF;
     
     -- Create new job with all necessary fields
@@ -60,7 +90,7 @@ BEGIN
         request_data.workload,
         'active', -- Já aprovado
         'active', -- Ativo para candidaturas
-        request_data.approved_by::uuid, -- Cast para UUID
+        creator_user_id, -- UUID do criador resolvido
         COALESCE(request_data.quantity, 1), -- Usar quantidade da solicitação ou padrão 1
         request_data.expires_at, -- Usar data de expiração da solicitação
         COALESCE(request_data.flow_status::job_flow_status, 'ativa'::job_flow_status), -- Cast para job_flow_status
