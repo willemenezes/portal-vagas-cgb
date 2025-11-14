@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
 import useJobRequests from "@/hooks/useJobRequests";
@@ -57,7 +58,6 @@ export default function JobRequestApproval() {
 
     // Estados para filtros das solicitações processadas
     const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
     const [stateFilter, setStateFilter] = useState("all");
     const [approverFilter, setApproverFilter] = useState("all");
 
@@ -191,21 +191,36 @@ export default function JobRequestApproval() {
     };
 
     const pendingRequests = jobRequests.filter(req => req.status === 'pendente');
+    const approvedRequests = jobRequests.filter(req => req.status === 'aprovado');
+    const rejectedRequests = jobRequests.filter(req => req.status === 'rejeitado');
     const allProcessedRequests = jobRequests.filter(req => req.status !== 'pendente');
 
-    // Filtrar solicitações processadas
-    const filteredProcessedRequests = allProcessedRequests.filter(request => {
+    // Filtrar solicitações aprovadas
+    const filteredApprovedRequests = approvedRequests.filter(request => {
         const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             request.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
             request.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (request.requested_by_name && request.requested_by_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        const matchesStatus = statusFilter === "all" || request.status === statusFilter;
         const matchesState = stateFilter === "all" || request.state === stateFilter;
         const matchesApprover = approverFilter === "all" ||
             (request.approved_by && getApproverDisplayName(request.approved_by).toLowerCase().includes(approverFilter.toLowerCase()));
 
-        return matchesSearch && matchesStatus && matchesState && matchesApprover;
+        return matchesSearch && matchesState && matchesApprover;
+    });
+
+    // Filtrar solicitações reprovadas
+    const filteredRejectedRequests = rejectedRequests.filter(request => {
+        const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            request.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            request.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (request.requested_by_name && request.requested_by_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const matchesState = stateFilter === "all" || request.state === stateFilter;
+        const matchesApprover = approverFilter === "all" ||
+            (request.approved_by && getApproverDisplayName(request.approved_by).toLowerCase().includes(approverFilter.toLowerCase()));
+
+        return matchesSearch && matchesState && matchesApprover;
     });
 
     // Função para converter ID de aprovador em nome legível
@@ -221,8 +236,8 @@ export default function JobRequestApproval() {
     };
 
     // Criar listas únicas para filtros com nomes legíveis
-    const uniqueStates = [...new Set(allProcessedRequests.map(req => req.state))].sort();
-    const uniqueApprovers = [...new Set(allProcessedRequests
+    const uniqueStates = [...new Set([...approvedRequests, ...rejectedRequests].map(req => req.state))].sort();
+    const uniqueApprovers = [...new Set([...approvedRequests, ...rejectedRequests]
         .filter(req => req.approved_by)
         .map(req => getApproverDisplayName(req.approved_by)))].sort();
 
@@ -593,15 +608,26 @@ export default function JobRequestApproval() {
                 </div>
             )}
 
-            {/* Solicitações Processadas */}
-            {allProcessedRequests.length > 0 && (
+            {/* Solicitações Processadas - Tabs para Aprovadas e Reprovadas */}
+            {(approvedRequests.length > 0 || rejectedRequests.length > 0) && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">Solicitações Processadas</h3>
-                        <div className="text-sm text-gray-600">
-                            {filteredProcessedRequests.length} de {allProcessedRequests.length} solicitações
-                        </div>
-                    </div>
+                    <Tabs defaultValue="approved" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="approved" className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4" />
+                                Aprovadas
+                                <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+                                    {approvedRequests.length}
+                                </Badge>
+                            </TabsTrigger>
+                            <TabsTrigger value="rejected" className="flex items-center gap-2">
+                                <XCircle className="w-4 h-4" />
+                                Reprovadas
+                                <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
+                                    {rejectedRequests.length}
+                                </Badge>
+                            </TabsTrigger>
+                        </TabsList>
 
                     {/* Filtros */}
                     <Card>
@@ -625,20 +651,6 @@ export default function JobRequestApproval() {
                                             className="pl-10"
                                         />
                                     </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Status</Label>
-                                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Todos os status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Todos os status</SelectItem>
-                                            <SelectItem value="aprovado">Aprovado</SelectItem>
-                                            <SelectItem value="rejeitado">Rejeitado</SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                 </div>
 
                                 <div className="space-y-2">
@@ -674,22 +686,23 @@ export default function JobRequestApproval() {
                         </CardContent>
                     </Card>
 
-                    {/* Tabela de Solicitações Processadas */}
-                    <Card>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Vaga</TableHead>
-                                        <TableHead>Localização</TableHead>
-                                        <TableHead>Solicitante</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Processado em</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredProcessedRequests.map((request) => (
+                    {/* Aba de Aprovadas */}
+                    <TabsContent value="approved" className="mt-0">
+                        <Card>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Vaga</TableHead>
+                                            <TableHead>Localização</TableHead>
+                                            <TableHead>Solicitante</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Processado em</TableHead>
+                                            <TableHead className="text-right">Ações</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredApprovedRequests.map((request) => (
                                         <TableRow key={request.id}>
                                             <TableCell>
                                                 <div className="space-y-1">
@@ -773,19 +786,20 @@ export default function JobRequestApproval() {
                                         </TableRow>
                                     ))}
                                 </TableBody>
-                            </Table>
+                                    </Table>
+                                </CardContent>
+                            </Card>
 
-                            {filteredProcessedRequests.length === 0 && allProcessedRequests.length > 0 && (
+                            {filteredApprovedRequests.length === 0 && approvedRequests.length > 0 && (
                                 <div className="p-8 text-center">
                                     <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-gray-500">Nenhuma solicitação encontrada com os filtros aplicados.</p>
+                                    <p className="text-gray-500">Nenhuma solicitação aprovada encontrada com os filtros aplicados.</p>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         className="mt-2"
                                         onClick={() => {
                                             setSearchTerm("");
-                                            setStatusFilter("all");
                                             setStateFilter("all");
                                             setApproverFilter("all");
                                         }}
@@ -794,8 +808,128 @@ export default function JobRequestApproval() {
                                     </Button>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                            {approvedRequests.length === 0 && (
+                                <div className="p-8 text-center">
+                                    <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-gray-500">Nenhuma solicitação aprovada no momento.</p>
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        {/* Aba de Reprovadas */}
+                        <TabsContent value="rejected" className="mt-0">
+                            <Card>
+                                <CardContent className="p-0">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Vaga</TableHead>
+                                                <TableHead>Localização</TableHead>
+                                                <TableHead>Solicitante</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Processado em</TableHead>
+                                                <TableHead className="text-right">Ações</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredRejectedRequests.map((request) => (
+                                                <TableRow key={request.id}>
+                                                    <TableCell>
+                                                        <div className="space-y-1">
+                                                            <div className="font-medium">{request.title}</div>
+                                                            <div className="text-sm text-gray-500 flex items-center gap-1">
+                                                                <Building className="w-3 h-3" />
+                                                                {request.department}
+                                                            </div>
+                                                            {request.justification && (
+                                                                <Popover
+                                                                    open={openPopoverId === `table-${request.id}`}
+                                                                    onOpenChange={(open) => handlePopoverChange(request.id, 'table', open)}
+                                                                >
+                                                                    <PopoverTrigger asChild>
+                                                                        <Badge className="bg-orange-100 text-orange-800 border-orange-300 cursor-pointer hover:bg-orange-200 transition-colors text-xs">
+                                                                            <MessageSquare className="w-2 h-2 mr-1" />
+                                                                            Justificativa
+                                                                        </Badge>
+                                                                    </PopoverTrigger>
+                                                                    <PopoverContent className="w-80 p-3" side="top" align="start">
+                                                                        <div className="space-y-2">
+                                                                            <h4 className="font-medium text-sm text-gray-900">Justificativa da Criação</h4>
+                                                                            <p className="text-sm text-gray-700 leading-relaxed">
+                                                                                {request.justification}
+                                                                            </p>
+                                                                        </div>
+                                                                    </PopoverContent>
+                                                                </Popover>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-1 text-sm">
+                                                            <MapPin className="w-3 h-3 text-gray-400" />
+                                                            {request.city}, {request.state}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-1 text-sm">
+                                                            <User className="w-3 h-3 text-gray-400" />
+                                                            {request.requested_by_name || 'N/A'}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {getStatusBadge(request.status)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                                                            <Calendar className="w-3 h-3" />
+                                                            {request.approved_at ? new Date(request.approved_at).toLocaleDateString('pt-BR') : '-'}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteRequest(request)}
+                                                                disabled={isDeleting}
+                                                            >
+                                                                <Trash2 className="w-3 h-3 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+
+                            {filteredRejectedRequests.length === 0 && rejectedRequests.length > 0 && (
+                                <div className="p-8 text-center">
+                                    <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-gray-500">Nenhuma solicitação reprovada encontrada com os filtros aplicados.</p>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mt-2"
+                                        onClick={() => {
+                                            setSearchTerm("");
+                                            setStateFilter("all");
+                                            setApproverFilter("all");
+                                        }}
+                                    >
+                                        Limpar Filtros
+                                    </Button>
+                                </div>
+                            )}
+                            {rejectedRequests.length === 0 && (
+                                <div className="p-8 text-center">
+                                    <XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-gray-500">Nenhuma solicitação reprovada no momento.</p>
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
                 </div>
             )}
 
