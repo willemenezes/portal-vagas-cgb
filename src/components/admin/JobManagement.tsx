@@ -65,6 +65,7 @@ const JobManagement = () => {
     createJobFromRequest,
     approveAndCreateJob,
     updateJobRequest,
+    updateJobRequestStatus,
     deleteJobRequest,
     isLoading: isLoadingRequests
   } = useJobRequests();
@@ -593,22 +594,44 @@ const JobManagement = () => {
                     </div>
                   </CardTitle>
                   <Badge variant="secondary" className="bg-green-100 text-green-800 text-lg px-3 py-1">
-                    {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length}
+                    {(rhProfile?.role === 'admin' 
+                      ? allRequestsForAdmin.filter(r => (r.status === 'aprovado' || r.status === 'rejeitado') && !r.job_created)
+                      : approvedRequests
+                    ).length}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="grid gap-4">
-                  {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).map((request) => (
+                  {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests)
+                    .filter(request => {
+                      // Para admin: mostrar aprovadas e rejeitadas (para reaprovação)
+                      if (rhProfile?.role === 'admin') {
+                        return (request.status === 'aprovado' || request.status === 'rejeitado') && !request.job_created;
+                      }
+                      // Para outros: apenas aprovadas
+                      return request.status === 'aprovado' && !request.job_created;
+                    })
+                    .map((request) => (
                     <Card key={request.id} className="bg-white border border-green-200 shadow-md hover:shadow-lg transition-shadow duration-200">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-3">
                               <h3 className="text-xl font-bold text-gray-900">{request.title}</h3>
-                              <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
-                                ✓ Aprovado
-                              </Badge>
+                              {request.status === 'aprovado' ? (
+                                <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                                  ✓ Aprovado
+                                </Badge>
+                              ) : request.status === 'pendente' ? (
+                                <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">
+                                  ⏳ Pendente
+                                </Badge>
+                              ) : request.status === 'rejeitado' ? (
+                                <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
+                                  ✗ Rejeitado
+                                </Badge>
+                              ) : null}
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -685,19 +708,54 @@ const JobManagement = () => {
                             <Trash2 className="w-4 h-4" />
                             Cancelar
                           </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleCreateJobFromRequest(request.id)}
-                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                            disabled={createJobFromRequest.isPending}
-                          >
-                            {createJobFromRequest.isPending ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Plus className="w-4 h-4" />
-                            )}
-                            Publicar Vaga
-                          </Button>
+                          {request.status === 'rejeitado' && rhProfile?.role === 'admin' && (
+                            <Button
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await updateJobRequestStatus.mutateAsync({
+                                    id: request.id,
+                                    status: 'aprovado',
+                                    notes: 'Reaprovado pelo administrador'
+                                  });
+                                  toast({
+                                    title: "Solicitação reaprovada!",
+                                    description: "A solicitação foi reaprovada e pode ser publicada.",
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Erro ao reaprovar",
+                                    description: "Não foi possível reaprovar a solicitação.",
+                                    variant: "destructive"
+                                  });
+                                }
+                              }}
+                              className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white"
+                              disabled={updateJobRequestStatus.isPending}
+                            >
+                              {updateJobRequestStatus.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                              Reaprovar
+                            </Button>
+                          )}
+                          {request.status === 'aprovado' && !request.job_created && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleCreateJobFromRequest(request.id)}
+                              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                              disabled={createJobFromRequest.isPending}
+                            >
+                              {createJobFromRequest.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Plus className="w-4 h-4" />
+                              )}
+                              Publicar Vaga
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
