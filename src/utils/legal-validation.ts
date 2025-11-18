@@ -247,35 +247,38 @@ export function calculateBusinessDaysElapsed(
         }
 
         const now = new Date();
-        const hour = start.getHours();
         
+        // Ajustar data de início considerando a regra das 16h
         // Se foi postado após as 16h, ajustar para próximo dia útil às 00:00
-        let adjustedStartForBusinessDays: Date;
-        if (hour >= 16) {
-            adjustedStartForBusinessDays = adjustStartDateForBusinessDays(start);
-        } else {
-            // Se foi antes das 16h, usar início do dia atual (ou próximo dia útil)
-            adjustedStartForBusinessDays = adjustStartDateForBusinessDays(start);
+        // Se foi antes das 16h, usar início do dia atual (ou próximo dia útil se não for dia útil)
+        const adjustedStartForBusinessDays = adjustStartDateForBusinessDays(start);
+        
+        // Data ajustada zerada para meia-noite (início do dia útil de contagem)
+        const adjustedStartMidnight = new Date(adjustedStartForBusinessDays);
+        adjustedStartMidnight.setHours(0, 0, 0, 0);
+        
+        // Próxima meia-noite após a data ajustada (quando a contagem realmente começa)
+        const nextMidnight = new Date(adjustedStartMidnight);
+        nextMidnight.setDate(nextMidnight.getDate() + 1);
+        
+        // Se ainda não chegou a próxima meia-noite após a data ajustada, aguardar
+        // Exemplo: colocado hoje às 10h, data ajustada = hoje 00:00, próxima meia-noite = amanhã 00:00
+        // Se agora são 16h de hoje, ainda não chegou amanhã 00:00, então aguardar
+        if (now.getTime() < nextMidnight.getTime()) {
+            return { text: 'Aguardando início da contagem', isOverdue: false, businessDays: 0 };
         }
         
-        // Calcular dias úteis desde a data ajustada
-        const businessDays = getBusinessDaysDifference(adjustedStartForBusinessDays, now);
+        // Calcular dias úteis desde a próxima meia-noite após a data ajustada
+        // A contagem começa a partir da meia-noite seguinte ao dia ajustado
+        const businessDays = getBusinessDaysDifference(nextMidnight, now);
         
         // Prazo de 48h = 2 dias úteis
         const isOverdue = businessDays > 2;
         
         // Formatar texto
         if (businessDays === 0) {
-            // Se ainda não passou 1 dia útil, mostrar horas/minutos desde a data ORIGINAL
-            // Usar a data original (start) para cálculo preciso de horas/minutos
-            const hours = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60));
-            const minutes = Math.floor((now.getTime() - start.getTime()) / (1000 * 60)) % 60;
-            
-            if (hours < 1) {
-                return { text: `${minutes} min`, isOverdue: false, businessDays: 0 };
-            } else {
-                return { text: `${hours}h ${minutes}min`, isOverdue: false, businessDays: 0 };
-            }
+            // Se ainda não passou 1 dia útil completo, mostrar "0 dias úteis"
+            return { text: '0 dias úteis', isOverdue: false, businessDays: 0 };
         } else if (businessDays === 1) {
             return { text: '1 dia útil', isOverdue: false, businessDays: 1 };
         } else {
