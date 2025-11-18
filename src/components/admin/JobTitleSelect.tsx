@@ -60,29 +60,6 @@ export function JobTitleSelect({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Adicionar event listener para scroll com roda do mouse
-  useEffect(() => {
-    const listElement = commandListRef.current;
-    if (!listElement) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.stopPropagation();
-      const isAtTop = listElement.scrollTop === 0;
-      const isAtBottom = listElement.scrollTop + listElement.clientHeight >= listElement.scrollHeight - 1;
-      
-      if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-        e.preventDefault();
-      } else {
-        listElement.scrollTop += e.deltaY;
-        e.preventDefault();
-      }
-    };
-
-    listElement.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      listElement.removeEventListener('wheel', handleWheel);
-    };
-  }, [open]);
 
   const handleSelect = (selectedValue: string) => {
     if (selectedValue === "Outros") {
@@ -137,7 +114,28 @@ export function JobTitleSelect({
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[400px] p-0" align="start">
+          <PopoverContent 
+            className="w-[400px] p-0" 
+            align="start"
+            onWheel={(e) => {
+              // Encontrar o elemento scrollável dentro do PopoverContent
+              const target = e.currentTarget;
+              const scrollableElement = target.querySelector('[cmdk-list]') as HTMLElement || 
+                                       target.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement ||
+                                       commandListRef.current;
+              
+              if (scrollableElement && scrollableElement.scrollHeight > scrollableElement.clientHeight) {
+                e.stopPropagation();
+                const isAtTop = scrollableElement.scrollTop === 0;
+                const isAtBottom = scrollableElement.scrollTop + scrollableElement.clientHeight >= scrollableElement.scrollHeight - 1;
+                
+                if (!((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0))) {
+                  scrollableElement.scrollTop += e.deltaY;
+                  e.preventDefault();
+                }
+              }
+            }}
+          >
             <Command>
               <CommandInput placeholder="Pesquisar cargo..." />
               <CommandList 
