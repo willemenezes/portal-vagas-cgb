@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export function JobTitleSelect({
 }: JobTitleSelectProps) {
   const [open, setOpen] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
+  const commandListRef = useRef<HTMLDivElement>(null);
   const isOtherSelected = value === "Outros" || (!jobTitles.includes(value) && value !== "");
 
   // Inicializar customTitle quando o valor não está na lista
@@ -58,6 +59,30 @@ export function JobTitleSelect({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  // Adicionar event listener para scroll com roda do mouse
+  useEffect(() => {
+    const listElement = commandListRef.current;
+    if (!listElement) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.stopPropagation();
+      const isAtTop = listElement.scrollTop === 0;
+      const isAtBottom = listElement.scrollTop + listElement.clientHeight >= listElement.scrollHeight - 1;
+      
+      if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+        e.preventDefault();
+      } else {
+        listElement.scrollTop += e.deltaY;
+        e.preventDefault();
+      }
+    };
+
+    listElement.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      listElement.removeEventListener('wheel', handleWheel);
+    };
+  }, [open]);
 
   const handleSelect = (selectedValue: string) => {
     if (selectedValue === "Outros") {
@@ -115,7 +140,10 @@ export function JobTitleSelect({
           <PopoverContent className="w-[400px] p-0" align="start">
             <Command>
               <CommandInput placeholder="Pesquisar cargo..." />
-              <CommandList>
+              <CommandList 
+                ref={commandListRef}
+                className="max-h-[300px] overflow-y-auto overflow-x-hidden"
+              >
                 <CommandEmpty>Nenhum cargo encontrado.</CommandEmpty>
                 <CommandGroup>
                   {jobTitles.map((title) => (
