@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileDown, Users, UserCheck, Archive, Loader2, LayoutDashboard, ThumbsUp, UserX } from "lucide-react";
+import { FileDown, FileText, Users, UserCheck, Archive, Loader2, LayoutDashboard, ThumbsUp, UserX } from "lucide-react";
 import { useAllCandidates } from "@/hooks/useCandidates";
 import { useAllResumes } from "@/hooks/useResumes";
 import { useAllJobs } from "@/hooks/useJobs";
@@ -8,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, subMonths, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllRejectionNotes } from "@/hooks/useAllRejectionNotes";
+import { generatePDFReport, generateDashboardPDF } from "@/utils/pdf-reports";
 
 const ReportsManagement = () => {
     const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates();
@@ -64,6 +66,169 @@ const ReportsManagement = () => {
         link.click();
         document.body.removeChild(link);
         toast({ title: "Exportação Concluída!", description: `${filename} foi baixado com sucesso.` });
+    };
+
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
+
+    const handleExportPDF = async (type: 'candidates' | 'hired' | 'talentBank' | 'dashboard' | 'approvedJobs' | 'rejectedCandidates') => {
+        if (isLoading) {
+            toast({ title: "Aguarde", description: "Os dados ainda estão sendo carregados.", variant: "destructive" });
+            return;
+        }
+
+        setIsGeneratingPDF(type);
+
+        try {
+            let headers: string[] = [];
+            let rows: string[][] = [];
+            let filename = "";
+            let title = "";
+            let description = "";
+
+            switch (type) {
+                case 'candidates':
+                    title = "Relatório de Candidatos Gerais";
+                    description = "Lista completa de todos os candidatos cadastrados no sistema";
+                    headers = ['Nome', 'Email', 'Telefone', 'Vaga Aplicada', 'Status', 'Localização', 'Possui CNH', 'Tipo de Veículo'];
+                    rows = candidates
+                        .filter(c => c.job_id !== null)
+                        .map(c => [
+                            c.name || '', c.email || '', c.phone || '',
+                            c.job?.title || 'N/A', c.status || 'N/A',
+                            `${c.city || ''}, ${c.state || ''}`,
+                            (c.cnh && c.cnh.toLowerCase() !== 'não possuo') ? 'Sim' : 'Não',
+                            c.vehicle || 'N/A'
+                        ]);
+                    filename = "relatorio_candidatos_gerais.pdf";
+                    break;
+
+                case 'hired':
+                    title = "Relatório de Candidatos Contratados";
+                    description = "Candidatos que foram efetivamente contratados";
+                    headers = ['Nome', 'Email', 'Telefone', 'Vaga Contratada', 'Data da Aprovação'];
+                    rows = candidates
+                        .filter(c => c.status === 'Aprovado')
+                        .map(c => [
+                            c.name || '', c.email || '', c.phone || '',
+                            c.job?.title || 'N/A',
+                            format(new Date(c.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                        ]);
+                    filename = "relatorio_contratados.pdf";
+                    break;
+
+                case 'talentBank':
+                    title = "Relatório de Cadastro de Currículos";
+                    description = "Candidatos que cadastraram seus currículos no banco de talentos";
+                    headers = ['Nome', 'Email', 'Telefone', 'Cargo Desejado', 'Estado', 'Cidade', 'Data de Envio'];
+                    rows = resumes.map(r => [
+                        r.name || '', r.email || '', r.phone || '',
+                        r.position || 'N/A', r.state || '', r.city || '',
+                        new Date(r.submitted_date).toLocaleDateString('pt-BR')
+                    ]);
+                    filename = "relatorio_banco_de_talentos.pdf";
+                    break;
+
+                case 'dashboard':
+                    title = "Relatório do Dashboard";
+                    description = "Principais métricas de desempenho do processo de recrutamento";
+                    const activeJobs = jobs.filter(j => j.status === 'active').length;
+                    const totalCandidates = candidates.length;
+                    const approvedCandidates = candidates.filter(c => c.status === 'Aprovado');
+                    const approvedCount = approvedCandidates.length;
+                    const conversionRate = totalCandidates > 0 ? `${Math.round((approvedCount / totalCandidates) * 100)}%` : "0%";
+                    let totalHiringTime = 0;
+                    approvedCandidates.forEach(candidate => {
+                        const job = jobs.find(j => j.id === candidate.job_id);
+                        if (job && job.created_at && candidate.updated_at) {
+                            totalHiringTime += differenceInDays(new Date(candidate.updated_at), new Date(job.created_at));
+                        }
+                    });
+                    const avgTimeToHire = approvedCount > 0 ? `${Math.round(totalHiringTime / approvedCount)} dias` : "0 dias";
+                    const oneMonthAgo = subMonths(new Date(), 1);
+                    const hiresThisMonth = approvedCandidates.filter(c => new Date(c.updated_at) > oneMonthAgo).length;
+                    const approvedJobsCount = jobs.filter(j => j.approval_status === 'active').length;
+                    const rejectedCandidatesCount = candidates.filter(c => c.status === 'Reprovado').length;
+
+                    const metrics = [
+                        { metric: 'Vagas Abertas', value: activeJobs, description: 'Total de vagas ativas' },
+                        { metric: 'Total de Candidatos', value: totalCandidates, description: 'Total de candidatos no sistema' },
+                        { metric: 'Candidatos Aprovados', value: approvedCount, description: 'Total de contratados através do portal' },
+                        { metric: 'Taxa de Conversão', value: conversionRate, description: 'Percentual de candidatos que foram aprovados' },
+                        { metric: 'Tempo Médio de Contratação', value: avgTimeToHire, description: 'Média de dias desde a criação da vaga até a contratação' },
+                        { metric: 'Contratações no Mês', value: hiresThisMonth, description: 'Novos talentos aprovados no último mês' },
+                        { metric: 'Vagas Processadas', value: approvedJobsCount, description: 'Total de requisições de vagas processadas pelos gestores' },
+                        { metric: 'Candidatos Reprovados', value: rejectedCandidatesCount, description: 'Candidatos que não passaram no processo seletivo' }
+                    ];
+
+                    await generateDashboardPDF(metrics);
+                    toast({ title: "PDF Gerado!", description: "Relatório do dashboard foi gerado com sucesso." });
+                    setIsGeneratingPDF(null);
+                    return;
+
+                case 'approvedJobs':
+                    title = "Relatório de Vagas Processadas";
+                    description = "Vagas que foram processadas pelos gestores e se tornaram ativas";
+                    headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
+                    rows = jobs
+                        .filter(j => j.approval_status === 'active')
+                        .map(j => [
+                            j.title || '',
+                            j.department || '',
+                            `${j.city || ''}, ${j.state || ''}`,
+                            format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
+                            getJobPortalStatus(j),
+                            String(j.quantity || 1)
+                        ]);
+                    filename = "relatorio_vagas_aprovadas.pdf";
+                    break;
+
+                case 'rejectedCandidates':
+                    title = "Relatório de Candidatos Reprovados";
+                    description = "Candidatos reprovados e seus motivos";
+                    headers = ['Nome', 'Email', 'Vaga Aplicada', 'Data da Reprovação', 'Motivo da Reprovação'];
+                    rows = candidates
+                        .filter(c => c.status === 'Reprovado')
+                        .map(c => {
+                            const note = rejectionNotes.find(n => n.candidate_id === c.id);
+                            return [
+                                c.name || '',
+                                c.email || '',
+                                c.job?.title || 'N/A',
+                                note ? format(new Date(note.created_at), "dd/MM/yyyy", { locale: ptBR }) : 'N/A',
+                                note?.note.replace('Motivo da reprovação: ', '') || 'Motivo não especificado'
+                            ];
+                        });
+                    filename = "relatorio_candidatos_reprovados.pdf";
+                    break;
+            }
+
+            if (type !== 'dashboard') {
+                if (rows.length === 0) {
+                    toast({ title: "Nenhum dado encontrado", description: "Não há dados para exportar neste relatório.", variant: "destructive" });
+                    setIsGeneratingPDF(null);
+                    return;
+                }
+
+                await generatePDFReport({
+                    title,
+                    headers,
+                    rows,
+                    filename,
+                    description
+                });
+
+                toast({ title: "PDF Gerado!", description: `${filename} foi gerado com sucesso.` });
+            }
+        } catch (error) {
+            console.error('Erro ao gerar PDF:', error);
+            toast({ 
+                title: "Erro ao gerar PDF", 
+                description: "Não foi possível gerar o relatório em PDF. Tente novamente.", 
+                variant: "destructive" 
+            });
+        } finally {
+            setIsGeneratingPDF(null);
+        }
     };
 
     const handleExport = (type: 'candidates' | 'hired' | 'talentBank' | 'dashboard' | 'approvedJobs' | 'rejectedCandidates') => {
@@ -235,7 +400,7 @@ const ReportsManagement = () => {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold text-gray-800">Central de Relatórios</h1>
-                <p className="text-gray-500 mt-1">Exporte os dados do sistema em formato CSV com um único clique.</p>
+                <p className="text-gray-500 mt-1">Exporte os dados do sistema em formato CSV ou PDF com um único clique.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -245,10 +410,14 @@ const ReportsManagement = () => {
                         <CardDescription>Exporte uma lista completa de todos os candidatos cadastrados no sistema, incluindo seus dados de contato e status atual.</CardDescription>
                     </CardHeader>
                     <CardContent />
-                    <CardFooter>
-                        <Button onClick={() => handleExport('candidates')} disabled={isLoading} className="w-full bg-cgb-primary hover:bg-cgb-primary-dark">
+                    <CardFooter className="flex gap-2">
+                        <Button onClick={() => handleExport('candidates')} disabled={isLoading} className="flex-1 bg-cgb-primary hover:bg-cgb-primary-dark">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
+                            CSV
+                        </Button>
+                        <Button onClick={() => handleExportPDF('candidates')} disabled={isLoading || isGeneratingPDF === 'candidates'} className="flex-1 bg-red-600 hover:bg-red-700">
+                            {isGeneratingPDF === 'candidates' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                            PDF
                         </Button>
                     </CardFooter>
                 </Card>
@@ -259,10 +428,14 @@ const ReportsManagement = () => {
                         <CardDescription>Gere um relatório focado apenas nos candidatos que foram efetivamente contratados, com detalhes da vaga e data de aprovação.</CardDescription>
                     </CardHeader>
                     <CardContent />
-                    <CardFooter>
-                        <Button onClick={() => handleExport('hired')} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700">
+                    <CardFooter className="flex gap-2">
+                        <Button onClick={() => handleExport('hired')} disabled={isLoading} className="flex-1 bg-green-600 hover:bg-green-700">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
+                            CSV
+                        </Button>
+                        <Button onClick={() => handleExportPDF('hired')} disabled={isLoading || isGeneratingPDF === 'hired'} className="flex-1 bg-red-600 hover:bg-red-700">
+                            {isGeneratingPDF === 'hired' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                            PDF
                         </Button>
                     </CardFooter>
                 </Card>
@@ -273,10 +446,14 @@ const ReportsManagement = () => {
                         <CardDescription>Baixe a lista de candidatos que cadastraram seus currículos, ideal para buscar perfis para futuras oportunidades.</CardDescription>
                     </CardHeader>
                     <CardContent />
-                    <CardFooter>
-                        <Button onClick={() => handleExport('talentBank')} disabled={isLoading} className="w-full bg-sky-600 hover:bg-sky-700">
+                    <CardFooter className="flex gap-2">
+                        <Button onClick={() => handleExport('talentBank')} disabled={isLoading} className="flex-1 bg-sky-600 hover:bg-sky-700">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
+                            CSV
+                        </Button>
+                        <Button onClick={() => handleExportPDF('talentBank')} disabled={isLoading || isGeneratingPDF === 'talentBank'} className="flex-1 bg-red-600 hover:bg-red-700">
+                            {isGeneratingPDF === 'talentBank' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                            PDF
                         </Button>
                     </CardFooter>
                 </Card>
@@ -292,10 +469,14 @@ const ReportsManagement = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent />
-                    <CardFooter>
-                        <Button onClick={() => handleExport('dashboard')} disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700">
+                    <CardFooter className="flex gap-2">
+                        <Button onClick={() => handleExport('dashboard')} disabled={isLoading} className="flex-1 bg-indigo-600 hover:bg-indigo-700">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
+                            CSV
+                        </Button>
+                        <Button onClick={() => handleExportPDF('dashboard')} disabled={isLoading || isGeneratingPDF === 'dashboard'} className="flex-1 bg-red-600 hover:bg-red-700">
+                            {isGeneratingPDF === 'dashboard' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                            PDF
                         </Button>
                     </CardFooter>
                 </Card>
@@ -306,10 +487,14 @@ const ReportsManagement = () => {
                         <CardDescription>Exporte a lista de todas as vagas que foram processadas pelos gestores e se tornaram ativas no portal.</CardDescription>
                     </CardHeader>
                     <CardContent />
-                    <CardFooter>
-                        <Button onClick={() => handleExport('approvedJobs')} disabled={isLoading} className="w-full bg-cyan-600 hover:bg-cyan-700">
+                    <CardFooter className="flex gap-2">
+                        <Button onClick={() => handleExport('approvedJobs')} disabled={isLoading} className="flex-1 bg-cyan-600 hover:bg-cyan-700">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
+                            CSV
+                        </Button>
+                        <Button onClick={() => handleExportPDF('approvedJobs')} disabled={isLoading || isGeneratingPDF === 'approvedJobs'} className="flex-1 bg-red-600 hover:bg-red-700">
+                            {isGeneratingPDF === 'approvedJobs' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                            PDF
                         </Button>
                     </CardFooter>
                 </Card>
@@ -320,10 +505,14 @@ const ReportsManagement = () => {
                         <CardDescription>Liste todos os candidatos reprovados e os motivos, ajudando a analisar e otimizar o funil de seleção.</CardDescription>
                     </CardHeader>
                     <CardContent />
-                    <CardFooter>
-                        <Button onClick={() => handleExport('rejectedCandidates')} disabled={isLoading} className="w-full bg-red-600 hover:bg-red-700">
+                    <CardFooter className="flex gap-2">
+                        <Button onClick={() => handleExport('rejectedCandidates')} disabled={isLoading} className="flex-1 bg-red-600 hover:bg-red-700">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                            Exportar CSV
+                            CSV
+                        </Button>
+                        <Button onClick={() => handleExportPDF('rejectedCandidates')} disabled={isLoading || isGeneratingPDF === 'rejectedCandidates'} className="flex-1 bg-red-700 hover:bg-red-800">
+                            {isGeneratingPDF === 'rejectedCandidates' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                            PDF
                         </Button>
                     </CardFooter>
                 </Card>
