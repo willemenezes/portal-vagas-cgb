@@ -13,4 +13,5 @@ export const departments = [
   "Recursos Humanos",
   "TI",
   "Qualidade",
+  "Saneamento",
 ];
