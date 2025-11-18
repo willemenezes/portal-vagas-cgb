@@ -165,7 +165,7 @@ const Index = () => {
 
                 <div className="bg-cgb-primary/5 border border-cgb-primary/20 rounded-lg p-3">
                   <p className="text-cgb-primary font-bold text-center text-lg">
-                    www.cgbvagas.com.br
+                    vagas.grupocgb.com.br
                   </p>
                 </div>
 
