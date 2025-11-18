@@ -247,38 +247,76 @@ export function calculateBusinessDaysElapsed(
         }
 
         const now = new Date();
+        const hour = start.getHours();
         
-        // Ajustar data de início considerando a regra das 16h
-        // Se foi postado após as 16h, ajustar para próximo dia útil às 00:00
-        // Se foi antes das 16h, usar início do dia atual (ou próximo dia útil se não for dia útil)
-        const adjustedStartForBusinessDays = adjustStartDateForBusinessDays(start);
+        let effectiveStartDate: Date;
         
-        // Data ajustada zerada para meia-noite (início do dia útil de contagem)
-        const adjustedStartMidnight = new Date(adjustedStartForBusinessDays);
-        adjustedStartMidnight.setHours(0, 0, 0, 0);
+        // Se foi colocado ANTES das 16h: começa a contar imediatamente a partir da hora que foi colocado
+        if (hour < 16) {
+            effectiveStartDate = new Date(start); // Usar data/hora original
+        } else {
+            // Se foi colocado APÓS as 16h: para o tempo e só começa a contar depois da meia-noite
+            // Ajustar para próximo dia útil às 00:00
+            effectiveStartDate = adjustStartDateForBusinessDays(start);
+        }
         
-        // Próxima meia-noite após a data ajustada (quando a contagem realmente começa)
-        const nextMidnight = new Date(adjustedStartMidnight);
-        nextMidnight.setDate(nextMidnight.getDate() + 1);
-        
-        // Se ainda não chegou a próxima meia-noite após a data ajustada, aguardar
-        // Exemplo: colocado hoje às 10h, data ajustada = hoje 00:00, próxima meia-noite = amanhã 00:00
-        // Se agora são 16h de hoje, ainda não chegou amanhã 00:00, então aguardar
-        if (now.getTime() < nextMidnight.getTime()) {
+        // Se a data efetiva é no futuro (ainda não chegou), aguardar
+        if (now.getTime() < effectiveStartDate.getTime()) {
             return { text: 'Aguardando início da contagem', isOverdue: false, businessDays: 0 };
         }
         
-        // Calcular dias úteis desde a próxima meia-noite após a data ajustada
-        // A contagem começa a partir da meia-noite seguinte ao dia ajustado
-        const businessDays = getBusinessDaysDifference(nextMidnight, now);
+        // Se foi antes das 16h, calcular tempo real (horas/minutos se ainda no mesmo dia útil)
+        if (hour < 16) {
+            // Verificar se ainda estamos no mesmo dia útil
+            const startMidnight = new Date(start);
+            startMidnight.setHours(0, 0, 0, 0);
+            const nowMidnight = new Date(now);
+            nowMidnight.setHours(0, 0, 0, 0);
+            
+            // Se ainda estamos no mesmo dia útil, mostrar horas/minutos desde a hora que foi colocado
+            if (startMidnight.getTime() === nowMidnight.getTime()) {
+                const hours = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60));
+                const minutes = Math.floor((now.getTime() - start.getTime()) / (1000 * 60)) % 60;
+                
+                if (hours < 1) {
+                    return { text: `${minutes} min`, isOverdue: false, businessDays: 0 };
+                } else {
+                    return { text: `${hours}h ${minutes}min`, isOverdue: false, businessDays: 0 };
+                }
+            }
+            
+            // Se já passou a meia-noite, usar a meia-noite do dia em que foi colocado para cálculo de dias úteis
+            // Mas verificar se é dia útil, se não for, ajustar para próximo dia útil
+            let adjustedForBusinessDay = new Date(startMidnight);
+            if (!isBusinessDay(adjustedForBusinessDay) || isHoliday(adjustedForBusinessDay)) {
+                while (!isBusinessDay(adjustedForBusinessDay) || isHoliday(adjustedForBusinessDay)) {
+                    adjustedForBusinessDay.setDate(adjustedForBusinessDay.getDate() + 1);
+                }
+            }
+            effectiveStartDate = adjustedForBusinessDay;
+        }
+        
+        // Para cálculo de dias úteis, usar a data efetiva zerada para meia-noite
+        const effectiveStartMidnight = new Date(effectiveStartDate);
+        effectiveStartMidnight.setHours(0, 0, 0, 0);
+        
+        // Se foi antes das 16h e já passou a meia-noite, começar a contar dias úteis a partir da meia-noite do dia colocado (ou próximo dia útil)
+        // Se foi após 16h, já está ajustado para meia-noite do próximo dia útil
+        const businessDays = getBusinessDaysDifference(effectiveStartMidnight, now);
         
         // Prazo de 48h = 2 dias úteis
         const isOverdue = businessDays > 2;
         
         // Formatar texto
         if (businessDays === 0) {
-            // Se ainda não passou 1 dia útil completo, mostrar "0 dias úteis"
-            return { text: '0 dias úteis', isOverdue: false, businessDays: 0 };
+            // Se ainda não passou 1 dia útil completo
+            if (hour < 16) {
+                // Se foi antes das 16h, já mostramos horas/minutos acima, então não chegamos aqui
+                // Mas se chegou aqui, significa que passou a meia-noite mas ainda não completou 1 dia útil
+                return { text: '0 dias úteis', isOverdue: false, businessDays: 0 };
+            } else {
+                return { text: '0 dias úteis', isOverdue: false, businessDays: 0 };
+            }
         } else if (businessDays === 1) {
             return { text: '1 dia útil', isOverdue: false, businessDays: 1 };
         } else {
