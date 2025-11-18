@@ -164,12 +164,14 @@ function isHoliday(date: Date): boolean {
 
 /**
  * Ajusta a data de início considerando a regra das 16h:
- * Se a data for após as 16h, retorna o próximo dia útil
+ * - Se a data for ANTES das 16h, usa a data/hora original
+ * - Se a data for APÓS as 16h, retorna o próximo dia útil às 00:00
+ * Retorna a data ajustada para cálculo de dias úteis
  */
-function adjustStartDate(date: Date): Date {
+function adjustStartDateForBusinessDays(date: Date): Date {
     const hour = date.getHours();
     
-    // Se for após as 16h, começar a contagem no próximo dia útil
+    // Se for após as 16h, começar a contagem no próximo dia útil às 00:00
     if (hour >= 16) {
         let nextDay = new Date(date);
         nextDay.setDate(nextDay.getDate() + 1);
@@ -183,11 +185,11 @@ function adjustStartDate(date: Date): Date {
         return nextDay;
     }
     
-    // Se for antes das 16h, usar a data atual
+    // Se for antes das 16h, usar o início do dia atual (ou próximo dia útil se não for dia útil)
     const adjustedDate = new Date(date);
     adjustedDate.setHours(0, 0, 0, 0);
     
-    // Se não for dia útil, ir para o próximo
+    // Se não for dia útil, ir para o próximo dia útil
     if (!isBusinessDay(adjustedDate) || isHoliday(adjustedDate)) {
         while (!isBusinessDay(adjustedDate) || isHoliday(adjustedDate)) {
             adjustedDate.setDate(adjustedDate.getDate() + 1);
@@ -244,21 +246,30 @@ export function calculateBusinessDaysElapsed(
             return { text: 'Data inválida', isOverdue: false, businessDays: 0 };
         }
 
-        // Ajustar data de início considerando a regra das 16h
-        const adjustedStart = adjustStartDate(start);
         const now = new Date();
+        const hour = start.getHours();
         
-        // Calcular dias úteis
-        const businessDays = getBusinessDaysDifference(adjustedStart, now);
+        // Se foi postado após as 16h, ajustar para próximo dia útil às 00:00
+        let adjustedStartForBusinessDays: Date;
+        if (hour >= 16) {
+            adjustedStartForBusinessDays = adjustStartDateForBusinessDays(start);
+        } else {
+            // Se foi antes das 16h, usar início do dia atual (ou próximo dia útil)
+            adjustedStartForBusinessDays = adjustStartDateForBusinessDays(start);
+        }
+        
+        // Calcular dias úteis desde a data ajustada
+        const businessDays = getBusinessDaysDifference(adjustedStartForBusinessDays, now);
         
         // Prazo de 48h = 2 dias úteis
         const isOverdue = businessDays > 2;
         
         // Formatar texto
         if (businessDays === 0) {
-            // Se ainda não passou 1 dia útil, mostrar horas/minutos
-            const hours = Math.floor((now.getTime() - adjustedStart.getTime()) / (1000 * 60 * 60));
-            const minutes = Math.floor((now.getTime() - adjustedStart.getTime()) / (1000 * 60)) % 60;
+            // Se ainda não passou 1 dia útil, mostrar horas/minutos desde a data ORIGINAL
+            // Usar a data original (start) para cálculo preciso de horas/minutos
+            const hours = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60));
+            const minutes = Math.floor((now.getTime() - start.getTime()) / (1000 * 60)) % 60;
             
             if (hours < 1) {
                 return { text: `${minutes} min`, isOverdue: false, businessDays: 0 };
