@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JobQuantityBadge from "./JobQuantityBadge";
 import JobFlowStatusBadge from "./JobFlowStatusBadge";
+import { JobTitleSelect } from "./JobTitleSelect";
 
 // Mapeamento de status para aparência do Badge (chaves em inglês, texto em português)
 const approvalStatusConfig = {
@@ -1268,11 +1269,17 @@ const JobForm = ({
     <form onSubmit={(e) => e.preventDefault()} className="space-y-6 p-1">
       <fieldset disabled={!!isSubmitting}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">Título da Vaga</Label>
-            <Input name="title" value={job.title} onChange={onFormChange} required maxLength={255} />
-            <p className="text-xs text-gray-500">{(job.title?.length || 0)}/255</p>
-          </div>
+          <JobTitleSelect
+            value={job.title || ""}
+            onChange={(value) => {
+              const event = { target: { name: "title", value } } as React.ChangeEvent<HTMLInputElement>;
+              onFormChange(event);
+            }}
+            required
+            maxLength={255}
+            showCharCount={true}
+            id="title"
+          />
           <div className="space-y-2">
             <Label htmlFor="department">Departamento</Label>
             <Select name="department" value={job.department} onValueChange={(value) => onSelectChange("department", value)}>
@@ -1679,15 +1686,13 @@ const JobRequestEditForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Título da Vaga *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => handleChange('title', e.target.value)}
-            required
-          />
-        </div>
+        <JobTitleSelect
+          value={formData.title || ""}
+          onChange={(value) => handleChange('title', value)}
+          required
+          maxLength={255}
+          id="title"
+        />
         <div className="space-y-2">
           <Label htmlFor="department">Departamento *</Label>
           <Select value={formData.department} onValueChange={(value) => handleChange('department', value)}>

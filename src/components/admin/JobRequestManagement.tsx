@@ -17,6 +17,7 @@ import { CITIES_BY_STATE, STATES, getStateByCity, validateCityState } from "@/da
 import { departments } from "@/data/departments";
 import { WORKLOAD_OPTIONS } from "@/data/workload-options";
 import JobQuantityBadge from "./JobQuantityBadge";
+import { JobTitleSelect } from "./JobTitleSelect";
 import {
     Plus,
     Send,
@@ -273,15 +274,13 @@ export default function JobRequestManagement() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Título da Vaga *</Label>
-                                <Input
-                                    id="title"
-                                    value={newRequest.title}
-                                    onChange={(e) => setNewRequest({ ...newRequest, title: e.target.value })}
-                                    placeholder="Ex: Desenvolvedor Full Stack"
-                                />
-                            </div>
+                            <JobTitleSelect
+                                value={newRequest.title || ""}
+                                onChange={(value) => setNewRequest({ ...newRequest, title: value })}
+                                required
+                                maxLength={255}
+                                id="title"
+                            />
                             <div className="space-y-2">
                                 <Label htmlFor="department">Departamento *</Label>
                                 <Select
