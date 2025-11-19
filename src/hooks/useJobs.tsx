@@ -134,45 +134,88 @@ export const useAllJobs = () => {
         }
 
         // Buscar contagem de candidatos para cada vaga
-        const jobsWithApplicants = await Promise.all(
-          jobs.map(async (job) => {
-            try {
-              const { count, error: countError } = await supabase
-                .from('candidates')
-                .select('id', { count: 'exact', head: true })
-                .eq('job_id', job.id);
+        // Otimizado: processar em lotes para evitar sobrecarga do servidor
+        const jobsWithApplicants: Job[] = [];
+        const batchSize = 10; // Processar 10 vagas por vez
+        
+        for (let i = 0; i < jobs.length; i += batchSize) {
+          const batch = jobs.slice(i, i + batchSize);
+          
+          const batchResults = await Promise.all(
+            batch.map(async (job) => {
+              try {
+                // Adicionar pequeno delay para evitar rate limiting
+                if (i > 0) {
+                  await new Promise(resolve => setTimeout(resolve, 50));
+                }
 
-              if (countError) {
-                console.warn('Erro ao contar candidates:', countError);
+                const { count, error: countError } = await supabase
+                  .from('candidates')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('job_id', job.id);
+
+                if (countError) {
+                  console.warn(`Erro ao contar candidates para vaga ${job.id}:`, countError);
+                }
+
+                // Contar candidatos contratados/aprovados com retry
+                let hiredCount = 0;
+                let retries = 0;
+                const maxRetries = 2;
+
+                while (retries <= maxRetries) {
+                  try {
+                    const { count: countResult, error: hiredError } = await supabase
+                      .from('candidates')
+                      .select('id', { count: 'exact', head: true })
+                      .eq('job_id', job.id)
+                      .in('status', ['Contratado', 'Aprovado']);
+
+                    if (hiredError) {
+                      if (hiredError.code === 'PGRST116' || hiredError.message?.includes('503')) {
+                        // Erro 503 ou timeout - tentar novamente
+                        if (retries < maxRetries) {
+                          retries++;
+                          await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Backoff exponencial
+                          continue;
+                        }
+                      }
+                      console.warn(`Erro ao contar candidatos contratados para vaga ${job.id}:`, hiredError);
+                      break;
+                    }
+                    hiredCount = countResult || 0;
+                    break;
+                  } catch (error) {
+                    if (retries < maxRetries) {
+                      retries++;
+                      await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+                      continue;
+                    }
+                    console.warn(`Erro ao contar candidatos contratados para vaga ${job.id}:`, error);
+                    break;
+                  }
+                }
+
+                return {
+                  ...job,
+                  applicants: count || 0,
+                  hired_count: hiredCount,
+                  posted: new Date(job.created_at).toLocaleDateString('pt-BR')
+                };
+              } catch (error) {
+                console.warn(`Erro ao processar vaga ${job.id}:`, error);
+                return {
+                  ...job,
+                  applicants: 0,
+                  hired_count: 0,
+                  posted: new Date(job.created_at).toLocaleDateString('pt-BR')
+                };
               }
+            })
+          );
 
-              // Contar candidatos contratados/aprovados
-              const { count: hiredCount, error: hiredError } = await supabase
-                .from('candidates')
-                .select('id', { count: 'exact', head: true })
-                .eq('job_id', job.id)
-                .in('status', ['Contratado', 'Aprovado']);
-
-              if (hiredError) {
-                console.warn('Erro ao contar candidatos contratados:', hiredError);
-              }
-
-              return {
-                ...job,
-                applicants: count || 0,
-                hired_count: hiredCount || 0,
-                posted: new Date(job.created_at).toLocaleDateString('pt-BR')
-              };
-            } catch (error) {
-              return {
-                ...job,
-                applicants: 0,
-                hired_count: 0,
-                posted: new Date(job.created_at).toLocaleDateString('pt-BR')
-              };
-            }
-          })
-        );
+          jobsWithApplicants.push(...batchResults);
+        }
 
         return jobsWithApplicants;
       } catch (error) {
