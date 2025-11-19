@@ -173,12 +173,44 @@ const SelectionProcess = () => {
                     const matchState = !hasStateFilter || assignedStates.includes(job.state || '');
                     
                     // Filtro por cidade (se atribuído)
+                    // Se tem estado E cidade, ambos devem bater
+                    // Se tem apenas cidade, a cidade deve bater
                     const matchCity = !hasCityFilter || assignedCities.includes(job.city || '');
                     
                     // Filtro por departamento (apenas para gerentes, se atribuído)
-                    const matchDepartment = !hasDepartmentFilter || assignedDepartments.includes(job.department || '');
+                    // A vaga deve estar em QUALQUER um dos departamentos atribuídos (OR)
+                    const matchDepartment = !hasDepartmentFilter || (job.department && assignedDepartments.includes(job.department));
 
-                    return matchState && matchCity && matchDepartment;
+                    // Aplicar lógica: se tem estado E cidade, ambos devem bater
+                    // Se tem apenas estado OU apenas cidade, pelo menos um deve bater
+                    let regionMatch = true;
+                    if (hasStateFilter && hasCityFilter) {
+                        // Tem estado E cidade: ambos devem bater
+                        regionMatch = matchState && matchCity;
+                    } else if (hasStateFilter) {
+                        // Tem apenas estado
+                        regionMatch = matchState;
+                    } else if (hasCityFilter) {
+                        // Tem apenas cidade
+                        regionMatch = matchCity;
+                    }
+
+                    // Resultado final: região E departamento (se aplicável)
+                    const result = regionMatch && matchDepartment;
+                    
+                    if (!result) {
+                        console.log(`❌ [SelectionProcess] Vaga "${job.title}" filtrada:`, {
+                            state: job.state,
+                            city: job.city,
+                            department: job.department,
+                            matchState,
+                            matchCity,
+                            matchDepartment,
+                            regionMatch
+                        });
+                    }
+                    
+                    return result;
                 });
                 console.log(`🔍 [SelectionProcess] Vagas após filtros: ${activeJobs.length} (de ${beforeFilter})`);
             } else {
