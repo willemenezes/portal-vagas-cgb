@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, AlertCircle, Shield } from 'lucide-react';
-import { validateCPF, formatCPF, formatRG, validateBirthDate, validateFullName } from '@/utils/legal-validation';
+import { validateCPF, formatCPF, formatRG, validateFullName } from '@/utils/legal-validation';
 import { WorkHistory, LegalDataFormValues } from '@/types/legal-validation';
 import { states, cities } from '@/data/cities-states';
 
@@ -129,9 +129,8 @@ export const LegalDataForm = ({
 
         if (!formData.birth_date) {
             newErrors.birth_date = 'Data de nascimento é obrigatória';
-        } else if (!validateBirthDate(formData.birth_date)) {
-            newErrors.birth_date = 'Candidato deve ser maior de 18 anos';
         }
+        // Removida validação de idade maior de 18 anos para permitir aprendizes
 
         if (!formData.cpf) {
             newErrors.cpf = 'CPF é obrigatório';
