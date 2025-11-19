@@ -168,18 +168,37 @@ const SelectionProcess = () => {
 
             if (hasStateFilter || hasCityFilter || hasDepartmentFilter) {
                 const beforeFilter = activeJobs.length;
+                
+                // Helper para normalizar strings (remover acentos, converter para minúsculas, trim)
+                const normalizeString = (str: string | null | undefined): string => {
+                    if (!str) return '';
+                    return str
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                        .trim();
+                };
+                
+                // Normalizar arrays de permissões uma vez
+                const normalizedStates = assignedStates.map(s => normalizeString(s));
+                const normalizedCities = assignedCities.map(c => normalizeString(c));
+                const normalizedDepartments = assignedDepartments.map(d => normalizeString(d));
+                
                 activeJobs = activeJobs.filter(job => {
-                    // Filtro por estado (se atribuído)
-                    const matchState = !hasStateFilter || assignedStates.includes(job.state || '');
+                    // Normalizar valores da vaga
+                    const jobState = normalizeString(job.state);
+                    const jobCity = normalizeString(job.city);
+                    const jobDepartment = normalizeString(job.department);
                     
-                    // Filtro por cidade (se atribuído)
-                    // Se tem estado E cidade, ambos devem bater
-                    // Se tem apenas cidade, a cidade deve bater
-                    const matchCity = !hasCityFilter || assignedCities.includes(job.city || '');
+                    // Filtro por estado (se atribuído) - comparação case-insensitive e sem acentos
+                    const matchState = !hasStateFilter || normalizedStates.includes(jobState);
+                    
+                    // Filtro por cidade (se atribuído) - comparação case-insensitive e sem acentos
+                    const matchCity = !hasCityFilter || normalizedCities.includes(jobCity);
                     
                     // Filtro por departamento (apenas para gerentes, se atribuído)
                     // A vaga deve estar em QUALQUER um dos departamentos atribuídos (OR)
-                    const matchDepartment = !hasDepartmentFilter || (job.department && assignedDepartments.includes(job.department));
+                    const matchDepartment = !hasDepartmentFilter || (jobDepartment && normalizedDepartments.includes(jobDepartment));
 
                     // Aplicar lógica: se tem estado E cidade, ambos devem bater
                     // Se tem apenas estado OU apenas cidade, pelo menos um deve bater
@@ -200,9 +219,18 @@ const SelectionProcess = () => {
                     
                     if (!result) {
                         console.log(`❌ [SelectionProcess] Vaga "${job.title}" filtrada:`, {
-                            state: job.state,
-                            city: job.city,
-                            department: job.department,
+                            jobState: job.state,
+                            jobCity: job.city,
+                            jobDepartment: job.department,
+                            normalizedJobState: jobState,
+                            normalizedJobCity: jobCity,
+                            normalizedJobDepartment: jobDepartment,
+                            assignedStates: assignedStates,
+                            assignedCities: assignedCities,
+                            assignedDepartments: assignedDepartments,
+                            normalizedStates,
+                            normalizedCities,
+                            normalizedDepartments,
                             matchState,
                             matchCity,
                             matchDepartment,
