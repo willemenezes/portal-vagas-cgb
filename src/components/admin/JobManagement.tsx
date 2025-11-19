@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, XCircle
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, XCircle, FileText
 } from "lucide-react";
 import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { departments } from "@/data/departments";
+import { contracts } from "@/data/contracts";
 import { WORKLOAD_OPTIONS } from "@/data/workload-options";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -650,7 +651,7 @@ const JobManagement = () => {
                               ) : null}
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
                               <div className="flex items-center gap-1.5 text-gray-600">
                                 <div className="p-0.5 bg-gray-100 rounded">
                                   <Briefcase className="w-3.5 h-3.5" />
@@ -669,6 +670,17 @@ const JobManagement = () => {
                                   <p className="text-sm font-medium">{request.city}, {request.state}</p>
                                 </div>
                               </div>
+                              {request.company_contract && (
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <div className="p-0.5 bg-gray-100 rounded">
+                                    <FileText className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-gray-500">CT</p>
+                                    <p className="text-sm font-medium">{request.company_contract}</p>
+                                  </div>
+                                </div>
+                              )}
                               <div className="flex items-center gap-1.5 text-gray-600">
                                 <div className="p-0.5 bg-gray-100 rounded">
                                   <Clock className="w-3.5 h-3.5" />
@@ -791,7 +803,7 @@ const JobManagement = () => {
                                   </Badge>
                                 </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
                                   <div className="flex items-center gap-1.5 text-gray-600">
                                     <div className="p-0.5 bg-gray-100 rounded">
                                       <Briefcase className="w-3.5 h-3.5" />
@@ -810,6 +822,17 @@ const JobManagement = () => {
                                       <p className="text-sm font-medium">{request.city}, {request.state}</p>
                                     </div>
                                   </div>
+                                  {request.company_contract && (
+                                    <div className="flex items-center gap-1.5 text-gray-600">
+                                      <div className="p-0.5 bg-gray-100 rounded">
+                                        <FileText className="w-3.5 h-3.5" />
+                                      </div>
+                                      <div>
+                                        <p className="text-[10px] text-gray-500">CT</p>
+                                        <p className="text-sm font-medium">{request.company_contract}</p>
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-1.5 text-gray-600">
                                     <div className="p-0.5 bg-gray-100 rounded">
                                       <Clock className="w-3.5 h-3.5" />
@@ -910,6 +933,7 @@ const JobManagement = () => {
                   <TableHead>Vaga</TableHead>
                   <TableHead>Departamento</TableHead>
                   <TableHead>Local</TableHead>
+                  <TableHead>CT</TableHead>
                   <TableHead>Candidatos</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -934,6 +958,7 @@ const JobManagement = () => {
                       </TableCell>
                       <TableCell>{job.department}</TableCell>
                       <TableCell>{job.city}, {job.state}</TableCell>
+                      <TableCell>{job.company_contract || '-'}</TableCell>
                       <TableCell>{job.applicants || 0}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-2">
@@ -1287,6 +1312,13 @@ const JobForm = ({
               <SelectContent>{departments.map(dep => <SelectItem key={dep} value={dep}>{dep}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="company_contract">CT</Label>
+            <Select name="company_contract" value={job.company_contract || ""} onValueChange={(value) => onSelectChange("company_contract", value)}>
+              <SelectTrigger><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
+              <SelectContent>{contracts.map(contract => <SelectItem key={contract} value={contract}>{contract}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -1593,7 +1625,8 @@ const JobRequestEditForm = ({
     observacoes_internas: request.observacoes_internas || '',
     tipo_solicitacao: request.tipo_solicitacao || 'aumento_quadro',
     nome_substituido: request.nome_substituido || '',
-    quantity: request.quantity || 1
+    quantity: request.quantity || 1,
+    company_contract: request.company_contract || ''
   });
 
   // Estados para lista suspensa de estados e cidades
@@ -1702,6 +1735,19 @@ const JobRequestEditForm = ({
             <SelectContent>
               {departments.map(dept => (
                 <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="company_contract">CT *</Label>
+          <Select value={formData.company_contract || ""} onValueChange={(value) => handleChange('company_contract', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o contrato" />
+            </SelectTrigger>
+            <SelectContent>
+              {contracts.map(contract => (
+                <SelectItem key={contract} value={contract}>{contract}</SelectItem>
               ))}
             </SelectContent>
           </Select>

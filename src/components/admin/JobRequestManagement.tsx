@@ -16,6 +16,7 @@ import useJobRequests, { CreateJobRequestData } from "@/hooks/useJobRequests";
 import { CITIES_BY_STATE, STATES, getStateByCity, validateCityState } from "@/data/cities-states";
 import { departments } from "@/data/departments";
 import { WORKLOAD_OPTIONS } from "@/data/workload-options";
+import { contracts } from "@/data/contracts";
 import JobQuantityBadge from "./JobQuantityBadge";
 import { JobTitleSelect } from "./JobTitleSelect";
 import {
@@ -79,7 +80,8 @@ export default function JobRequestManagement() {
         solicitante_funcao: "",
         observacoes_internas: "",
         tipo_solicitacao: "aumento_quadro",
-        nome_substituido: ""
+        nome_substituido: "",
+        company_contract: ""
     });
     const { toast } = useToast();
 
@@ -152,10 +154,10 @@ export default function JobRequestManagement() {
     }));
 
     const handleCreateRequest = async () => {
-        if (!newRequest.title || !newRequest.department || !newRequest.city || !newRequest.description || !newRequest.justification) {
+        if (!newRequest.title || !newRequest.department || !newRequest.city || !newRequest.description || !newRequest.justification || !newRequest.company_contract) {
             toast({
                 title: "Campos obrigatórios",
-                description: "Preencha todos os campos obrigatórios, incluindo a justificativa",
+                description: "Preencha todos os campos obrigatórios, incluindo a justificativa e o CT (Contrato)",
                 variant: "destructive"
             });
             return;
@@ -169,6 +171,7 @@ export default function JobRequestManagement() {
             city: newRequest.city,
             state: newRequest.state,
             type: newRequest.type,
+            company_contract: newRequest.company_contract,
             description: newRequest.description,
             requirements: newRequest.requirements.split('\n').filter(r => r.trim() !== ''),
             benefits: newRequest.benefits.split('\n').filter(b => b.trim() !== ''),
@@ -293,6 +296,22 @@ export default function JobRequestManagement() {
                                     <SelectContent>
                                         {departments.map(dept => (
                                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="company_contract">CT *</Label>
+                                <Select
+                                    value={newRequest.company_contract || ""}
+                                    onValueChange={(value) => setNewRequest({ ...newRequest, company_contract: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o contrato" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {contracts.map(contract => (
+                                            <SelectItem key={contract} value={contract}>{contract}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>

@@ -168,13 +168,14 @@ const ReportsManagement = () => {
                 case 'approvedJobs':
                     title = "Relatório de Vagas Processadas";
                     description = "Vagas que foram processadas pelos gestores e se tornaram ativas";
-                    headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
+                    headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
                     rows = jobs
                         .filter(j => j.approval_status === 'active')
                         .map(j => [
                             j.title || '',
                             j.department || '',
                             `${j.city || ''}, ${j.state || ''}`,
+                            j.company_contract || 'N/A',
                             format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
                             getJobPortalStatus(j),
                             String(j.quantity || 1)
@@ -339,7 +340,7 @@ const ReportsManagement = () => {
                 break;
 
             case 'approvedJobs':
-                headers = ['Título da Vaga', 'Departamento', 'Local', 'Data de Aprovação', 'Status no Portal', 'Quantidade de Vagas'];
+                headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade de Vagas'];
                 rows = jobs
                     .filter(j => j.approval_status === 'active')
                     .flatMap(j => {
@@ -352,6 +353,7 @@ const ReportsManagement = () => {
                                 j.title || '',
                                 j.department || '',
                                 `${j.city || ''}, ${j.state || ''}`,
+                                j.company_contract || 'N/A',
                                 format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
                                 getJobPortalStatus(j),
                                 `${i}/${quantity}` // Ex: "1/3", "2/3", "3/3"

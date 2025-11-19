@@ -38,6 +38,8 @@ export interface Job {
   // Campos de justificativa
   is_justificativa?: boolean; // Se tem justificativa
   justification?: string; // Texto da justificativa
+  // Campo de contrato da empresa (CT)
+  company_contract?: string; // Contrato da empresa (CT) relacionado à vaga
 }
 
 export const useJobs = () => {

@@ -33,6 +33,7 @@ export interface JobRequest {
     nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
     flow_status?: 'ativa' | 'concluida' | 'congelada'; // Status do fluxo da vaga
     quantity?: number; // Quantidade de vagas
+    company_contract?: string; // Contrato da empresa (CT) relacionado à vaga
     created_at: string;
     updated_at: string;
 }
@@ -54,6 +55,7 @@ export interface CreateJobRequestData {
     observacoes_internas?: string; // Observações internas para controle
     tipo_solicitacao?: string; // Tipo de solicitação: aumento_quadro, substituicao
     nome_substituido?: string; // Nome da pessoa substituída (quando tipo = substituicao)
+    company_contract?: string; // Contrato da empresa (CT) relacionado à vaga
 }
 
 export const useJobRequests = () => {

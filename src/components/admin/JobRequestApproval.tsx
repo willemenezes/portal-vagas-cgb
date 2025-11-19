@@ -29,7 +29,8 @@ import {
     Trash2,
     Search,
     Filter,
-    Calendar
+    Calendar,
+    FileText
 } from "lucide-react";
 
 export default function JobRequestApproval() {
@@ -396,6 +397,12 @@ export default function JobRequestApproval() {
                                                 <MapPin className="w-4 h-4" />
                                                 {request.city}, {request.state}
                                             </div>
+                                            {request.company_contract && (
+                                                <div className="flex items-center gap-1">
+                                                    <FileText className="w-4 h-4" />
+                                                    {request.company_contract}
+                                                </div>
+                                            )}
                                             {request.requested_by_name && (
                                                 <div className="flex items-center gap-1">
                                                     <User className="w-4 h-4" />
