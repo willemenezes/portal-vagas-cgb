@@ -39,17 +39,17 @@ export function JobTitleSelect({
   const [open, setOpen] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
   const commandListRef = useRef<HTMLDivElement>(null);
-  const isOtherSelected = value === "Outros" || (!jobTitles.includes(value) && value !== "");
+  const isOtherSelected = value === "Outro" || (!jobTitles.includes(value) && value !== "");
 
   // Inicializar customTitle quando o valor não está na lista
   useEffect(() => {
-    if (value && !jobTitles.includes(value) && value !== "Outros") {
+    if (value && !jobTitles.includes(value) && value !== "Outro") {
       // Valor customizado que não está na lista
       if (customTitle !== value) {
         setCustomTitle(value);
       }
-    } else if (value === "Outros") {
-      // Se selecionou "Outros", manter customTitle vazio para o usuário digitar
+    } else if (value === "Outro") {
+      // Se selecionou "Outro", manter customTitle vazio para o usuário digitar
       // Não fazer nada aqui, deixar o usuário digitar
     } else if (jobTitles.includes(value)) {
       // Se selecionou um cargo da lista, limpar título customizado
@@ -62,8 +62,8 @@ export function JobTitleSelect({
 
 
   const handleSelect = (selectedValue: string) => {
-    if (selectedValue === "Outros") {
-      onChange("Outros");
+    if (selectedValue === "Outro") {
+      onChange("Outro");
       setOpen(false);
       setCustomTitle("");
     } else {
@@ -85,7 +85,7 @@ export function JobTitleSelect({
     <div className="space-y-2">
       <Label htmlFor={id}>Título da Vaga{required ? " *" : ""}</Label>
       
-      {isOtherSelected && value !== "Outros" ? (
+      {isOtherSelected && value !== "Outro" ? (
         // Mostrar input quando já tem um título customizado
         <div className="space-y-2">
           <Input
@@ -166,8 +166,8 @@ export function JobTitleSelect({
         </Popover>
       )}
 
-      {/* Mostrar input quando "Outros" for selecionado */}
-      {value === "Outros" && (
+      {/* Mostrar input quando "Outro" for selecionado */}
+      {value === "Outro" && (
         <div className="space-y-2 mt-2">
           <Input
             id={`${id}-custom`}
@@ -183,7 +183,7 @@ export function JobTitleSelect({
         </div>
       )}
 
-      {showCharCount && !isOtherSelected && value !== "Outros" && (
+      {showCharCount && !isOtherSelected && value !== "Outro" && (
         <p className="text-xs text-gray-500">{value.length}/{maxLength}</p>
       )}
     </div>
