@@ -192,8 +192,8 @@ const TalentBankManagement = () => {
                 travel: resumeToInvite.travel || '', // Agora disponível se migração foi executada
                 cnh: resumeToInvite.cnh || '', // Agora disponível se migração foi executada
                 vehicle: resumeToInvite.vehicle || '', // Agora disponível se migração foi executada
-                vehicleModel: resumeToInvite.vehicleModel || '', // Agora disponível se migração foi executada
-                vehicleYear: resumeToInvite.vehicleYear || '', // Agora disponível se migração foi executada
+                vehicle_model: (resumeToInvite as any).vehicleModel || (resumeToInvite as any).vehicle_model || '', // Modelo do veículo (tentar ambos formatos)
+                vehicle_year: (resumeToInvite as any).vehicleYear || (resumeToInvite as any).vehicle_year || '', // Ano do veículo (tentar ambos formatos)
                 lgpdConsent: true // Assumir consentimento já dado no banco de talentos
             };
 
