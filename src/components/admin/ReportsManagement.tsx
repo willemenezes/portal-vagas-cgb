@@ -10,10 +10,14 @@ import { format, subMonths, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllRejectionNotes } from "@/hooks/useAllRejectionNotes";
 import { generatePDFReport, generateDashboardPDF } from "@/utils/pdf-reports";
+import { useAuth } from "@/hooks/useAuth";
+import { useRHProfile } from "@/hooks/useRH";
 
 const ReportsManagement = () => {
-    const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates();
-    const { data: resumes = [], isLoading: isLoadingResumes } = useAllResumes();
+    const { user } = useAuth();
+    const { data: rhProfile } = useRHProfile(user?.id);
+    const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates(rhProfile || undefined);
+    const { data: resumes = [], isLoading: isLoadingResumes } = useAllResumes(rhProfile || undefined);
     const { data: jobs = [], isLoading: isLoadingJobs } = useAllJobs();
     const { data: rejectionNotes = [], isLoading: isLoadingRejectionNotes } = useAllRejectionNotes();
     const { toast } = useToast();

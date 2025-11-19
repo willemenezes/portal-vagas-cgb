@@ -119,11 +119,26 @@ export const useCandidates = (page = 0, pageSize = 100, filters?: { jobId?: stri
 };
 
 // Hook para buscar TODOS os candidatos (para relatórios e exportações)
-export const useAllCandidates = () => {
+// Agora aceita rhProfile opcional para aplicar filtros de permissão
+export const useAllCandidates = (rhProfile?: { role?: string; assigned_states?: string[] | null; assigned_cities?: string[] | null; assigned_departments?: string[] | null; is_admin?: boolean } | null) => {
   return useQuery({
-    queryKey: ['candidates', 'all', 'v5'],
+    queryKey: ['candidates', 'all', 'v6', rhProfile?.role, rhProfile?.assigned_states, rhProfile?.assigned_cities, rhProfile?.assigned_departments],
     queryFn: async () => {
-      console.log('🔄 useAllCandidates: Buscando TODOS os candidatos (sem limites)...');
+      const isAdmin = rhProfile?.is_admin || rhProfile?.role === 'admin';
+      const hasFilters = !isAdmin && (
+        (rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) ||
+        (rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) ||
+        (rhProfile?.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0)
+      );
+
+      console.log('🔄 useAllCandidates: Buscando candidatos...', {
+        isAdmin,
+        hasFilters,
+        role: rhProfile?.role,
+        states: rhProfile?.assigned_states,
+        cities: rhProfile?.assigned_cities,
+        departments: rhProfile?.assigned_departments
+      });
 
       let allCandidates: any[] = [];
       let from = 0;
@@ -131,7 +146,7 @@ export const useAllCandidates = () => {
       let hasMore = true;
 
       while (hasMore) {
-        const { data, error } = await supabase
+        let query = supabase
           .from('candidates')
           .select(`
             *,
@@ -139,6 +154,22 @@ export const useAllCandidates = () => {
           `)
           .order('created_at', { ascending: false })
           .range(from, from + batchSize - 1);
+
+        // Aplicar filtros no servidor se necessário
+        // Nota: Filtro por departamento precisa ser feito no cliente pois vem de job relacionado
+        if (hasFilters && rhProfile) {
+          // Filtro por estado (pode ser feito no servidor)
+          if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+            query = query.in('state', rhProfile.assigned_states);
+          }
+
+          // Filtro por cidade (pode ser feito no servidor)
+          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            query = query.in('city', rhProfile.assigned_cities);
+          }
+        }
+
+        const { data, error } = await query;
 
         if (error) {
           console.error("❌ Erro ao buscar candidatos:", error);
@@ -158,7 +189,39 @@ export const useAllCandidates = () => {
         }
       }
 
-      console.log(`✅ useAllCandidates: ${allCandidates.length} candidatos carregados (TOTAL COMPLETO)`);
+      // Aplicar filtros adicionais no cliente se necessário (para dados que vêm do job)
+      if (hasFilters && rhProfile) {
+        allCandidates = allCandidates.filter(c => {
+          const candidateState = c.state || c.job?.state;
+          const candidateCity = c.city || c.job?.city;
+          const candidateDepartment = c.job?.department;
+
+          // Filtro por departamento (apenas para gerentes)
+          if (rhProfile.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
+            if (!candidateDepartment || !rhProfile.assigned_departments.includes(candidateDepartment)) {
+              return false;
+            }
+          }
+
+          // Filtro por estado
+          if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+            if (!candidateState || !rhProfile.assigned_states.includes(candidateState)) {
+              return false;
+            }
+          }
+
+          // Filtro por cidade
+          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            if (!candidateCity || !rhProfile.assigned_cities.includes(candidateCity)) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+      }
+
+      console.log(`✅ useAllCandidates: ${allCandidates.length} candidatos carregados${hasFilters ? ' (FILTRADOS)' : ' (TOTAL COMPLETO)'}`);
 
       return allCandidates.map(c => ({
         ...c,

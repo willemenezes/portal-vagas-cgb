@@ -64,11 +64,24 @@ export const useResumes = (page = 0, pageSize = 100) => {
 };
 
 // Hook para buscar TODOS os currículos (para relatórios e exportações)
-export const useAllResumes = () => {
+// Agora aceita rhProfile opcional para aplicar filtros de permissão
+export const useAllResumes = (rhProfile?: { role?: string; assigned_states?: string[] | null; assigned_cities?: string[] | null; is_admin?: boolean } | null) => {
   return useQuery({
-    queryKey: ['resumes', 'all', 'v2'],
+    queryKey: ['resumes', 'all', 'v3', rhProfile?.role, rhProfile?.assigned_states, rhProfile?.assigned_cities],
     queryFn: async () => {
-      console.log('🔄 useAllResumes: Buscando TODOS os currículos (sem limites)...');
+      const isAdmin = rhProfile?.is_admin || rhProfile?.role === 'admin';
+      const hasFilters = !isAdmin && (
+        (rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) ||
+        (rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0)
+      );
+
+      console.log('🔄 useAllResumes: Buscando currículos...', {
+        isAdmin,
+        hasFilters,
+        role: rhProfile?.role,
+        states: rhProfile?.assigned_states,
+        cities: rhProfile?.assigned_cities
+      });
 
       let allResumes: any[] = [];
       let from = 0;
@@ -76,11 +89,26 @@ export const useAllResumes = () => {
       let hasMore = true;
 
       while (hasMore) {
-        const { data, error } = await supabase
+        let query = supabase
           .from('resumes')
           .select('*')
           .order('submitted_date', { ascending: false })
           .range(from, from + batchSize - 1);
+
+        // Aplicar filtros no servidor se necessário
+        if (hasFilters && rhProfile) {
+          // Filtro por estado
+          if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+            query = query.in('state', rhProfile.assigned_states);
+          }
+
+          // Filtro por cidade
+          if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+            query = query.in('city', rhProfile.assigned_cities);
+          }
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -97,7 +125,7 @@ export const useAllResumes = () => {
         }
       }
 
-      console.log(`✅ useAllResumes: ${allResumes.length} currículos carregados (TOTAL COMPLETO)`);
+      console.log(`✅ useAllResumes: ${allResumes.length} currículos carregados${hasFilters ? ' (FILTRADOS)' : ' (TOTAL COMPLETO)'}`);
       return allResumes;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos de cache

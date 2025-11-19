@@ -11,10 +11,14 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/useAuth';
+import { useRHProfile } from '@/hooks/useRH';
 
 const HiredManagement = () => {
+    const { user } = useAuth();
+    const { data: rhProfile } = useRHProfile(user?.id);
     // Para contratados, precisamos de todos para não perder registros
-    const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates();
+    const { data: candidates = [], isLoading: isLoadingCandidates } = useAllCandidates(rhProfile || undefined);
     const { data: jobs = [], isLoading: isLoadingJobs } = useAllJobs();
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
