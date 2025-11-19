@@ -90,6 +90,32 @@ const TalentBankManagement = () => {
         };
     }, [resumes, filters.state]);
 
+    // Função helper para normalizar CNH para comparação
+    const normalizeCNH = (cnh: string | null | undefined): 'sim' | 'não' => {
+        if (!cnh) return 'não';
+        const cnhUpper = cnh.toUpperCase();
+        // Se contém "NÃO POSSUI" ou está vazio, retorna "não"
+        if (cnhUpper.includes('NÃO POSSUI') || cnhUpper.includes('NAO POSSUI') || cnh.trim() === '') {
+            return 'não';
+        }
+        // Caso contrário, tem algum tipo de CNH
+        return 'sim';
+    };
+
+    // Função helper para normalizar veículo para comparação
+    const normalizeVehicle = (vehicle: string | null | undefined): string => {
+        if (!vehicle) return 'nao';
+        const vehicleLower = vehicle.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .trim();
+        
+        if (vehicleLower.includes('carro')) return 'carro';
+        if (vehicleLower.includes('moto')) return 'moto';
+        if (vehicleLower.includes('nao') || vehicleLower.includes('não') || vehicleLower.includes('não possuo')) return 'nao';
+        return vehicleLower;
+    };
+
     const filteredResumes = useMemo(() => {
         return resumes
             .filter(r => {
@@ -110,8 +136,16 @@ const TalentBankManagement = () => {
             .filter(r => filters.position !== 'all' ? r.position === filters.position : true)
             .filter(r => filters.state !== 'all' ? r.state === filters.state : true)
             .filter(r => filters.city !== 'all' ? r.city === filters.city : true)
-            .filter(r => filters.cnh !== 'all' ? r.cnh === filters.cnh : true)
-            .filter(r => filters.vehicle !== 'all' ? r.vehicle === filters.vehicle : true);
+            .filter(r => {
+                if (filters.cnh === 'all') return true;
+                const normalizedCNH = normalizeCNH(r.cnh);
+                return normalizedCNH === filters.cnh;
+            })
+            .filter(r => {
+                if (filters.vehicle === 'all') return true;
+                const normalizedVehicle = normalizeVehicle(r.vehicle);
+                return normalizedVehicle === filters.vehicle;
+            });
     }, [resumes, searchTerm, filters, showInvited, invitedEmails]);
 
     const isLoading = isLoadingResumes || isLoadingJobs;
