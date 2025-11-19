@@ -4,14 +4,13 @@ import { useAllJobs } from '@/hooks/useJobs';
 import { useCreateCandidate, useCandidates } from '@/hooks/useCandidates';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet, UserPlus, Send, Eye, EyeOff, Filter } from 'lucide-react';
+import { Loader2, Search, FileText, User, Mail, MapPin, Briefcase, Archive, Download, Trash2, FileSpreadsheet, UserPlus, Send, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { INVITED_STATUS, INVITED_STATUS_COLOR } from '@/lib/constants';
 
@@ -36,7 +35,6 @@ const TalentBankManagement = () => {
         cnh: 'all',
         vehicle: 'all',
     });
-    const [showInvited, setShowInvited] = useState(false); // Controle para mostrar/ocultar convidados
     const deleteResume = useDeleteResume();
     const { toast } = useToast();
 
@@ -121,9 +119,6 @@ const TalentBankManagement = () => {
             .filter(r => {
                 if (!r) return false;
 
-                // Filtro para mostrar/ocultar convidados
-                const isInvited = invitedEmails.has(r.email.toLowerCase());
-                if (!showInvited && isInvited) return false;
 
                 const searchLower = searchTerm.toLowerCase();
                 return (
@@ -146,7 +141,7 @@ const TalentBankManagement = () => {
                 const normalizedVehicle = normalizeVehicle(r.vehicle);
                 return normalizedVehicle === filters.vehicle;
             });
-    }, [resumes, searchTerm, filters, showInvited, invitedEmails]);
+    }, [resumes, searchTerm, filters, invitedEmails]);
 
     const isLoading = isLoadingResumes || isLoadingJobs;
     const error = resumesError || jobsError;
@@ -338,16 +333,6 @@ const TalentBankManagement = () => {
                         <Select value={filters.city} onValueChange={value => setFilters(prev => ({ ...prev, city: value }))}><SelectTrigger><MapPin className="w-4 h-4 mr-2" /> <span>{filters.city === 'all' ? 'Todas as Cidades' : filters.city}</span></SelectTrigger><SelectContent><SelectItem value="all">Todas as Cidades</SelectItem>{uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
                         <Select value={filters.cnh} onValueChange={value => setFilters(prev => ({ ...prev, cnh: value }))}><SelectTrigger><span>Possui CNH?</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="sim">Sim</SelectItem><SelectItem value="não">Não</SelectItem></SelectContent></Select>
                         <Select value={filters.vehicle} onValueChange={value => setFilters(prev => ({ ...prev, vehicle: value }))}><SelectTrigger><span>Tipo de Veículo</span></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="carro">Carro</SelectItem><SelectItem value="moto">Moto</SelectItem><SelectItem value="nao">Não possuo</SelectItem></SelectContent></Select>
-
-                        {/* Toggle para mostrar/ocultar convidados */}
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-md border">
-                            {showInvited ? <Eye className="w-4 h-4 text-gray-600" /> : <EyeOff className="w-4 h-4 text-gray-600" />}
-                            <span className="text-sm font-medium">Mostrar em processo</span>
-                            <Switch
-                                checked={showInvited}
-                                onCheckedChange={setShowInvited}
-                            />
-                        </div>
                     </div>
                     <div className="border rounded-lg overflow-hidden">
                         <Table>
@@ -426,23 +411,7 @@ const TalentBankManagement = () => {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24">
-                                            {!showInvited && invitedCount > 0 ? (
-                                                <div className="text-center">
-                                                    <p>Nenhum talento disponível com os filtros selecionados.</p>
-                                                    <p className="text-sm text-gray-500 mt-1">
-                                                        {invitedCount} talento{invitedCount > 1 ? 's estão' : ' está'} em processo seletivo.
-                                                        <Button
-                                                            variant="link"
-                                                            className="p-0 h-auto ml-1"
-                                                            onClick={() => setShowInvited(true)}
-                                                        >
-                                                            Mostrar todos
-                                                        </Button>
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                "Nenhum talento no banco de dados ainda."
-                                            )}
+                                            "Nenhum talento no banco de dados ainda."
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -451,11 +420,6 @@ const TalentBankManagement = () => {
                     </div>
                     <div className="pt-4 text-sm text-gray-600">
                         Mostrando {currentPage * pageSize + 1} a {Math.min((currentPage + 1) * pageSize, totalCount)} de {totalCount} talentos.
-                        {!showInvited && invitedCount > 0 && (
-                            <span className="ml-2 text-blue-600">
-                                ({invitedCount} oculto{invitedCount > 1 ? 's' : ''} - em processo)
-                            </span>
-                        )}
                     </div>
 
                     {/* Paginação */}
