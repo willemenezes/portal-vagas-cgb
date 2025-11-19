@@ -358,14 +358,13 @@ const JobManagement = () => {
   const handleCreateJobFromRequest = async (requestId: string) => {
     try {
       await createJobFromRequest.mutateAsync(requestId);
-      toast({
-        title: "Vaga criada com sucesso!",
-        description: "A vaga foi criada e está ativa para candidaturas."
-      });
-    } catch (error) {
+      // Toast de sucesso é mostrado no onSuccess da mutation
+    } catch (error: any) {
+      console.error('❌ [JobManagement] Erro ao criar vaga:', error);
+      const errorMessage = error?.message || error?.error?.message || 'Não foi possível criar a vaga. Tente novamente.';
       toast({
         title: "Erro ao criar vaga",
-        description: "Não foi possível criar a vaga. Tente novamente.",
+        description: errorMessage,
         variant: "destructive"
       });
     }

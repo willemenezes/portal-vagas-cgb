@@ -430,15 +430,34 @@ export const useJobRequests = () => {
                 throw new Error('Esta solicitação já foi convertida em vaga.');
             }
 
+            console.log('🔄 [createJobFromRequest] Chamando RPC create_job_from_request com requestId:', requestId);
+            
             const { data, error } = await supabase.rpc('create_job_from_request', {
                 request_id: requestId
             });
 
             if (error) {
-                console.error('Erro ao criar vaga:', error);
-                throw error;
+                console.error('❌ [createJobFromRequest] Erro do RPC:', {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code
+                });
+                
+                // Melhorar mensagem de erro para o usuário
+                let userMessage = error.message || 'Não foi possível criar a vaga.';
+                if (error.message?.includes('invalid input syntax for type uuid')) {
+                    userMessage = 'Erro ao processar dados da solicitação. Verifique se todos os campos estão corretos.';
+                } else if (error.message?.includes('Solicitação não encontrada')) {
+                    userMessage = 'A solicitação não foi encontrada ou não está aprovada.';
+                } else if (error.message?.includes('já foi convertida')) {
+                    userMessage = 'Esta solicitação já foi convertida em vaga anteriormente.';
+                }
+                
+                throw new Error(userMessage);
             }
 
+            console.log('✅ [createJobFromRequest] Vaga criada com sucesso:', data);
             return data;
         },
         onSuccess: () => {
