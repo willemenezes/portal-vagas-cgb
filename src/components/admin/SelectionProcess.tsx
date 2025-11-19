@@ -140,10 +140,14 @@ const SelectionProcess = () => {
     const [pendingApproval, setPendingApproval] = useState<{ candidate: Candidate; job: Job } | null>(null);
 
     const jobsForSelection = useMemo(() => {
-        if (isRhProfileLoading) return [];
+        if (isRhProfileLoading) {
+            console.log(`⏳ [SelectionProcess] Carregando perfil RH...`);
+            return [];
+        }
 
         // Filtrar apenas vagas ativas (flow_status = 'ativa')
         let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
+        console.log(`📊 [SelectionProcess] Vagas ativas (antes de filtros): ${activeJobs.length}`);
 
         // BUG FIX: Filtro de região e departamento para RECRUTADOR e GERENTE
         if (rhProfile && 'role' in rhProfile) {
@@ -151,12 +155,19 @@ const SelectionProcess = () => {
             const assignedCities = (rhProfile.assigned_cities as string[]) || [];
             const assignedDepartments = (rhProfile.assigned_departments as string[]) || [];
 
+            console.log(`🔍 [SelectionProcess] Perfil: ${rhProfile.role}`, {
+                states: assignedStates,
+                cities: assignedCities,
+                departments: assignedDepartments
+            });
+
             // Aplicar filtros apenas se houver permissões específicas atribuídas
             const hasStateFilter = assignedStates.length > 0;
             const hasCityFilter = assignedCities.length > 0;
             const hasDepartmentFilter = rhProfile.role === 'manager' && assignedDepartments.length > 0;
 
             if (hasStateFilter || hasCityFilter || hasDepartmentFilter) {
+                const beforeFilter = activeJobs.length;
                 activeJobs = activeJobs.filter(job => {
                     // Filtro por estado (se atribuído)
                     const matchState = !hasStateFilter || assignedStates.includes(job.state || '');
@@ -169,17 +180,32 @@ const SelectionProcess = () => {
 
                     return matchState && matchCity && matchDepartment;
                 });
+                console.log(`🔍 [SelectionProcess] Vagas após filtros: ${activeJobs.length} (de ${beforeFilter})`);
+            } else {
+                console.log(`ℹ️ [SelectionProcess] Sem filtros de permissão aplicados`);
             }
+        } else {
+            console.log(`ℹ️ [SelectionProcess] Sem perfil RH ou perfil não tem role`);
+        }
+
+        console.log(`✅ [SelectionProcess] Vagas disponíveis para seleção: ${activeJobs.length}`);
+        if (activeJobs.length > 0) {
+            console.log(`📋 [SelectionProcess] Primeiras 3 vagas:`, activeJobs.slice(0, 3).map(j => `${j.title} - ${j.city}, ${j.state}`));
         }
 
         return activeJobs;
     }, [allJobs, rhProfile, isRhProfileLoading]);
 
     useEffect(() => {
+        console.log(`🔍 [SelectionProcess] useEffect - selectedJobId: ${selectedJobId}, jobsForSelection.length: ${jobsForSelection.length}`);
         if (!selectedJobId && jobsForSelection.length > 0) {
-            setSelectedJobId(jobsForSelection[0].id);
+            const firstJobId = jobsForSelection[0].id;
+            console.log(`✅ [SelectionProcess] Selecionando automaticamente primeira vaga: ${firstJobId} (${jobsForSelection[0].title})`);
+            setSelectedJobId(firstJobId);
+        } else if (!selectedJobId && jobsForSelection.length === 0 && !isRhProfileLoading) {
+            console.warn(`⚠️ [SelectionProcess] Nenhuma vaga disponível para seleção`);
         }
-    }, [selectedJobId, jobsForSelection]);
+    }, [selectedJobId, jobsForSelection, isRhProfileLoading]);
 
     /*
     // Este useEffect foi removido pois estava causando um efeito colateral indesejado.
