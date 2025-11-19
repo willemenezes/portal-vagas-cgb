@@ -249,6 +249,7 @@ const SelectionProcess = () => {
     const filteredCandidates = useMemo(() => {
         if (!selectedJobId || !Array.isArray(jobCandidates)) return [];
         // jobCandidates já está filtrado por job_id no hook useCandidatesByJob
+        console.log(`🔍 [SelectionProcess] filteredCandidates: ${jobCandidates.length} candidatos`, jobCandidates.map(c => ({ id: c.id, name: c.name, status: c.status })));
         return jobCandidates;
     }, [selectedJobId, jobCandidates]);
 
@@ -259,11 +260,16 @@ const SelectionProcess = () => {
             return acc;
         }, {} as Record<SelectionStatus, Candidate[]>);
 
+        console.log(`🔍 [SelectionProcess] Processando ${filteredCandidates.length} candidatos para aba "${activeTab}"`);
+
         // Filtra candidatos por aba e distribui nas colunas
         filteredCandidates.forEach(candidate => {
-            const status = (candidate.status && SELECTION_STATUSES.includes(candidate.status as any))
-                ? candidate.status as SelectionStatus
+            const candidateStatus = candidate.status || null;
+            const status = (candidateStatus && SELECTION_STATUSES.includes(candidateStatus as any))
+                ? candidateStatus as SelectionStatus
                 : "Cadastrado";
+
+            console.log(`🔍 [SelectionProcess] Candidato ${candidate.name}: status original="${candidateStatus}", status mapeado="${status}"`);
 
             // Lógica de filtro por aba
             if (activeTab === "ativos") {
@@ -271,22 +277,41 @@ const SelectionProcess = () => {
                 if (status !== 'Contratado') {
                     if (initialCols[status]) {
                         initialCols[status].push(candidate);
+                        console.log(`✅ [SelectionProcess] Adicionado candidato ${candidate.name} à coluna "${status}"`);
+                    } else {
+                        console.warn(`⚠️ [SelectionProcess] Coluna "${status}" não existe em initialCols`);
                     }
+                } else {
+                    console.log(`⏭️ [SelectionProcess] Candidato ${candidate.name} ignorado (status: Contratado na aba ativos)`);
                 }
             } else if (activeTab === "reprovados") {
                 // Na aba reprovados, mostra apenas reprovados
                 if (status === 'Reprovado') {
                     if (initialCols[status]) {
                         initialCols[status].push(candidate);
+                        console.log(`✅ [SelectionProcess] Adicionado candidato ${candidate.name} à coluna "${status}"`);
                     }
+                } else {
+                    console.log(`⏭️ [SelectionProcess] Candidato ${candidate.name} ignorado (status: ${status} na aba reprovados)`);
                 }
             } else if (activeTab === "aprovados") {
                 // Na aba aprovados, mostra apenas aprovados
                 if (status === 'Aprovado') {
                     if (initialCols[status]) {
                         initialCols[status].push(candidate);
+                        console.log(`✅ [SelectionProcess] Adicionado candidato ${candidate.name} à coluna "${status}"`);
                     }
+                } else {
+                    console.log(`⏭️ [SelectionProcess] Candidato ${candidate.name} ignorado (status: ${status} na aba aprovados)`);
                 }
+            }
+        });
+
+        // Log final das colunas
+        Object.keys(initialCols).forEach(key => {
+            const count = initialCols[key as SelectionStatus]?.length || 0;
+            if (count > 0) {
+                console.log(`📊 [SelectionProcess] Coluna "${key}": ${count} candidato(s)`);
             }
         });
 
