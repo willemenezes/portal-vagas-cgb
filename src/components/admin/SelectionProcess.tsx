@@ -145,17 +145,29 @@ const SelectionProcess = () => {
         // Filtrar apenas vagas ativas (flow_status = 'ativa')
         let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
 
-        // BUG FIX: Filtro de região para RECRUTADOR (reativado e corrigido)
-        if (rhProfile && 'role' in rhProfile && rhProfile.role === 'recruiter') {
+        // BUG FIX: Filtro de região e departamento para RECRUTADOR e GERENTE
+        if (rhProfile && 'role' in rhProfile) {
             const assignedStates = (rhProfile.assigned_states as string[]) || [];
             const assignedCities = (rhProfile.assigned_cities as string[]) || [];
+            const assignedDepartments = (rhProfile.assigned_departments as string[]) || [];
 
-            if (assignedStates.length > 0 || assignedCities.length > 0) {
+            // Aplicar filtros apenas se houver permissões específicas atribuídas
+            const hasStateFilter = assignedStates.length > 0;
+            const hasCityFilter = assignedCities.length > 0;
+            const hasDepartmentFilter = rhProfile.role === 'manager' && assignedDepartments.length > 0;
+
+            if (hasStateFilter || hasCityFilter || hasDepartmentFilter) {
                 activeJobs = activeJobs.filter(job => {
-                    const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
-                    const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
+                    // Filtro por estado (se atribuído)
+                    const matchState = !hasStateFilter || assignedStates.includes(job.state || '');
+                    
+                    // Filtro por cidade (se atribuído)
+                    const matchCity = !hasCityFilter || assignedCities.includes(job.city || '');
+                    
+                    // Filtro por departamento (apenas para gerentes, se atribuído)
+                    const matchDepartment = !hasDepartmentFilter || assignedDepartments.includes(job.department || '');
 
-                    return matchState && matchCity;
+                    return matchState && matchCity && matchDepartment;
                 });
             }
         }
