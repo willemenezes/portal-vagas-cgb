@@ -107,6 +107,9 @@ export const useAllJobs = () => {
   return useQuery({
     queryKey: ['allJobs'],
     queryFn: async () => {
+      console.log('🔄 [useAllJobs] Iniciando busca de vagas...');
+      const startTime = performance.now();
+      
       try {
         // OTIMIZAÇÃO: Usar select específico em vez de * para reduzir payload
         // Adicionar limite de segurança para evitar sobrecarga
@@ -148,11 +151,18 @@ export const useAllJobs = () => {
           .order('created_at', { ascending: false })
           .limit(1000); // Limite de segurança
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ [useAllJobs] Erro na query:', error);
+          throw new Error(`Erro ao buscar vagas: ${error.message}`);
+        }
 
         if (!jobs || jobs.length === 0) {
+          console.log('⚠️ [useAllJobs] Nenhuma vaga encontrada');
           return [];
         }
+
+        const endTime = performance.now();
+        console.log(`✅ [useAllJobs] ${jobs.length} vagas carregadas em ${Math.round(endTime - startTime)}ms`);
 
         // OTIMIZAÇÃO: Retornar vagas sem contagem inicial para carregamento rápido
         // A contagem de candidatos será feita sob demanda quando necessário
@@ -165,13 +175,18 @@ export const useAllJobs = () => {
         }));
 
         return jobsWithApplicants;
-      } catch (error) {
-        console.error('Erro ao buscar todas as vagas:', error);
+      } catch (error: any) {
+        console.error('💥 [useAllJobs] Erro crítico:', error);
+        // Melhorar mensagem de erro para o usuário
+        if (error?.message?.includes('Failed to fetch')) {
+          throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
+        }
         throw error;
       }
     },
-    retry: 1, // Reduzir tentativas para evitar sobrecarga
-    staleTime: 5 * 60 * 1000, // 5 minutos - aumentar para reduzir requisições
+    retry: 2, // Aumentar para 2 tentativas
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Exponential backoff
+    staleTime: 3 * 60 * 1000, // 3 minutos
     refetchOnMount: false, // Não refazer ao montar para evitar delay
     refetchOnWindowFocus: false, // Não refazer ao focar para evitar delay
     refetchInterval: false, // Desabilitar refetch automático para evitar sobrecarga

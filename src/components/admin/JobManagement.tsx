@@ -43,12 +43,24 @@ const JobManagement = () => {
   // Hooks de autenticação e perfil
   const { user } = useAuth();
   const { data: rhProfile } = useRHProfile(user?.id);
-  const { data: allJobs = [], isLoading } = useAllJobs();
+  const { data: allJobs = [], isLoading, error: jobsError } = useAllJobs();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const { toast } = useToast();
+
+  // Log de erro para debug
+  useEffect(() => {
+    if (jobsError) {
+      console.error('❌ [JobManagement] Erro ao carregar vagas:', jobsError);
+      toast({
+        title: "Erro ao carregar vagas",
+        description: jobsError instanceof Error ? jobsError.message : "Erro desconhecido. Tente recarregar a página.",
+        variant: "destructive",
+      });
+    }
+  }, [jobsError, toast]);
 
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -76,7 +88,12 @@ const JobManagement = () => {
   // Filtrar apenas vagas processadas (aprovadas) - mesmo critério do relatório
   // IMPORTANTE: Incluir vagas concluídas e congeladas mesmo que não tenham approval_status === 'active'
   const processedJobs = React.useMemo(() => {
-    return allJobs.filter(j => {
+    if (!allJobs || allJobs.length === 0) return [];
+    
+    console.log('🔄 [JobManagement] Processando', allJobs.length, 'vagas...');
+    const startTime = performance.now();
+    
+    const filtered = allJobs.filter(j => {
       // Incluir todas as vagas que foram processadas (aprovadas)
       // Isso inclui: ativas, concluídas, congeladas, etc.
       // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
@@ -99,6 +116,11 @@ const JobManagement = () => {
       
       return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
     });
+    
+    const endTime = performance.now();
+    console.log(`✅ [JobManagement] ${filtered.length} vagas processadas em ${Math.round(endTime - startTime)}ms`);
+    
+    return filtered;
   }, [allJobs]);
 
   // Função helper para normalizar strings (case-insensitive e sem acentos)
@@ -1038,7 +1060,28 @@ const JobManagement = () => {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>
+          <div className="flex flex-col justify-center items-center h-64 gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-cgb-primary" />
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-700">Carregando vagas...</p>
+              <p className="text-sm text-gray-500 mt-1">Isso pode levar alguns segundos</p>
+            </div>
+          </div>
+        ) : jobsError ? (
+          <div className="flex flex-col justify-center items-center h-64 gap-4">
+            <AlertTriangle className="h-12 w-12 text-red-500" />
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-700">Erro ao carregar vagas</p>
+              <p className="text-sm text-gray-500 mt-1">{jobsError instanceof Error ? jobsError.message : "Erro desconhecido"}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="mt-4"
+                variant="outline"
+              >
+                Recarregar Página
+              </Button>
+            </div>
+          </div>
         ) : (
           <TooltipProvider>
             <Table>
