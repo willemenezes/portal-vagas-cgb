@@ -113,8 +113,11 @@ const JobManagement = () => {
         job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.city.toLowerCase().includes(searchTerm.toLowerCase());
 
+      // Helper para verificar se vaga está ativa (não concluída nem congelada)
+      const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+
       const matchesStatus = statusFilter === 'all' ||
-        (statusFilter === 'expired' && job.expires_at && new Date(job.expires_at) < new Date()) ||
+        (statusFilter === 'expired' && isActive && job.expires_at && new Date(job.expires_at) < new Date()) ||
         (statusFilter === 'expiring_soon' && job.expires_at && (() => {
           const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
           return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
