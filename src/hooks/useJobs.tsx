@@ -48,6 +48,36 @@ export interface Job {
   deleted_by_email?: string; // Email do usuário que excluiu (para exibição)
 }
 
+// Lista de colunas que realmente existem na tabela jobs
+const JOB_COLUMNS = `
+  id,
+  title,
+  department,
+  city,
+  state,
+  type,
+  description,
+  requirements,
+  benefits,
+  workload,
+  status,
+  approval_status,
+  rejection_reason,
+  created_at,
+  updated_at,
+  quantity,
+  quantity_filled,
+  expires_at,
+  solicitante_nome,
+  solicitante_funcao,
+  observacoes_internas,
+  tipo_solicitacao,
+  nome_substituido,
+  flow_status,
+  created_by,
+  company_contract
+`;
+
 export const useJobs = () => {
   return useQuery({
     queryKey: ['jobs'],
