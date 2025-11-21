@@ -436,19 +436,29 @@ const JobManagement = () => {
         const currentStatus = String(currentJob?.status || '').toLowerCase();
         const isCurrentlyActive = ['active', 'ativo'].includes(currentApprovalStatus) || ['active', 'ativo'].includes(currentStatus);
         
-        console.log('🔍 [JobManagement] Verificando vaga para edição:', {
+        console.log('🔍 [JobManagement] ===== VERIFICANDO VAGA PARA EDIÇÃO =====');
+        console.log('🔍 [JobManagement] Dados da vaga atual:', {
           jobId: jobToSave.id,
+          title: currentJob?.title,
           currentFlowStatus: currentJob?.flow_status,
           currentApprovalStatus: currentJob?.approval_status,
           currentStatus: currentJob?.status,
-          isCurrentlyActive,
+          isCurrentlyActive
+        });
+        console.log('🔍 [JobManagement] Dados do salvamento:', {
           submissionStatus,
-          statusToSend
+          statusToSend,
+          newApprovalStatus: jobDataClean.approval_status
         });
         
-        // REGRA CRÍTICA: Se a vaga está ATIVA e está sendo editada,
-        // SEMPRE voltar para pending_approval (exceto se admin escolher "publicar_direto")
-        if (isCurrentlyActive && submissionStatus !== 'publicar_direto') {
+        // REGRA PRINCIPAL: Se o usuário escolheu "Enviar para Aprovação", SEMPRE forçar pending_approval
+        if (submissionStatus === 'aprovacao_pendente' || statusToSend === 'pending_approval') {
+          console.log('✅ [JobManagement] Usuário escolheu "Enviar para Aprovação" - FORÇANDO pending_approval');
+          jobDataClean.approval_status = 'pending_approval';
+          jobDataClean.status = 'draft';
+        }
+        // Se a vaga está ATIVA e está sendo editada (qualquer botão exceto publicar_direto)
+        else if (isCurrentlyActive && submissionStatus !== 'publicar_direto') {
           console.log('✅ [JobManagement] Vaga ATIVA sendo editada - FORÇANDO pending_approval');
           jobDataClean.approval_status = 'pending_approval';
           jobDataClean.status = 'draft';
@@ -459,17 +469,18 @@ const JobManagement = () => {
           jobDataClean.approval_status = 'pending_approval';
           jobDataClean.status = 'draft';
         }
-        // Se o usuário escolheu explicitamente "aprovacao_pendente"
-        else if (statusToSend === 'pending_approval' || submissionStatus === 'aprovacao_pendente') {
-          console.log('✅ [JobManagement] Usuário escolheu "Enviar para Aprovação" - garantindo pending_approval');
-          jobDataClean.approval_status = 'pending_approval';
-          jobDataClean.status = 'draft';
-        }
         // Se é admin escolhendo "publicar_direto", manter como active
         else if (submissionStatus === 'publicar_direto') {
           console.log('✅ [JobManagement] Admin escolheu "Publicar Direto" - mantendo como active');
           // Manter o statusToSend que já está como 'active'
         }
+        
+        console.log('🔍 [JobManagement] Status FINAL que será salvo:', {
+          approval_status: jobDataClean.approval_status,
+          status: jobDataClean.status,
+          flow_status: jobDataClean.flow_status
+        });
+        console.log('🔍 [JobManagement] ===== FIM DA VERIFICAÇÃO =====');
       }
 
       if (!jobToSave.id) {
