@@ -141,8 +141,6 @@ export const useAllJobs = () => {
             nome_substituido,
             flow_status,
             created_by,
-            is_justificativa,
-            justification,
             company_contract
           `)
           .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
