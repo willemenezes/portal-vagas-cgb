@@ -74,6 +74,7 @@ const JobManagement = () => {
   } = useJobRequests();
 
   // Filtrar apenas vagas processadas (aprovadas) - mesmo critério do relatório
+  // IMPORTANTE: Incluir vagas concluídas e congeladas mesmo que não tenham approval_status === 'active'
   const processedJobs = React.useMemo(() => {
     return allJobs.filter(j => {
       // Incluir todas as vagas que foram processadas (aprovadas)
@@ -81,10 +82,17 @@ const JobManagement = () => {
       // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
       const approval = String(j.approval_status || '').toLowerCase();
       const status = String(j.status || '').toLowerCase();
+      const flowStatus = String(j.flow_status || '').toLowerCase();
       
-      // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+      // Se tem flow_status de concluída ou congelada, SEMPRE incluir (mesmo sem approval_status)
+      if (flowStatus === 'concluida' || flowStatus === 'congelada') {
+        // Apenas verificar se não é rejeitada
+        return !['rejected', 'rejeitado'].includes(approval);
+      }
+      
+      // Para outras vagas, verificar se foi aprovada OU tem flow_status ativa
       const isApproved = ['active', 'ativo'].includes(approval);
-      const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+      const hasFlowStatus = flowStatus === 'ativa';
       const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
       const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
       const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
