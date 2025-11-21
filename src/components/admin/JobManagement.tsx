@@ -73,25 +73,45 @@ const JobManagement = () => {
     isLoading: isLoadingRequests
   } = useJobRequests();
 
+  // Filtrar apenas vagas processadas (aprovadas) - mesmo critério do relatório
+  const processedJobs = React.useMemo(() => {
+    return allJobs.filter(j => {
+      // Incluir todas as vagas que foram processadas (aprovadas)
+      // Isso inclui: ativas, concluídas, congeladas, etc.
+      // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
+      const approval = String(j.approval_status || '').toLowerCase();
+      const status = String(j.status || '').toLowerCase();
+      
+      // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+      const isApproved = ['active', 'ativo'].includes(approval);
+      const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+      const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
+      const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
+      const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
+      
+      return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
+    });
+  }, [allJobs]);
+
   // BUG FIX: Filtrar vagas por região para RECRUTADOR
   const jobs = React.useMemo(() => {
     if (!rhProfile || rhProfile.role !== 'recruiter') {
-      return allJobs;
+      return processedJobs;
     }
 
     const assignedStates = rhProfile.assigned_states || [];
     const assignedCities = rhProfile.assigned_cities || [];
 
     if (assignedStates.length === 0 && assignedCities.length === 0) {
-      return allJobs;
+      return processedJobs;
     }
 
-    return allJobs.filter(job => {
+    return processedJobs.filter(job => {
       const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
       const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
       return matchState && matchCity;
     });
-  }, [allJobs, rhProfile]);
+  }, [processedJobs, rhProfile]);
 
   // Deduplicar "Banco de Talentos": manter apenas 1 (preferir ativo; senão, o mais recente)
   const jobsDeduped = React.useMemo(() => {
