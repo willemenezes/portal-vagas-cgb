@@ -427,42 +427,48 @@ const JobManagement = () => {
         jobDataClean.flow_status = 'ativa';
       }
 
-      // FLUXO CORRIGIDO: Se uma vaga congelada está sendo ativada novamente,
-      // ela deve voltar para aprovação (pending_approval) para admin/gerente revisar
+      // FLUXO CORRIGIDO: Quando uma vaga é editada, ela DEVE voltar para aprovação
+      // Exceto se for admin escolhendo "publicar_direto"
       if (jobToSave.id) {
         // Buscar a vaga atual para verificar o status anterior
         const currentJob = allJobs.find(j => j.id === jobToSave.id);
-        console.log('🔍 [JobManagement] Verificando vaga para reativação:', {
+        const currentApprovalStatus = String(currentJob?.approval_status || '').toLowerCase();
+        const currentStatus = String(currentJob?.status || '').toLowerCase();
+        const isCurrentlyActive = ['active', 'ativo'].includes(currentApprovalStatus) || ['active', 'ativo'].includes(currentStatus);
+        
+        console.log('🔍 [JobManagement] Verificando vaga para edição:', {
           jobId: jobToSave.id,
           currentFlowStatus: currentJob?.flow_status,
-          newFlowStatus: jobDataClean.flow_status,
-          currentApprovalStatus: currentJob?.approval_status
+          currentApprovalStatus: currentJob?.approval_status,
+          currentStatus: currentJob?.status,
+          isCurrentlyActive,
+          submissionStatus,
+          statusToSend
         });
         
-        // IMPORTANTE: Se a vaga estava congelada e está sendo ativada, OU
-        // se está sendo editada e precisa voltar para aprovação
-        if (currentJob?.flow_status === 'congelada' && jobDataClean.flow_status === 'ativa') {
+        // REGRA CRÍTICA: Se a vaga está ATIVA e está sendo editada,
+        // SEMPRE voltar para pending_approval (exceto se admin escolher "publicar_direto")
+        if (isCurrentlyActive && submissionStatus !== 'publicar_direto') {
+          console.log('✅ [JobManagement] Vaga ATIVA sendo editada - FORÇANDO pending_approval');
+          jobDataClean.approval_status = 'pending_approval';
+          jobDataClean.status = 'draft';
+        }
+        // Se a vaga estava congelada e está sendo ativada
+        else if (currentJob?.flow_status === 'congelada' && jobDataClean.flow_status === 'ativa') {
           console.log('✅ [JobManagement] Vaga congelada sendo reativada - voltando para pending_approval');
           jobDataClean.approval_status = 'pending_approval';
-          jobDataClean.status = 'draft'; // Voltar para draft até ser aprovada novamente
+          jobDataClean.status = 'draft';
         }
-        
-        // CORREÇÃO ADICIONAL: Se a vaga está sendo editada e o usuário escolheu "aprovacao_pendente",
-        // SEMPRE garantir que volte para pending_approval, independentemente do status anterior
-        // Isso garante que admin e gerente vejam a vaga editada
-        if (statusToSend === 'pending_approval') {
-          console.log('✅ [JobManagement] Vaga sendo enviada para aprovação - garantindo pending_approval');
+        // Se o usuário escolheu explicitamente "aprovacao_pendente"
+        else if (statusToSend === 'pending_approval' || submissionStatus === 'aprovacao_pendente') {
+          console.log('✅ [JobManagement] Usuário escolheu "Enviar para Aprovação" - garantindo pending_approval');
           jobDataClean.approval_status = 'pending_approval';
           jobDataClean.status = 'draft';
         }
-        
-        // CORREÇÃO CRÍTICA: Se a vaga está sendo editada (tem ID) e o RH escolheu "aprovacao_pendente",
-        // mas por algum motivo o statusToSend não é 'pending_approval', forçar pending_approval
-        // Isso garante que vagas editadas sempre apareçam para admin e gerente
-        if (jobToSave.id && submissionStatus === 'aprovacao_pendente' && jobDataClean.approval_status !== 'pending_approval') {
-          console.log('✅ [JobManagement] Forçando pending_approval para vaga editada');
-          jobDataClean.approval_status = 'pending_approval';
-          jobDataClean.status = 'draft';
+        // Se é admin escolhendo "publicar_direto", manter como active
+        else if (submissionStatus === 'publicar_direto') {
+          console.log('✅ [JobManagement] Admin escolheu "Publicar Direto" - mantendo como active');
+          // Manter o statusToSend que já está como 'active'
         }
       }
 
