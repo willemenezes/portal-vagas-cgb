@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
 import useJobRequests from "@/hooks/useJobRequests";
+import { usePendingJobs } from "@/hooks/useJobs";
 import { supabase } from "@/integrations/supabase/client";
 import {
     CheckCircle,
@@ -30,7 +31,8 @@ import {
     Search,
     Filter,
     Calendar,
-    FileText
+    FileText,
+    RefreshCw
 } from "lucide-react";
 
 export default function JobRequestApproval() {
@@ -47,6 +49,9 @@ export default function JobRequestApproval() {
         isUpdating,
         isDeleting
     } = useJobRequests();
+    
+    // Hook para buscar vagas pendentes de aprovação (vagas editadas)
+    const { data: pendingJobs = [], isLoading: isLoadingPendingJobs, refetch: refetchPendingJobs } = usePendingJobs(rhProfile);
 
     // Estado para mapear IDs de aprovadores para nomes
     const [approverNames, setApproverNames] = useState<Record<string, string>>({});
@@ -353,10 +358,84 @@ export default function JobRequestApproval() {
                 </Card>
             </div>
 
+            {/* VAGAS EDITADAS AGUARDANDO APROVAÇÃO */}
+            {pendingJobs.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <FileText className="w-5 h-5 text-blue-500" />
+                            Vagas Editadas Aguardando Aprovação
+                            <Badge className="bg-blue-500">{pendingJobs.length}</Badge>
+                        </h3>
+                        <Button
+                            onClick={() => {
+                                console.log('🔄 Recarregando vagas pendentes manualmente...');
+                                refetchPendingJobs();
+                            }}
+                            variant="outline"
+                            size="sm"
+                            disabled={isLoadingPendingJobs}
+                        >
+                            {isLoadingPendingJobs ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <RefreshCw className="w-4 h-4" />
+                            )}
+                            <span className="ml-2">Recarregar</span>
+                        </Button>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                        Essas vagas foram editadas e precisam ser aprovadas novamente antes de serem publicadas no portal.
+                    </p>
+                    {pendingJobs.map((job) => (
+                        <Card key={job.id} className="border-l-4 border-l-blue-500">
+                            <CardContent className="p-6">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h4 className="text-lg font-semibold text-gray-900">{job.title}</h4>
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    <Badge variant="outline" className="flex items-center gap-1">
+                                                        <Building className="w-3 h-3" />
+                                                        {job.department}
+                                                    </Badge>
+                                                    <Badge variant="outline" className="flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {job.city}, {job.state}
+                                                    </Badge>
+                                                    <Badge className="bg-yellow-500">
+                                                        Aguardando Aprovação
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="text-sm text-gray-600">
+                                            <p><strong>Tipo:</strong> {job.type}</p>
+                                            {job.quantity && job.quantity > 1 && (
+                                                <p><strong>Quantidade de Vagas:</strong> {job.quantity}</p>
+                                            )}
+                                            <p className="mt-2"><strong>Descrição:</strong></p>
+                                            <p className="whitespace-pre-wrap">{job.description}</p>
+                                        </div>
+                                        
+                                        <div className="text-xs text-gray-500">
+                                            <Clock className="w-3 h-3 inline mr-1" />
+                                            Última atualização: {new Date(job.updated_at || job.created_at).toLocaleString('pt-BR')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+            
             {/* Solicitações Pendentes */}
             {pendingRequests.length > 0 && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Solicitações Pendentes</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Solicitações de Criação de Vagas Pendentes</h3>
                     {pendingRequests.map((request) => (
                         <Card key={request.id} className="border-l-4 border-l-yellow-400">
                             <CardContent className="p-6">
