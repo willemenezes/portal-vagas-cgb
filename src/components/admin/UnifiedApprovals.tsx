@@ -13,7 +13,11 @@ export default function UnifiedApprovals() {
     const { user } = useAuth();
     const { data: rhProfile } = useRHProfile(user?.id);
     const { stats: jobRequestStats } = useJobRequests();
-    const [activeTab, setActiveTab] = useState("job-requests");
+    // Admin vê primeiro as aprovações de publicação (vagas editadas)
+    // Gerente vê primeiro as solicitações de criação
+    const [activeTab, setActiveTab] = useState(
+        (rhProfile?.role === 'admin' || rhProfile?.is_admin) ? "job-approvals" : "job-requests"
+    );
 
     // Se for solicitador, só mostra solicitações de vagas
     if (rhProfile?.role === 'solicitador') {
