@@ -245,14 +245,21 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
       const { data, error } = await query;
 
       console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas para', rhProfile?.role);
+      
+      // DEBUG: Listar IDs das vagas encontradas
+      if (data && data.length > 0) {
+        console.log('📋 [usePendingJobs] IDs das vagas pendentes:', data.map(j => ({ id: j.id, title: j.title, approval_status: j.approval_status })));
+      }
 
       if (error) {
-        console.error('Erro ao buscar vagas pendentes:', error);
+        console.error('❌ [usePendingJobs] Erro ao buscar vagas pendentes:', error);
         throw error;
       }
       return data || [];
     },
     enabled: !!rhProfile,
+    refetchOnMount: true, // Garantir que sempre busque dados atualizados
+    refetchOnWindowFocus: true, // Atualizar quando a janela receber foco
   });
 };
 
