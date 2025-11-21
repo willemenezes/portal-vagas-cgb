@@ -354,7 +354,7 @@ export const useUpdateJob = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('🔄 [useUpdateJob] ===== VAGA ATUALIZADA =====');
       console.log('🔄 [useUpdateJob] Dados da vaga atualizada:', {
         id: data?.id,
@@ -365,9 +365,32 @@ export const useUpdateJob = () => {
       });
       
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
+      await queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      await queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      await queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
+      
+      // CORREÇÃO CRÍTICA: Invalidar pendingJobs para TODOS os usuários (admin, gerente, recrutador)
+      console.log('🔄 [useUpdateJob] ===== INVALIDANDO PENDINGJOBS =====');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const isPendingJobs = query.queryKey[0] === 'pendingJobs';
+          if (isPendingJobs) {
+            console.log('✅ [useUpdateJob] Invalidando pendingJobs para queryKey:', query.queryKey);
+          }
+          return isPendingJobs;
+        },
+        refetchType: 'all'
+      });
+      
+      // EXTRA: Forçar refetch imediato de todas as queries pendingJobs
+      const allQueries = queryClient.getQueryCache().getAll();
+      const pendingJobsQueries = allQueries.filter(q => q.queryKey[0] === 'pendingJobs');
+      console.log('🔍 [useUpdateJob] Encontradas', pendingJobsQueries.length, 'queries de pendingJobs para refetch');
+      
+      for (const query of pendingJobsQueries) {
+        console.log('🔄 [useUpdateJob] Forçando refetch para:', query.queryKey);
+        await queryClient.refetchQueries({ queryKey: query.queryKey, type: 'active' });
+      }
       
       // CORREÇÃO CRÍTICA: Invalidar pendingJobs para TODOS os usuários (admin, gerente, recrutador)
       // Usar predicate para invalidar todas as variações da queryKey
