@@ -209,7 +209,13 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
   return useQuery<Job[], Error>({
     queryKey: ['pendingJobs', rhProfile?.user_id, rhProfile?.role],
     queryFn: async () => {
-      console.log('🔍 [usePendingJobs] Perfil:', rhProfile?.role, 'is_admin:', rhProfile && 'is_admin' in rhProfile ? rhProfile.is_admin : 'N/A');
+      console.log('🔍 [usePendingJobs] ===== INÍCIO DA BUSCA =====');
+      console.log('🔍 [usePendingJobs] Perfil:', {
+        role: rhProfile?.role,
+        is_admin: rhProfile && 'is_admin' in rhProfile ? rhProfile.is_admin : 'N/A',
+        user_id: rhProfile?.user_id,
+        email: rhProfile?.email
+      });
 
       let query = supabase
         .from('jobs')
@@ -221,9 +227,10 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
       // IMPORTANTE: Admin e Recrutador veem TODAS as vagas pendentes (sem filtros)
       // Apenas Gerente tem filtros por departamento/região
       if (rhProfile?.role === 'admin' || rhProfile?.role === 'recruiter') {
-        console.log('🔍 [usePendingJobs] Admin/Recrutador - Buscando TODAS as vagas pendentes (sem filtros)');
+        console.log('✅ [usePendingJobs] Admin/Recrutador - Buscando TODAS as vagas pendentes (SEM FILTROS)');
         // Não aplicar nenhum filtro - admin/recrutador vê tudo
       } else if (rhProfile?.role === 'manager') {
+        console.log('🔍 [usePendingJobs] Gerente - Aplicando filtros por permissões');
         // Filtro por departamento para gerentes
         if (rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
           console.log('🔍 [usePendingJobs] Gerente - Filtrando por departamentos:', rhProfile.assigned_departments);
@@ -240,16 +247,29 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
           console.log('🔍 [usePendingJobs] Gerente - Filtrando por cidades:', rhProfile.assigned_cities);
           query = query.in('city', rhProfile.assigned_cities);
         }
+      } else {
+        console.warn('⚠️ [usePendingJobs] Role desconhecida:', rhProfile?.role);
       }
 
       const { data, error } = await query;
 
-      console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas para', rhProfile?.role);
+      console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas para role:', rhProfile?.role);
       
-      // DEBUG: Listar IDs das vagas encontradas
+      // DEBUG: Listar TODAS as vagas encontradas com detalhes
       if (data && data.length > 0) {
-        console.log('📋 [usePendingJobs] IDs das vagas pendentes:', data.map(j => ({ id: j.id, title: j.title, approval_status: j.approval_status })));
+        console.log('📋 [usePendingJobs] Vagas pendentes encontradas:', data.map(j => ({
+          id: j.id,
+          title: j.title,
+          department: j.department,
+          city: j.city,
+          state: j.state,
+          approval_status: j.approval_status,
+          created_at: j.created_at
+        })));
+      } else {
+        console.log('⚠️ [usePendingJobs] Nenhuma vaga pendente encontrada!');
       }
+      console.log('🔍 [usePendingJobs] ===== FIM DA BUSCA =====');
 
       if (error) {
         console.error('❌ [usePendingJobs] Erro ao buscar vagas pendentes:', error);
@@ -260,6 +280,7 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
     enabled: !!rhProfile,
     refetchOnMount: true, // Garantir que sempre busque dados atualizados
     refetchOnWindowFocus: true, // Atualizar quando a janela receber foco
+    refetchInterval: 10000, // Atualizar a cada 10 segundos
   });
 };
 
