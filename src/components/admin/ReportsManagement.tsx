@@ -37,10 +37,18 @@ const ReportsManagement = () => {
         if (flow === 'concluida') return 'Concluída';
         if (flow === 'congelada') return 'Congelada';
 
-        // 2) Expiração
+        // 2) Expiração - IMPORTANTE: Só marcar como expirada se a data JÁ PASSOU completamente
+        // Vagas que expiram hoje (days === 0) ou em breve (days > 0) NÃO são expiradas
         if (job?.expires_at) {
             const expiresAt = new Date(job.expires_at);
-            if (!isNaN(expiresAt.getTime()) && expiresAt < new Date()) {
+            const now = new Date();
+            
+            // Comparar apenas as datas (sem hora) para evitar problemas de timezone
+            const expiresDate = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            // Só é expirada se a data já passou (não inclui hoje)
+            if (!isNaN(expiresAt.getTime()) && expiresDate < today) {
                 return 'Expirada';
             }
         }
