@@ -118,7 +118,7 @@ const JobManagement = () => {
 
       const matchesStatus = statusFilter === 'all' ||
         (statusFilter === 'expired' && isActive && job.expires_at && new Date(job.expires_at) < new Date()) ||
-        (statusFilter === 'expiring_soon' && job.expires_at && (() => {
+        (statusFilter === 'expiring_soon' && isActive && job.expires_at && (() => {
           const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
           return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
         })()) ||
