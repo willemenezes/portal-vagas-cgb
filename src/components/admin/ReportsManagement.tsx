@@ -25,6 +25,7 @@ const ReportsManagement = () => {
     const isLoading = isLoadingCandidates || isLoadingResumes || isLoadingJobs || isLoadingRejectionNotes;
 
     // Determina o status exibido no portal para a vaga exportada
+    // IMPORTANTE: Usar a mesma lógica do dashboard para consistência
     const getJobPortalStatus = (job: any): string => {
         const status = String(job?.status || '').toLowerCase();
         const approval = String(job?.approval_status || '').toLowerCase();
@@ -37,10 +38,13 @@ const ReportsManagement = () => {
         if (flow === 'concluida') return 'Concluída';
         if (flow === 'congelada') return 'Congelada';
 
-        // 2) Expiração - IMPORTANTE: Só marcar como expirada se a data JÁ PASSOU (1 dia depois)
-        // No mesmo dia que vence, ainda NÃO é expirada
-        // Vagas que vão expirar (mas ainda não expiraram) sempre contam como no prazo
-        if (job?.expires_at) {
+        // 2) Expiração - IMPORTANTE: Mesma lógica do dashboard
+        // Só marcar como expirada se:
+        // - A vaga está ATIVA (não concluída nem congelada) - já verificado acima
+        // - A data JÁ PASSOU (1 dia depois, não no mesmo dia)
+        // - Tem data de expiração
+        const isActive = flow !== 'concluida' && flow !== 'congelada';
+        if (isActive && job?.expires_at) {
             const expiresAt = new Date(job.expires_at);
             
             if (!isNaN(expiresAt.getTime())) {
@@ -59,9 +63,9 @@ const ReportsManagement = () => {
         }
 
         // 3) Ativa (mesmo que flow esteja vazio em dados antigos)
-        const isActive = ['active', 'ativo'].includes(status);
+        const isActiveStatus = ['active', 'ativo'].includes(status);
         const isApproved = ['active', 'ativo'].includes(approval);
-        if (isActive && isApproved && (flow === 'ativa' || flow === '' || flow === 'null' || flow === 'undefined')) {
+        if (isActiveStatus && isApproved && (flow === 'ativa' || flow === '' || flow === 'null' || flow === 'undefined')) {
             return 'Ativa';
         }
 
