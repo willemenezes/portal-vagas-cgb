@@ -460,11 +460,20 @@ const JobManagement = () => {
           jobDataClean.status = 'draft'; // Voltar para draft até ser aprovada novamente
         }
         
-        // CORREÇÃO ADICIONAL: Se a vaga está sendo editada e já está com approval_status diferente de pending,
-        // mas o usuário escolheu "aprovacao_pendente", garantir que volte para pending_approval
+        // CORREÇÃO ADICIONAL: Se a vaga está sendo editada e o usuário escolheu "aprovacao_pendente",
+        // SEMPRE garantir que volte para pending_approval, independentemente do status anterior
         // Isso garante que admin e gerente vejam a vaga editada
         if (statusToSend === 'pending_approval') {
           console.log('✅ [JobManagement] Vaga sendo enviada para aprovação - garantindo pending_approval');
+          jobDataClean.approval_status = 'pending_approval';
+          jobDataClean.status = 'draft';
+        }
+        
+        // CORREÇÃO CRÍTICA: Se a vaga está sendo editada (tem ID) e o RH escolheu "aprovacao_pendente",
+        // mas por algum motivo o statusToSend não é 'pending_approval', forçar pending_approval
+        // Isso garante que vagas editadas sempre apareçam para admin e gerente
+        if (jobToSave.id && submissionStatus === 'aprovacao_pendente' && jobDataClean.approval_status !== 'pending_approval') {
+          console.log('✅ [JobManagement] Forçando pending_approval para vaga editada');
           jobDataClean.approval_status = 'pending_approval';
           jobDataClean.status = 'draft';
         }
