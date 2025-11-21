@@ -50,15 +50,35 @@ export const ContractDeadlineManagement: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // Filtrar apenas vagas processadas (aprovadas) - mesmo critério do relatório
+    const processedJobs = React.useMemo(() => {
+        return allJobs.filter(j => {
+            // Incluir todas as vagas que foram processadas (aprovadas)
+            // Isso inclui: ativas, concluídas, congeladas, etc.
+            // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
+            const approval = String(j.approval_status || '').toLowerCase();
+            const status = String(j.status || '').toLowerCase();
+            
+            // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+            const isApproved = ['active', 'ativo'].includes(approval);
+            const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+            const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
+            const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
+            const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
+            
+            return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
+        });
+    }, [allJobs]);
+
     // Deduplicar Banco de Talentos (preferir ativo; senão, o mais recente)
     const normalizedTitle = (t: string | undefined) => (t || '').trim().toLowerCase();
-    const talentJobs = allJobs
+    const talentJobs = processedJobs
         .filter(j => normalizedTitle(j.title) === 'banco de talentos')
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const chosenTalent = talentJobs.find(j => j.approval_status === 'active' || j.status === 'active') || talentJobs[0];
     const jobsDeduped = chosenTalent
-        ? [chosenTalent, ...allJobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos')]
-        : allJobs;
+        ? [chosenTalent, ...processedJobs.filter(j => normalizedTitle(j.title) !== 'banco de talentos')]
+        : processedJobs;
 
     // BUG FIX: Aplicar filtro de região para RECRUTADOR
     const jobsFilteredByRegion = React.useMemo(() => {
