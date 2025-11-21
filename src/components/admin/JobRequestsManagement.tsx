@@ -506,18 +506,127 @@ const JobRequestsManagement = () => {
 
             {/* Conteúdo */}
             {activeView === 'pending' ? (
-                <Card className="bg-amber-50 border-amber-200">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-amber-900">
-                            <Clock className="w-6 h-6" />
-                            Solicitações Aprovadas para Criação
-                            <Badge className="bg-amber-600 ml-auto">{totalPendingJobs} pendente{totalPendingJobs !== 1 ? 's' : ''}</Badge>
-                        </CardTitle>
-                        <p className="text-sm text-amber-800 mt-2">
-                            Revise, edite ou publique as vagas aprovadas pelos gerentes
-                        </p>
-                    </CardHeader>
-                    <CardContent>
+                <div className="space-y-6">
+                    {/* VAGAS EDITADAS AGUARDANDO APROVAÇÃO */}
+                    {pendingEditedJobs.length > 0 && (
+                        <Card className="bg-blue-50 border-blue-200">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-blue-900">
+                                    <FileText className="w-6 h-6" />
+                                    Vagas Editadas Aguardando Aprovação
+                                    <Badge className="bg-blue-600 ml-auto">{pendingEditedJobs.length} pendente{pendingEditedJobs.length !== 1 ? 's' : ''}</Badge>
+                                </CardTitle>
+                                <p className="text-sm text-blue-800 mt-2">
+                                    Essas vagas foram editadas e precisam ser aprovadas novamente antes de serem publicadas no portal
+                                </p>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {pendingEditedJobs.map((job) => (
+                                    <div
+                                        key={job.id}
+                                        className="p-6 border-2 border-blue-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                            <div className="flex-grow">
+                                                <div className="flex items-start gap-3 mb-2">
+                                                    <h3 className="font-bold text-xl text-gray-900">{job.title}</h3>
+                                                    <Badge className="bg-yellow-500">Aguardando Aprovação</Badge>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex flex-wrap gap-4 text-sm text-gray-700">
+                                                        <div className="flex items-center gap-1">
+                                                            <Building className="w-4 h-4 text-gray-500" />
+                                                            <span>{job.department}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <MapPin className="w-4 h-4 text-gray-500" />
+                                                            <span>{job.city}, {job.state}</span>
+                                                        </div>
+                                                        {job.company_contract && (
+                                                            <div className="flex items-center gap-1">
+                                                                <FileText className="w-4 h-4 text-gray-500" />
+                                                                <span>{job.company_contract}</span>
+                                                            </div>
+                                                        )}
+                                                        {job.quantity && job.quantity > 1 && (
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="font-semibold">{job.quantity} vagas</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 line-clamp-2">{job.description}</p>
+                                                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                        <Calendar className="w-3 h-3" />
+                                                        Última atualização: {new Date(job.updated_at || job.created_at).toLocaleString('pt-BR')}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col lg:flex-row gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedJob(job);
+                                                        setDetailModalOpen(true);
+                                                    }}
+                                                >
+                                                    <Eye className="w-4 h-4 mr-1" />
+                                                    Ver Detalhes
+                                                </Button>
+                                                <Button
+                                                    variant="default"
+                                                    size="sm"
+                                                    className="bg-green-600 hover:bg-green-700"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await updateJob.mutateAsync({
+                                                                id: job.id,
+                                                                approval_status: 'active',
+                                                                status: 'active',
+                                                                flow_status: 'ativa'
+                                                            });
+                                                            toast({ title: 'Vaga Aprovada!', description: 'A vaga está ativa e pública.' });
+                                                            refetchPendingJobs();
+                                                        } catch (error) {
+                                                            toast({ title: 'Erro', description: 'Não foi possível aprovar a vaga.', variant: 'destructive' });
+                                                        }
+                                                    }}
+                                                >
+                                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                                    Aprovar
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedJob(job);
+                                                        setRejectModalOpen(true);
+                                                    }}
+                                                >
+                                                    <XCircle className="w-4 h-4 mr-1" />
+                                                    Rejeitar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+                    
+                    {/* SOLICITAÇÕES APROVADAS PARA CRIAÇÃO */}
+                    <Card className="bg-amber-50 border-amber-200">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-amber-900">
+                                <Clock className="w-6 h-6" />
+                                Solicitações Aprovadas para Criação
+                                <Badge className="bg-amber-600 ml-auto">{totalPendingJobs} pendente{totalPendingJobs !== 1 ? 's' : ''}</Badge>
+                            </CardTitle>
+                            <p className="text-sm text-amber-800 mt-2">
+                                Revise, edite ou publique as vagas aprovadas pelos gerentes
+                            </p>
+                        </CardHeader>
+                        <CardContent>
                         {paginatedPendingJobs.length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-lg">
                                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
