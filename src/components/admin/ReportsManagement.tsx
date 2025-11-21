@@ -24,8 +24,16 @@ const ReportsManagement = () => {
 
     const isLoading = isLoadingCandidates || isLoadingResumes || isLoadingJobs || isLoadingRejectionNotes;
 
+    // Função helper para calcular dias até expiração - MESMA LÓGICA DO DASHBOARD
+    const getDaysUntilExpiry = (expiryDate: string): number => {
+        const now = new Date();
+        const expiry = new Date(expiryDate);
+        const diffTime = expiry.getTime() - now.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
     // Determina o status exibido no portal para a vaga exportada
-    // IMPORTANTE: Usar a mesma lógica do dashboard para consistência
+    // IMPORTANTE: Usar EXATAMENTE a mesma lógica do dashboard para consistência
     const getJobPortalStatus = (job: any): string => {
         const status = String(job?.status || '').toLowerCase();
         const approval = String(job?.approval_status || '').toLowerCase();
@@ -38,28 +46,21 @@ const ReportsManagement = () => {
         if (flow === 'concluida') return 'Concluída';
         if (flow === 'congelada') return 'Congelada';
 
-        // 2) Expiração - IMPORTANTE: Mesma lógica do dashboard
-        // Só marcar como expirada se:
-        // - A vaga está ATIVA (não concluída nem congelada) - já verificado acima
-        // - A data JÁ PASSOU (1 dia depois, não no mesmo dia)
-        // - Tem data de expiração
+        // 2) Expiração - MESMA LÓGICA EXATA DO DASHBOARD
+        // IMPORTANTE: Usar getDaysUntilExpiry (não comparação de datas) para consistência
         const isActive = flow !== 'concluida' && flow !== 'congelada';
         if (isActive && job?.expires_at) {
-            const expiresAt = new Date(job.expires_at);
+            const days = getDaysUntilExpiry(job.expires_at);
             
-            if (!isNaN(expiresAt.getTime())) {
-                // Comparar apenas as datas (sem hora) para evitar problemas de timezone
-                const expiresDate = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
-                const today = new Date();
-                const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                
-                // Só é expirada se a data de expiração é MENOR que hoje (não igual)
-                // Se expiresDate < todayDate → Expirada (já passou)
-                // Se expiresDate >= todayDate → Não expirada (ainda no prazo, mesmo que expire hoje)
-                if (expiresDate < todayDate) {
-                    return 'Expirada';
-                }
+            // Dashboard: days < 0 = Expirada, days <= 3 && days >= 0 = Expirando em Breve
+            // Relatório: Apenas marcar como "Expirada" se days < 0 (já passou)
+            // Vagas "Expirando em Breve" (days <= 3 && days >= 0) devem ser "Ativa" no relatório
+            if (days < 0) {
+                // Apenas se já passou (não inclui "expira hoje" nem "expirando em breve")
+                return 'Expirada';
             }
+            // Se days >= 0, a vaga ainda está no prazo (pode ser "Ativa" ou "Expirando em Breve")
+            // Mas no relatório, não temos categoria "Expirando em Breve", então marcamos como "Ativa"
         }
 
         // 3) Ativa (mesmo que flow esteja vazio em dados antigos)
