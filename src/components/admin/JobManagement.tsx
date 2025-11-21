@@ -688,11 +688,11 @@ const JobManagement = () => {
           </Card>
 
           {/* Botão Nova Vaga - Centralizado */}
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+          <Card className="border-indigo-200 bg-indigo-50">
             <CardContent className="p-4 h-full flex items-center justify-center">
               <Button 
                 onClick={handleCreate}
-                className="w-full bg-cgb-primary text-white hover:bg-cgb-primary-dark font-semibold shadow-md"
+                className="w-full bg-indigo-600 text-white hover:bg-indigo-700 font-semibold shadow-sm"
                 size="lg"
               >
                 <Plus className="mr-2 h-5 w-5" /> Nova Vaga
