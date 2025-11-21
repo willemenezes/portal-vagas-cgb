@@ -282,8 +282,8 @@ export default function JobRequestManagement() {
                                 onChange={(value) => setNewRequest({ ...newRequest, title: value })}
                                 required
                                 maxLength={255}
-                                id="title"
-                            />
+                                    id="title"
+                                />
                             <div className="space-y-2">
                                 <Label htmlFor="department">Departamento *</Label>
                                 <Select

@@ -616,7 +616,7 @@ export default function JobRequestApproval() {
             )}
 
             {/* Solicitações Processadas - Tabs para Aprovadas e Reprovadas */}
-            <div className="space-y-4">
+                <div className="space-y-4">
                 <Tabs defaultValue="approved" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 mb-4">
                         <TabsTrigger value="approved" className="flex items-center gap-2">
@@ -694,20 +694,20 @@ export default function JobRequestApproval() {
 
                     {/* Aba de Aprovadas */}
                     <TabsContent value="approved" className="mt-0">
-                        <Card>
-                            <CardContent className="p-0">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Vaga</TableHead>
-                                            <TableHead>Localização</TableHead>
-                                            <TableHead>Solicitante</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Processado em</TableHead>
-                                            <TableHead className="text-right">Ações</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
+                    <Card>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Vaga</TableHead>
+                                        <TableHead>Localização</TableHead>
+                                        <TableHead>Solicitante</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Processado em</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                         {filteredApprovedRequests.map((request) => (
                                         <TableRow key={request.id}>
                                             <TableCell>
@@ -792,7 +792,7 @@ export default function JobRequestApproval() {
                                         </TableRow>
                                     ))}
                                 </TableBody>
-                                    </Table>
+                            </Table>
                                 </CardContent>
                             </Card>
 
@@ -907,8 +907,8 @@ export default function JobRequestApproval() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                </CardContent>
-                            </Card>
+                        </CardContent>
+                    </Card>
 
                             {filteredRejectedRequests.length === 0 && rejectedRequests.length > 0 && (
                                 <div className="p-8 text-center">
@@ -926,8 +926,8 @@ export default function JobRequestApproval() {
                                     >
                                         Limpar Filtros
                                     </Button>
-                                </div>
-                            )}
+                </div>
+            )}
                             {rejectedRequests.length === 0 && (
                                 <div className="p-8 text-center">
                                     <XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />

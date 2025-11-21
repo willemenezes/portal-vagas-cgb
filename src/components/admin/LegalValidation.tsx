@@ -602,16 +602,16 @@ const LegalValidation = () => {
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-                            {candidates && candidates.length > 0 ? candidates.map(c => (
-                                <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} contractFilter={contractFilter} />
-                            )) : (
+                        {candidates && candidates.length > 0 ? candidates.map(c => (
+                            <CandidateCard key={c.id} candidate={c} onAction={handleActionClick} contractFilter={contractFilter} />
+                        )) : (
                                 <Card className="col-span-full">
-                                    <CardContent className="py-12 text-center">
-                                        <p className="text-gray-500">Nenhum candidato aguardando validação.</p>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </div>
+                                <CardContent className="py-12 text-center">
+                                    <p className="text-gray-500">Nenhum candidato aguardando validação.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
 
                         {/* Controles de Paginação */}
                         {totalCount > 0 && (

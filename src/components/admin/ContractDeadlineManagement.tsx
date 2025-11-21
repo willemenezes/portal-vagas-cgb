@@ -130,10 +130,6 @@ export const ContractDeadlineManagement: React.FC = () => {
                 const days = getDaysUntilExpiry(job.expires_at);
                 return days < 0; // Apenas se já passou (não inclui "expira hoje")
             })()) ||
-            (statusFilter === 'expiring_soon' && isActive && job.expires_at && (() => {
-                const days = getDaysUntilExpiry(job.expires_at);
-                return days <= 3 && days >= 0; // Inclui "expira hoje" (days === 0)
-            })()) ||
             (statusFilter === 'active' && job.flow_status === 'ativa') ||
             (statusFilter === 'completed' && job.flow_status === 'concluida') ||
             (statusFilter === 'congelada' && job.flow_status === 'congelada');
@@ -158,16 +154,6 @@ export const ContractDeadlineManagement: React.FC = () => {
             if (!isActive || !job.expires_at) return sum;
             const days = getDaysUntilExpiry(job.expires_at);
             if (days < 0) { // Apenas se já passou (não inclui "expira hoje")
-                return sum + getQuantity(job);
-            }
-            return sum;
-        }, 0),
-        expiring_soon: jobsFilteredByRegion.reduce((sum, job) => {
-            // Só contar como "expirando em breve" se a vaga está ativa
-            const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
-            if (!isActive || !job.expires_at) return sum;
-            const days = getDaysUntilExpiry(job.expires_at);
-            if (days <= 3 && days >= 0) { // Inclui "expira hoje" (days === 0)
                 return sum + getQuantity(job);
             }
             return sum;
@@ -324,9 +310,8 @@ export const ContractDeadlineManagement: React.FC = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Todas as vagas</SelectItem>
-                                    <SelectItem value="expired">Expiradas</SelectItem>
-                                    <SelectItem value="expiring_soon">Expirando em breve</SelectItem>
                                     <SelectItem value="active">Ativas</SelectItem>
+                                    <SelectItem value="expired">Expiradas</SelectItem>
                                     <SelectItem value="completed">Concluídas</SelectItem>
                                     <SelectItem value="congelada">Congeladas</SelectItem>
                                 </SelectContent>

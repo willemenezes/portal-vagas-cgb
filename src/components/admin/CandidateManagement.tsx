@@ -98,8 +98,8 @@ const CandidateManagement = () => {
   useEffect(() => {
     // Apenas resetar página se não for mudança de jobId (já tratado acima)
     if (previousJobIdRef.current === filters.jobId) {
-      setCurrentPage(0);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    setCurrentPage(0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [filters.status, filters.state, filters.cnh, filters.vehicle, searchTerm]);
 

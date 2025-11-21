@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 
 interface ExpiryStats {
     expired_jobs: number;
-    expiring_soon: number;
     active_jobs: number;
     total_jobs: number;
     total_positions: number;
@@ -50,13 +49,13 @@ export const ExpiryDashboard: React.FC<ExpiryDashboardProps> = ({
         : 0;
 
     const expiryRate = stats.total_jobs > 0
-        ? ((stats.expired_jobs + stats.expiring_soon) / stats.total_jobs) * 100
+        ? (stats.expired_jobs / stats.total_jobs) * 100
         : 0;
 
     return (
         <div className={cn("space-y-4", className)}>
             {/* Cards de Estatísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Vagas Expiradas */}
                 <Card className="border-red-200 bg-red-50">
                     <CardContent className="p-6">
@@ -71,26 +70,6 @@ export const ExpiryDashboard: React.FC<ExpiryDashboardProps> = ({
                             <div className="mt-2">
                                 <Badge variant="destructive" className="text-xs">
                                     Ação necessária
-                                </Badge>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Vagas Expirando */}
-                <Card className="border-yellow-200 bg-yellow-50">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-yellow-600">Expirando em Breve</p>
-                                <p className="text-2xl font-bold text-yellow-700">{stats.expiring_soon}</p>
-                            </div>
-                            <Clock className="w-8 h-8 text-yellow-500" />
-                        </div>
-                        {stats.expiring_soon > 0 && (
-                            <div className="mt-2">
-                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">
-                                    ≤ 3 dias restantes
                                 </Badge>
                             </div>
                         )}
@@ -179,13 +158,7 @@ export const ExpiryDashboard: React.FC<ExpiryDashboardProps> = ({
                                 <Badge variant="destructive">{stats.expired_jobs}</Badge>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-yellow-600">Expirando (&le;3 dias)</span>
-                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
-                                    {stats.expiring_soon}
-                                </Badge>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-green-600">Ativas (&gt;3 dias)</span>
+                                <span className="text-sm text-green-600">Ativas</span>
                                 <Badge variant="outline" className="border-green-300 text-green-700">
                                     {stats.active_jobs}
                                 </Badge>

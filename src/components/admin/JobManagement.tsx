@@ -200,10 +200,6 @@ const JobManagement = () => {
           const days = getDaysUntilExpiry(job.expires_at);
           return days < 0; // Apenas se já passou (não inclui "expira hoje")
         })()) ||
-        (statusFilter === 'expiring_soon' && isActive && job.expires_at && (() => {
-          const days = getDaysUntilExpiry(job.expires_at);
-          return days <= 3 && days >= 0; // Inclui "expira hoje" (days === 0)
-        })()) ||
         (statusFilter === 'active' && normalizedFlowStatus === 'ativa') ||
         (statusFilter === 'completed' && normalizedFlowStatus === 'concluida') ||
         (statusFilter === 'congelada' && normalizedFlowStatus === 'congelada');
@@ -237,16 +233,6 @@ const JobManagement = () => {
         if (!isActive || !job.expires_at) return sum;
         const days = getDaysUntilExpiry(job.expires_at);
         if (days < 0) { // Apenas se já passou (não inclui "expira hoje")
-          return sum + getQuantity(job);
-        }
-        return sum;
-      }, 0),
-      expiring_soon: jobsDeduped.reduce((sum, job) => {
-        // Só contar como "expirando em breve" se a vaga está ativa
-        const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
-        if (!isActive || !job.expires_at) return sum;
-        const days = getDaysUntilExpiry(job.expires_at);
-        if (days <= 3 && days >= 0) { // Inclui "expira hoje" (days === 0)
           return sum + getQuantity(job);
         }
         return sum;
@@ -668,18 +654,6 @@ const JobManagement = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-yellow-600">Expirando em Breve</p>
-                  <p className="text-2xl font-bold text-yellow-700">{stats.expiring_soon}</p>
-                </div>
-                <Clock className="w-8 h-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -739,9 +713,8 @@ const JobManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as vagas</SelectItem>
-                    <SelectItem value="expired">Expiradas</SelectItem>
-                    <SelectItem value="expiring_soon">Expirando em breve</SelectItem>
                     <SelectItem value="active">Ativas</SelectItem>
+                    <SelectItem value="expired">Expiradas</SelectItem>
                     <SelectItem value="completed">Concluídas</SelectItem>
                     <SelectItem value="congelada">Congeladas</SelectItem>
                   </SelectContent>
