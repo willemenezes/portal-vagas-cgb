@@ -20,8 +20,7 @@ import {
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
-import { useAllJobs } from '@/hooks/useJobs';
-import { useUpdateJob } from '@/hooks/useJobs';
+import { useAllJobs, useUpdateJob, Job } from '@/hooks/useJobs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -117,28 +116,52 @@ export const ContractDeadlineManagement: React.FC = () => {
     // Calcular estatísticas (sobre lista filtrada por região)
     // IMPORTANTE: Vagas concluídas ou congeladas NÃO devem contar como expiradas
     // IMPORTANTE: "Expira hoje" (days === 0) NÃO deve contar como expirada
+    // IMPORTANTE: Considerar o campo 'quantity' de cada vaga (ex: 3 vagas em Castanhal = quantity: 3)
+    const getQuantity = (job: Job) => job.quantity || 1; // Se não tiver quantity, assume 1
+    
     const stats = {
-        total: jobsFilteredByRegion.length,
-        expired: jobsFilteredByRegion.filter(job => {
+        total: jobsFilteredByRegion.reduce((sum, job) => sum + getQuantity(job), 0),
+        expired: jobsFilteredByRegion.reduce((sum, job) => {
             // Só contar como expirada se:
             // 1. Tem data de expiração
             // 2. A data já passou (days < 0, não days <= 0)
             // 3. A vaga está ATIVA (não concluída nem congelada)
             const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
-            if (!isActive || !job.expires_at) return false;
+            if (!isActive || !job.expires_at) return sum;
             const days = getDaysUntilExpiry(job.expires_at);
-            return days < 0; // Apenas se já passou (não inclui "expira hoje")
-        }).length,
-        expiring_soon: jobsFilteredByRegion.filter(job => {
+            if (days < 0) { // Apenas se já passou (não inclui "expira hoje")
+                return sum + getQuantity(job);
+            }
+            return sum;
+        }, 0),
+        expiring_soon: jobsFilteredByRegion.reduce((sum, job) => {
             // Só contar como "expirando em breve" se a vaga está ativa
             const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
-            if (!isActive || !job.expires_at) return false;
+            if (!isActive || !job.expires_at) return sum;
             const days = getDaysUntilExpiry(job.expires_at);
-            return days <= 3 && days >= 0; // Inclui "expira hoje" (days === 0)
-        }).length,
-        active: jobsFilteredByRegion.filter(job => job.flow_status === 'ativa').length,
-        completed: jobsFilteredByRegion.filter(job => job.flow_status === 'concluida').length,
-        congelada: jobsFilteredByRegion.filter(job => job.flow_status === 'congelada').length
+            if (days <= 3 && days >= 0) { // Inclui "expira hoje" (days === 0)
+                return sum + getQuantity(job);
+            }
+            return sum;
+        }, 0),
+        active: jobsFilteredByRegion.reduce((sum, job) => {
+            if (job.flow_status === 'ativa') {
+                return sum + getQuantity(job);
+            }
+            return sum;
+        }, 0),
+        completed: jobsFilteredByRegion.reduce((sum, job) => {
+            if (job.flow_status === 'concluida') {
+                return sum + getQuantity(job);
+            }
+            return sum;
+        }, 0),
+        congelada: jobsFilteredByRegion.reduce((sum, job) => {
+            if (job.flow_status === 'congelada') {
+                return sum + getQuantity(job);
+            }
+            return sum;
+        }, 0)
     };
 
     // Paginação baseada na lista filtrada

@@ -151,29 +151,53 @@ const JobManagement = () => {
   // Calcular estatísticas
   // IMPORTANTE: Vagas concluídas ou congeladas NÃO devem contar como expiradas
   // IMPORTANTE: "Expira hoje" (days === 0) NÃO deve contar como expirada
+  // IMPORTANTE: Considerar o campo 'quantity' de cada vaga (ex: 3 vagas em Castanhal = quantity: 3)
+  const getQuantity = (job: Job) => job.quantity || 1; // Se não tiver quantity, assume 1
+  
   const stats = React.useMemo(() => {
     return {
-      total: jobsDeduped.length,
-      expired: jobsDeduped.filter(job => {
+      total: jobsDeduped.reduce((sum, job) => sum + getQuantity(job), 0),
+      expired: jobsDeduped.reduce((sum, job) => {
         // Só contar como expirada se:
         // 1. Tem data de expiração
         // 2. A data já passou (days < 0, não days <= 0)
         // 3. A vaga está ATIVA (não concluída nem congelada)
         const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
-        if (!isActive || !job.expires_at) return false;
+        if (!isActive || !job.expires_at) return sum;
         const days = getDaysUntilExpiry(job.expires_at);
-        return days < 0; // Apenas se já passou (não inclui "expira hoje")
-      }).length,
-      expiring_soon: jobsDeduped.filter(job => {
+        if (days < 0) { // Apenas se já passou (não inclui "expira hoje")
+          return sum + getQuantity(job);
+        }
+        return sum;
+      }, 0),
+      expiring_soon: jobsDeduped.reduce((sum, job) => {
         // Só contar como "expirando em breve" se a vaga está ativa
         const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
-        if (!isActive || !job.expires_at) return false;
+        if (!isActive || !job.expires_at) return sum;
         const days = getDaysUntilExpiry(job.expires_at);
-        return days <= 3 && days >= 0; // Inclui "expira hoje" (days === 0)
-      }).length,
-      active: jobsDeduped.filter(job => job.flow_status === 'ativa').length,
-      completed: jobsDeduped.filter(job => job.flow_status === 'concluida').length,
-      congelada: jobsDeduped.filter(job => job.flow_status === 'congelada').length
+        if (days <= 3 && days >= 0) { // Inclui "expira hoje" (days === 0)
+          return sum + getQuantity(job);
+        }
+        return sum;
+      }, 0),
+      active: jobsDeduped.reduce((sum, job) => {
+        if (job.flow_status === 'ativa') {
+          return sum + getQuantity(job);
+        }
+        return sum;
+      }, 0),
+      completed: jobsDeduped.reduce((sum, job) => {
+        if (job.flow_status === 'concluida') {
+          return sum + getQuantity(job);
+        }
+        return sum;
+      }, 0),
+      congelada: jobsDeduped.reduce((sum, job) => {
+        if (job.flow_status === 'congelada') {
+          return sum + getQuantity(job);
+        }
+        return sum;
+      }, 0)
     };
   }, [jobsDeduped]);
 
