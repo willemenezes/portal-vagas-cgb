@@ -37,19 +37,24 @@ const ReportsManagement = () => {
         if (flow === 'concluida') return 'Concluída';
         if (flow === 'congelada') return 'Congelada';
 
-        // 2) Expiração - IMPORTANTE: Só marcar como expirada se a data JÁ PASSOU completamente
-        // Vagas que expiram hoje (days === 0) ou em breve (days > 0) NÃO são expiradas
+        // 2) Expiração - IMPORTANTE: Só marcar como expirada se a data JÁ PASSOU (1 dia depois)
+        // No mesmo dia que vence, ainda NÃO é expirada
+        // Vagas que vão expirar (mas ainda não expiraram) sempre contam como no prazo
         if (job?.expires_at) {
             const expiresAt = new Date(job.expires_at);
-            const now = new Date();
             
-            // Comparar apenas as datas (sem hora) para evitar problemas de timezone
-            const expiresDate = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            
-            // Só é expirada se a data já passou (não inclui hoje)
-            if (!isNaN(expiresAt.getTime()) && expiresDate < today) {
-                return 'Expirada';
+            if (!isNaN(expiresAt.getTime())) {
+                // Comparar apenas as datas (sem hora) para evitar problemas de timezone
+                const expiresDate = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
+                const today = new Date();
+                const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                // Só é expirada se a data de expiração é MENOR que hoje (não igual)
+                // Se expiresDate < todayDate → Expirada (já passou)
+                // Se expiresDate >= todayDate → Não expirada (ainda no prazo, mesmo que expire hoje)
+                if (expiresDate < todayDate) {
+                    return 'Expirada';
+                }
             }
         }
 
