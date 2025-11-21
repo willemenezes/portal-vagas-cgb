@@ -224,7 +224,10 @@ export const useAllJobs = () => {
       }
     },
     retry: 2,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 segundos (reduzido para atualizações mais frequentes)
+    refetchOnMount: true, // Refaz a busca ao montar o componente
+    refetchOnWindowFocus: true, // Busca dados ao focar na janela
+    refetchInterval: 60 * 1000, // Refetch automático a cada 1 minuto
   });
 };
 
