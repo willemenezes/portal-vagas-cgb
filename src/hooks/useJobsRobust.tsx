@@ -48,38 +48,25 @@ export const useJobsRobust = () => {
 
             if (!data || !Array.isArray(data)) return [];
 
-            // Buscar contagem de candidatos para cada vaga
-            const jobsWithApplicants = await Promise.all(
-                data.map(async (job: any, index: number) => {
-                    try {
-                        const { count, error: countError } = await supabase
-                            .from('candidates')
-                            .select('id', { count: 'exact', head: true })
-                            .eq('job_id', job.id);
-
-                        if (countError) {
-                            console.warn('Erro ao contar candidates para vaga', job.id, ':', countError);
-                        }
-
-                        return {
-                            id: job.id || `temp-${index}`,
-                            title: job.title || 'Título não disponível',
-                            department: job.department || 'Departamento não informado',
-                            city: job.city || 'Cidade não informada',
-                            state: job.state || 'Estado não informado',
-                            type: job.type || 'CLT',
-                            description: job.description || 'Descrição não disponível',
-                            requirements: Array.isArray(job.requirements) ? job.requirements : [],
-                            benefits: Array.isArray(job.benefits) ? job.benefits : [],
-                            workload: job.workload || 'Não informado',
-                            status: job.status || 'active',
-                            created_at: job.created_at || new Date().toISOString(),
-                            updated_at: job.updated_at || new Date().toISOString(),
-                            applicants: count || 0,
-                            posted: job.created_at ? new Date(job.created_at).toLocaleDateString('pt-BR') : 'Data não disponível'
-                        };
-                    } catch (error) {
-                        console.warn('Erro ao processar vaga', job.id, ':', error);
+            // OTIMIZAÇÃO: Retornar vagas sem contagem inicial para carregamento rápido
+            // A contagem de candidatos será feita sob demanda quando necessário
+            const jobsWithApplicants = data.map((job: any, index: number) => ({
+                id: job.id || `temp-${index}`,
+                title: job.title || 'Título não disponível',
+                department: job.department || 'Departamento não informado',
+                city: job.city || 'Cidade não informada',
+                state: job.state || 'Estado não informado',
+                type: job.type || 'CLT',
+                description: job.description || 'Descrição não disponível',
+                requirements: Array.isArray(job.requirements) ? job.requirements : [],
+                benefits: Array.isArray(job.benefits) ? job.benefits : [],
+                workload: job.workload || 'Não informado',
+                status: job.status || 'active',
+                created_at: job.created_at || new Date().toISOString(),
+                updated_at: job.updated_at || new Date().toISOString(),
+                applicants: 0, // Inicializar com 0, será atualizado sob demanda
+                posted: job.created_at ? new Date(job.created_at).toLocaleDateString('pt-BR') : 'Data não disponível'
+            }));
                         return {
                             id: job.id || `temp-${index}`,
                             title: job.title || 'Título não disponível',

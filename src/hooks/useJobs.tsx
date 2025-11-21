@@ -73,34 +73,13 @@ export const useJobs = () => {
           return [];
         }
 
-        // Buscar contagem de candidatos para cada vaga
-        const jobsWithApplicants = await Promise.all(
-          jobs.map(async (job) => {
-            try {
-              const { count, error: countError } = await supabase
-                .from('candidates')
-                .select('id', { count: 'exact', head: true })
-                .eq('job_id', job.id);
-
-              if (countError) {
-                console.warn('Erro ao contar candidates para vaga', job.id, ':', countError);
-              }
-
-              return {
-                ...job,
-                applicants: count || 0,
-                posted: new Date(job.created_at).toLocaleDateString('pt-BR')
-              };
-            } catch (error) {
-              console.warn('Erro ao processar vaga', job.id, ':', error);
-              return {
-                ...job,
-                applicants: 0,
-                posted: new Date(job.created_at).toLocaleDateString('pt-BR')
-              };
-            }
-          })
-        );
+        // OTIMIZAÇÃO: Retornar vagas sem contagem inicial para carregamento rápido
+        // A contagem de candidatos pode ser feita sob demanda ou em background
+        const jobsWithApplicants = jobs.map((job) => ({
+          ...job,
+          applicants: 0, // Inicializar com 0, será atualizado sob demanda se necessário
+          posted: new Date(job.created_at).toLocaleDateString('pt-BR')
+        }));
 
         // Garantir que apenas um "Banco de Talentos" apareça na administração
         // Preferimos o que está ativo; se não houver ativo, mantemos o mais recente
@@ -141,89 +120,15 @@ export const useAllJobs = () => {
           return [];
         }
 
-        // Buscar contagem de candidatos para cada vaga
-        // Otimizado: processar em lotes para evitar sobrecarga do servidor
-        const jobsWithApplicants: Job[] = [];
-        const batchSize = 10; // Processar 10 vagas por vez
-        
-        for (let i = 0; i < jobs.length; i += batchSize) {
-          const batch = jobs.slice(i, i + batchSize);
-          
-          const batchResults = await Promise.all(
-            batch.map(async (job) => {
-              try {
-                // Adicionar pequeno delay para evitar rate limiting
-                if (i > 0) {
-                  await new Promise(resolve => setTimeout(resolve, 50));
-                }
-
-                const { count, error: countError } = await supabase
-                  .from('candidates')
-                  .select('id', { count: 'exact', head: true })
-                  .eq('job_id', job.id);
-
-                if (countError) {
-                  console.warn(`Erro ao contar candidates para vaga ${job.id}:`, countError);
-                }
-
-                // Contar candidatos contratados/aprovados com retry
-                let hiredCount = 0;
-                let retries = 0;
-                const maxRetries = 2;
-
-                while (retries <= maxRetries) {
-                  try {
-                    const { count: countResult, error: hiredError } = await supabase
-                      .from('candidates')
-                      .select('id', { count: 'exact', head: true })
-                      .eq('job_id', job.id)
-                      .in('status', ['Contratado', 'Aprovado']);
-
-                    if (hiredError) {
-                      if (hiredError.code === 'PGRST116' || hiredError.message?.includes('503')) {
-                        // Erro 503 ou timeout - tentar novamente
-                        if (retries < maxRetries) {
-                          retries++;
-                          await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Backoff exponencial
-                          continue;
-                        }
-                      }
-                      console.warn(`Erro ao contar candidatos contratados para vaga ${job.id}:`, hiredError);
-                      break;
-                    }
-                    hiredCount = countResult || 0;
-                    break;
-                  } catch (error) {
-                    if (retries < maxRetries) {
-                      retries++;
-                      await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-                      continue;
-                    }
-                    console.warn(`Erro ao contar candidatos contratados para vaga ${job.id}:`, error);
-                    break;
-                  }
-                }
-
-                return {
-                  ...job,
-                  applicants: count || 0,
-                  hired_count: hiredCount,
-                  posted: new Date(job.created_at).toLocaleDateString('pt-BR')
-                };
-              } catch (error) {
-                console.warn(`Erro ao processar vaga ${job.id}:`, error);
-                return {
-                  ...job,
-                  applicants: 0,
-                  hired_count: 0,
-                  posted: new Date(job.created_at).toLocaleDateString('pt-BR')
-                };
-              }
-            })
-          );
-
-          jobsWithApplicants.push(...batchResults);
-        }
+        // OTIMIZAÇÃO: Retornar vagas sem contagem inicial para carregamento rápido
+        // A contagem de candidatos será feita sob demanda quando necessário
+        // Isso evita sobrecarregar o servidor com muitas requisições simultâneas
+        const jobsWithApplicants: Job[] = jobs.map((job) => ({
+          ...job,
+          applicants: 0, // Inicializar com 0, será atualizado sob demanda
+          hired_count: 0, // Inicializar com 0, será atualizado sob demanda
+          posted: new Date(job.created_at).toLocaleDateString('pt-BR')
+        }));
 
         return jobsWithApplicants;
       } catch (error) {
@@ -231,11 +136,11 @@ export const useAllJobs = () => {
         throw error;
       }
     },
-    retry: 2,
-    staleTime: 30 * 1000, // 30 segundos (reduzido para atualizações mais frequentes)
-    refetchOnMount: true, // Refaz a busca ao montar o componente
-    refetchOnWindowFocus: true, // Busca dados ao focar na janela
-    refetchInterval: 60 * 1000, // Refetch automático a cada 1 minuto
+    retry: 1, // Reduzir tentativas para evitar sobrecarga
+    staleTime: 2 * 60 * 1000, // 2 minutos - aumentar para reduzir requisições
+    refetchOnMount: false, // Não refazer ao montar para evitar delay
+    refetchOnWindowFocus: false, // Não refazer ao focar para evitar delay
+    refetchInterval: false, // Desabilitar refetch automático para evitar sobrecarga
   });
 };
 
