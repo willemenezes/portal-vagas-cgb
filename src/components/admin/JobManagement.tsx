@@ -101,6 +101,16 @@ const JobManagement = () => {
     });
   }, [allJobs]);
 
+  // Função helper para normalizar strings (case-insensitive e sem acentos)
+  const normalizeString = (str: string | null | undefined): string => {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  };
+
   // BUG FIX: Filtrar vagas por região para RECRUTADOR
   const jobs = React.useMemo(() => {
     if (!rhProfile || rhProfile.role !== 'recruiter') {
@@ -114,9 +124,17 @@ const JobManagement = () => {
       return processedJobs;
     }
 
+    // Normalizar estados e cidades atribuídos
+    const normalizedStates = assignedStates.map(s => normalizeString(s));
+    const normalizedCities = assignedCities.map(c => normalizeString(c));
+
     return processedJobs.filter(job => {
-      const matchState = assignedStates.length === 0 || assignedStates.includes(job.state || '');
-      const matchCity = assignedCities.length === 0 || assignedCities.includes(job.city || '');
+      const jobState = normalizeString(job.state);
+      const jobCity = normalizeString(job.city);
+
+      const matchState = normalizedStates.length === 0 || normalizedStates.includes(jobState);
+      const matchCity = normalizedCities.length === 0 || normalizedCities.includes(jobCity);
+      
       return matchState && matchCity;
     });
   }, [processedJobs, rhProfile]);
