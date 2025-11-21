@@ -239,7 +239,7 @@ export const useJobById = (id: string) => {
 
 export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
   return useQuery<Job[], Error>({
-    queryKey: ['pendingJobs', rhProfile?.user_id],
+    queryKey: ['pendingJobs', rhProfile?.user_id, rhProfile?.role],
     queryFn: async () => {
       console.log('🔍 [usePendingJobs] Perfil:', rhProfile?.role, 'is_admin:', rhProfile && 'is_admin' in rhProfile ? rhProfile.is_admin : 'N/A');
 
@@ -250,26 +250,33 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
         .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
         .order('created_at', { ascending: false });
 
-      // NOVO: Filtro por departamento para gerentes
-      if (rhProfile?.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
-        console.log('🔍 [usePendingJobs] Filtrando por departamentos:', rhProfile.assigned_departments);
-        query = query.in('department', rhProfile.assigned_departments);
-      }
+      // IMPORTANTE: Admin e Recrutador veem TODAS as vagas pendentes (sem filtros)
+      // Apenas Gerente tem filtros por departamento/região
+      if (rhProfile?.role === 'admin' || rhProfile?.role === 'recruiter') {
+        console.log('🔍 [usePendingJobs] Admin/Recrutador - Buscando TODAS as vagas pendentes (sem filtros)');
+        // Não aplicar nenhum filtro - admin/recrutador vê tudo
+      } else if (rhProfile?.role === 'manager') {
+        // Filtro por departamento para gerentes
+        if (rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
+          console.log('🔍 [usePendingJobs] Gerente - Filtrando por departamentos:', rhProfile.assigned_departments);
+          query = query.in('department', rhProfile.assigned_departments);
+        }
 
-      // Filtro por região (Estado/Cidade)
-      if (rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
-        console.log('🔍 [usePendingJobs] Filtrando por estados:', rhProfile.assigned_states);
-        query = query.in('state', rhProfile.assigned_states);
-      }
+        // Filtro por região (Estado/Cidade) para gerentes
+        if (rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
+          console.log('🔍 [usePendingJobs] Gerente - Filtrando por estados:', rhProfile.assigned_states);
+          query = query.in('state', rhProfile.assigned_states);
+        }
 
-      if (rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) {
-        console.log('🔍 [usePendingJobs] Filtrando por cidades:', rhProfile.assigned_cities);
-        query = query.in('city', rhProfile.assigned_cities);
+        if (rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0) {
+          console.log('🔍 [usePendingJobs] Gerente - Filtrando por cidades:', rhProfile.assigned_cities);
+          query = query.in('city', rhProfile.assigned_cities);
+        }
       }
 
       const { data, error } = await query;
 
-      console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas');
+      console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas para', rhProfile?.role);
 
       if (error) {
         console.error('Erro ao buscar vagas pendentes:', error);
