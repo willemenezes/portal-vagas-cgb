@@ -418,6 +418,17 @@ const JobManagement = () => {
         jobDataClean.flow_status = 'ativa';
       }
 
+      // FLUXO CORRIGIDO: Se uma vaga congelada está sendo ativada novamente,
+      // ela deve voltar para aprovação (pending_approval) para admin/gerente revisar
+      if (jobToSave.id) {
+        // Buscar a vaga atual para verificar o status anterior
+        const currentJob = allJobs.find(j => j.id === jobToSave.id);
+        if (currentJob?.flow_status === 'congelada' && jobDataClean.flow_status === 'ativa') {
+          jobDataClean.approval_status = 'pending_approval';
+          jobDataClean.status = 'draft'; // Voltar para draft até ser aprovada novamente
+        }
+      }
+
       if (!jobToSave.id) {
         delete jobDataClean.id;
         jobDataClean.created_by = user.id;
@@ -425,7 +436,12 @@ const JobManagement = () => {
         toast({ title: "Vaga criada com sucesso!", description: "A nova vaga foi adicionada ao sistema." });
       } else {
         await updateJob.mutateAsync(jobDataClean);
-        toast({ title: "Vaga atualizada com sucesso!", description: "As alterações foram salvas." });
+        toast({ 
+          title: "Vaga atualizada com sucesso!", 
+          description: jobDataClean.approval_status === 'pending_approval' 
+            ? "A vaga foi reativada e precisa ser aprovada novamente por admin/gerente." 
+            : "As alterações foram salvas." 
+        });
       }
       setIsModalOpen(false);
       setFormData(null);

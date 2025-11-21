@@ -426,9 +426,28 @@ export const useUpdateJobFlowStatus = () => {
 
   return useMutation({
     mutationFn: async ({ jobId, flowStatus }: { jobId: string; flowStatus: 'ativa' | 'concluida' | 'congelada' }) => {
+      // Buscar a vaga atual para verificar o status anterior
+      const { data: currentJob, error: fetchError } = await supabase
+        .from('jobs')
+        .select('flow_status, approval_status, status')
+        .eq('id', jobId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Preparar dados para atualização
+      const updateData: any = { flow_status: flowStatus };
+
+      // FLUXO CORRIGIDO: Se uma vaga congelada está sendo ativada novamente,
+      // ela deve voltar para aprovação (pending_approval) para admin/gerente revisar
+      if (currentJob?.flow_status === 'congelada' && flowStatus === 'ativa') {
+        updateData.approval_status = 'pending_approval';
+        updateData.status = 'draft'; // Voltar para draft até ser aprovada novamente
+      }
+
       const { data, error } = await supabase
         .from('jobs')
-        .update({ flow_status: flowStatus })
+        .update(updateData)
         .eq('id', jobId)
         .select()
         .single();
