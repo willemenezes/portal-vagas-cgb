@@ -12,7 +12,6 @@ import {
     Send,
     Gavel,
     Loader2,
-    Calendar,
     Menu
 } from "lucide-react";
 
@@ -53,7 +52,6 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
             { id: "unified-approvals", icon: CheckCircle, text: "Aprovações", action: () => setActiveTab("unified-approvals") },
-            { id: "contract-deadlines", icon: Calendar, text: "Prazos de Contratação", action: () => setActiveTab("contract-deadlines") },
             { id: "selection-process", icon: Users, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
             { id: "hired", icon: UserCheck, text: "Contratados", action: () => setActiveTab("hired") },
             { id: "reports", icon: FileText, text: "Relatórios", action: () => setActiveTab("reports") },
@@ -75,7 +73,6 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
             { id: "jobs", icon: Briefcase, text: "Gestão Completa de Vagas", action: () => setActiveTab("jobs") },
-            { id: "contract-deadlines", icon: Calendar, text: "Prazos de Contratação", action: () => setActiveTab("contract-deadlines") },
             { id: "selection-process", icon: TrendingUp, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
             { id: "candidates", icon: Users, text: "Candidatos", action: () => setActiveTab("candidates") },
             { id: "hired", icon: UserCheck, text: "Contratados", action: () => setActiveTab("hired") },
