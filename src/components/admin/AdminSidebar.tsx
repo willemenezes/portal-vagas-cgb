@@ -97,67 +97,62 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
     }
 
     return (
-        <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col shadow-2xl flex-shrink-0 overflow-hidden">
-            {/* Container interno com padding para criar o "card" */}
-            <div className="flex flex-col h-full p-5">
-                {/* Header com botão de fechar (somente se onCollapse fornecido) */}
-                <div className="flex items-center justify-between mb-6 px-2 pt-2 flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                        <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" loading="lazy" />
-                        <span className="text-xl font-semibold tracking-wider text-cgb-primary-dark">Portal do RH</span>
-                    </div>
-                    {onCollapse && (
-                        <button
-                            type="button"
-                            aria-label="Fechar menu"
-                            onClick={onCollapse}
-                            className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 hover:bg-white/70"
-                        >
-                            <Menu className="w-5 h-5 text-gray-700" />
-                        </button>
-                    )}
+        <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col p-5 shadow-2xl flex-shrink-0">
+            {/* Header com botão de fechar (somente se onCollapse fornecido) */}
+            <div className="flex items-center justify-between mb-6 px-2 pt-2">
+                <div className="flex items-center gap-3">
+                    <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" loading="lazy" />
+                    <span className="text-xl font-semibold tracking-wider text-cgb-primary-dark">Portal do RH</span>
                 </div>
+                {onCollapse && (
+                    <button
+                        type="button"
+                        aria-label="Fechar menu"
+                        onClick={onCollapse}
+                        className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 hover:bg-white/70"
+                    >
+                        <Menu className="w-5 h-5 text-gray-700" />
+                    </button>
+                )}
+            </div>
 
-                {/* Nav com scroll quando necessário */}
-                <nav className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2">
-                    <div className="flex flex-col gap-2.5">
-                        {menuItems.map((item) => (
-                            <NavItem
-                                key={item.id}
-                                icon={item.icon}
-                                text={item.text}
-                                active={activeTab === item.id}
-                                onClick={item.action}
-                                isNew={item.isNew}
-                            />
-                        ))}
-                    </div>
-                </nav>
+            {/* Nav sem scroll - visualização única */}
+            <nav className="flex flex-col gap-2.5 flex-1 min-h-0">
+                {menuItems.map((item) => (
+                    <NavItem
+                        key={item.id}
+                        icon={item.icon}
+                        text={item.text}
+                        active={activeTab === item.id}
+                        onClick={item.action}
+                        isNew={item.isNew}
+                    />
+                ))}
+            </nav>
 
-                {/* Footer fixo na parte inferior */}
-                <div className="flex-shrink-0 mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex flex-col gap-2">
-                        <button
-                            onClick={onLogout}
-                            disabled={isLoggingOut}
-                            className={`w-full flex items-center gap-4 px-4 py-3 text-base font-semibold transition-colors rounded-lg group ${isLoggingOut
-                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                : "text-red-600 hover:bg-red-100 hover:text-red-700"
-                                }`}
-                        >
-                            {isLoggingOut ? (
-                                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-gray-400" />
-                            ) : (
-                                <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-700" />
-                            )}
-                            <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>
-                        </button>
-                    </div>
-                    <div className="text-center text-gray-600 text-xs mt-5">
-                        <p>&copy; 2025 Grupo CGB.</p>
-                        <p className="mt-1">Versão {__APP_VERSION__} ({__COMMIT_HASH__})</p>
-                        <p className="mt-1">Programado por Wille Menezes</p>
-                    </div>
+            {/* Footer na parte inferior */}
+            <div className="mt-auto pt-4 border-t border-gray-200">
+                <div className="flex flex-col gap-2">
+                    <button
+                        onClick={onLogout}
+                        disabled={isLoggingOut}
+                        className={`w-full flex items-center gap-4 px-4 py-3 text-base font-semibold transition-colors rounded-lg group ${isLoggingOut
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "text-red-600 hover:bg-red-100 hover:text-red-700"
+                            }`}
+                    >
+                        {isLoggingOut ? (
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-gray-400" />
+                        ) : (
+                            <LogOut className="h-5 w-5 shrink-0 text-red-500 group-hover:text-red-700" />
+                        )}
+                        <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>
+                    </button>
+                </div>
+                <div className="text-center text-gray-600 text-xs mt-5">
+                    <p>&copy; 2025 Grupo CGB.</p>
+                    <p className="mt-1">Versão {__APP_VERSION__} ({__COMMIT_HASH__})</p>
+                    <p className="mt-1">Programado por Wille Menezes</p>
                 </div>
             </div>
         </aside>
