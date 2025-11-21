@@ -56,7 +56,7 @@ export const useJobs = () => {
         // Primeiro buscar as vagas ativas e aprovadas COM flow_status = 'ativa'
         const { data: jobs, error: jobsError } = await supabase
           .from('jobs')
-          .select('*')
+          .select(JOB_COLUMNS)
           // Aceitar tanto inglês quanto português para compatibilidade de dados
           .in('status', ['active', 'ativo'])
           .in('approval_status', ['active', 'ativo'])
@@ -115,34 +115,7 @@ export const useAllJobs = () => {
         // Adicionar limite de segurança para evitar sobrecarga
         const { data: jobs, error } = await supabase
           .from('jobs')
-          .select(`
-            id,
-            title,
-            department,
-            city,
-            state,
-            type,
-            description,
-            requirements,
-            benefits,
-            workload,
-            status,
-            approval_status,
-            rejection_reason,
-            created_at,
-            updated_at,
-            quantity,
-            quantity_filled,
-            expires_at,
-            solicitante_nome,
-            solicitante_funcao,
-            observacoes_internas,
-            tipo_solicitacao,
-            nome_substituido,
-            flow_status,
-            created_by,
-            company_contract
-          `)
+          .select(JOB_COLUMNS)
           .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
           .order('created_at', { ascending: false })
           .limit(1000); // Limite de segurança
@@ -196,7 +169,7 @@ export const useJobById = (id: string) => {
     queryFn: async () => {
       const { data: job, error } = await supabase
         .from('jobs')
-        .select('*')
+        .select(JOB_COLUMNS)
         .eq('id', id)
         .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
         .single();
@@ -241,7 +214,7 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
 
       let query = supabase
         .from('jobs')
-        .select('*')
+        .select(JOB_COLUMNS)
         .eq('approval_status', 'pending_approval')
         .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
         .order('created_at', { ascending: false });
@@ -423,10 +396,14 @@ export const useDeletedJobs = () => {
   return useQuery({
     queryKey: ['deletedJobs'],
     queryFn: async () => {
-      // Buscar vagas excluídas
+      // Buscar vagas excluídas (incluindo campos de soft delete)
       const { data: jobs, error: jobsError } = await supabase
         .from('jobs')
-        .select('*')
+        .select(`
+          ${JOB_COLUMNS},
+          deleted_at,
+          deleted_by
+        `)
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false });
 
