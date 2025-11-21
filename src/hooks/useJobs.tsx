@@ -338,7 +338,13 @@ export const useUpdateJob = () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
-      queryClient.invalidateQueries({ queryKey: ['pendingJobs'] });
+      // CORREÇÃO CRÍTICA: Invalidar pendingJobs para TODOS os usuários (admin, gerente, recrutador)
+      // Usar predicate para invalidar todas as variações da queryKey
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return query.queryKey[0] === 'pendingJobs';
+        }
+      });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
