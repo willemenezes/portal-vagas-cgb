@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle } from 'lucide-react';
-import { Job, useUpdateJob, useAllJobs, useDeleteJob } from '@/hooks/useJobs';
+import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle, Building } from 'lucide-react';
+import { Job, useUpdateJob, useAllJobs, useDeleteJob, usePendingJobs } from '@/hooks/useJobs';
 import { useJobRequests } from '@/hooks/useJobRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { useRHProfile } from '@/hooks/useRH';
@@ -25,6 +25,9 @@ const JobRequestsManagement = () => {
     
     // BUG FIX: Usar o hook correto para solicitações de vagas
     const { jobRequests, isLoading: isLoadingRequests } = useJobRequests();
+    
+    // CORREÇÃO: Buscar vagas editadas aguardando aprovação
+    const { data: pendingEditedJobs = [], isLoading: isLoadingEditedJobs, refetch: refetchPendingJobs } = usePendingJobs(rhProfile);
 
     // Filtrar solicitações por status
     const pendingRequests = jobRequests?.filter(req => req.status === 'pendente') || [];
@@ -653,8 +656,9 @@ const JobRequestsManagement = () => {
                                 )}
                             </>
                         )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             ) : activeView === 'approved' ? (
                 <Card className="bg-green-50 border-green-200">
                     <CardHeader>
