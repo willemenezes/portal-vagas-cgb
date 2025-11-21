@@ -445,9 +445,28 @@ const JobManagement = () => {
       if (jobToSave.id) {
         // Buscar a vaga atual para verificar o status anterior
         const currentJob = allJobs.find(j => j.id === jobToSave.id);
+        console.log('🔍 [JobManagement] Verificando vaga para reativação:', {
+          jobId: jobToSave.id,
+          currentFlowStatus: currentJob?.flow_status,
+          newFlowStatus: jobDataClean.flow_status,
+          currentApprovalStatus: currentJob?.approval_status
+        });
+        
+        // IMPORTANTE: Se a vaga estava congelada e está sendo ativada, OU
+        // se está sendo editada e precisa voltar para aprovação
         if (currentJob?.flow_status === 'congelada' && jobDataClean.flow_status === 'ativa') {
+          console.log('✅ [JobManagement] Vaga congelada sendo reativada - voltando para pending_approval');
           jobDataClean.approval_status = 'pending_approval';
           jobDataClean.status = 'draft'; // Voltar para draft até ser aprovada novamente
+        }
+        
+        // CORREÇÃO ADICIONAL: Se a vaga está sendo editada e já está com approval_status diferente de pending,
+        // mas o usuário escolheu "aprovacao_pendente", garantir que volte para pending_approval
+        // Isso garante que admin e gerente vejam a vaga editada
+        if (statusToSend === 'pending_approval') {
+          console.log('✅ [JobManagement] Vaga sendo enviada para aprovação - garantindo pending_approval');
+          jobDataClean.approval_status = 'pending_approval';
+          jobDataClean.status = 'draft';
         }
       }
 
