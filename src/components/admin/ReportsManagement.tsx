@@ -180,10 +180,16 @@ const ReportsManagement = () => {
                             // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
                             const approval = String(j.approval_status || '').toLowerCase();
                             const status = String(j.status || '').toLowerCase();
+                            const flowStatus = String(j.flow_status || '').toLowerCase();
                             
-                            // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+                            // Se tem flow_status de concluída ou congelada, SEMPRE incluir (mesmo sem approval_status)
+                            if (flowStatus === 'concluida' || flowStatus === 'congelada') {
+                                return !['rejected', 'rejeitado'].includes(approval);
+                            }
+                            
+                            // Para outras vagas, verificar se foi aprovada OU tem flow_status ativa
                             const isApproved = ['active', 'ativo'].includes(approval);
-                            const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+                            const hasFlowStatus = flowStatus === 'ativa';
                             const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
                             const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
                             const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
@@ -359,7 +365,7 @@ const ReportsManagement = () => {
                 break;
 
             case 'approvedJobs':
-                headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade de Vagas'];
+                headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
                 rows = jobs
                     .filter(j => {
                         // Incluir todas as vagas que foram processadas (aprovadas)
@@ -367,35 +373,31 @@ const ReportsManagement = () => {
                         // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
                         const approval = String(j.approval_status || '').toLowerCase();
                         const status = String(j.status || '').toLowerCase();
+                        const flowStatus = String(j.flow_status || '').toLowerCase();
                         
-                        // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+                        // Se tem flow_status de concluída ou congelada, SEMPRE incluir (mesmo sem approval_status)
+                        if (flowStatus === 'concluida' || flowStatus === 'congelada') {
+                            return !['rejected', 'rejeitado'].includes(approval);
+                        }
+                        
+                        // Para outras vagas, verificar se foi aprovada OU tem flow_status ativa
                         const isApproved = ['active', 'ativo'].includes(approval);
-                        const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+                        const hasFlowStatus = flowStatus === 'ativa';
                         const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
                         const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
                         const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
                         
                         return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
                     })
-                    .flatMap(j => {
-                        const quantity = j.quantity || 1; // Se não tiver quantidade, assume 1
-                        const jobRows = [];
-
-                        // Criar uma linha para cada vaga individual
-                        for (let i = 1; i <= quantity; i++) {
-                            jobRows.push([
-                                j.title || '',
-                                j.department || '',
-                                `${j.city || ''}, ${j.state || ''}`,
-                                j.company_contract || 'N/A',
-                                format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
-                                getJobPortalStatus(j),
-                                `${i}/${quantity}` // Ex: "1/3", "2/3", "3/3"
-                            ]);
-                        }
-
-                        return jobRows;
-                    });
+                    .map(j => [
+                        j.title || '',
+                        j.department || '',
+                        `${j.city || ''}, ${j.state || ''}`,
+                        j.company_contract || 'N/A',
+                        format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
+                        getJobPortalStatus(j),
+                        String(j.quantity || 1) // Mostrar quantity na coluna, não criar múltiplas linhas
+                    ]);
                 filename = "relatorio_vagas_aprovadas.csv";
                 break;
 
