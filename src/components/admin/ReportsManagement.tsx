@@ -174,7 +174,22 @@ const ReportsManagement = () => {
                     description = "Vagas que foram processadas pelos gestores e se tornaram ativas";
                     headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
                     rows = jobs
-                        .filter(j => j.approval_status === 'active')
+                        .filter(j => {
+                            // Incluir todas as vagas que foram processadas (aprovadas)
+                            // Isso inclui: ativas, concluídas, congeladas, etc.
+                            // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
+                            const approval = String(j.approval_status || '').toLowerCase();
+                            const status = String(j.status || '').toLowerCase();
+                            
+                            // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+                            const isApproved = ['active', 'ativo'].includes(approval);
+                            const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+                            const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
+                            const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
+                            const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
+                            
+                            return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
+                        })
                         .map(j => [
                             j.title || '',
                             j.department || '',
@@ -346,7 +361,22 @@ const ReportsManagement = () => {
             case 'approvedJobs':
                 headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade de Vagas'];
                 rows = jobs
-                    .filter(j => j.approval_status === 'active')
+                    .filter(j => {
+                        // Incluir todas as vagas que foram processadas (aprovadas)
+                        // Isso inclui: ativas, concluídas, congeladas, etc.
+                        // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
+                        const approval = String(j.approval_status || '').toLowerCase();
+                        const status = String(j.status || '').toLowerCase();
+                        
+                        // Incluir se foi aprovada (active/ativo) OU se foi processada (tem flow_status)
+                        const isApproved = ['active', 'ativo'].includes(approval);
+                        const hasFlowStatus = j.flow_status && ['ativa', 'concluida', 'congelada'].includes(j.flow_status);
+                        const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
+                        const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
+                        const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
+                        
+                        return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
+                    })
                     .flatMap(j => {
                         const quantity = j.quantity || 1; // Se não tiver quantidade, assume 1
                         const jobRows = [];
