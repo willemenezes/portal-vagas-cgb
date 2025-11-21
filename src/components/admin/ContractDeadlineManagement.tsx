@@ -148,14 +148,6 @@ export const ContractDeadlineManagement: React.FC = () => {
     const endIndex = Math.min(totalCount, startIndex + pageSize);
     const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
-    // Função para calcular dias até expiração
-    const getDaysUntilExpiry = (expiryDate: string) => {
-        const now = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry.getTime() - now.getTime();
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-
     // Função para obter status de expiração
     const getExpiryStatus = (expiryDate: string, flowStatus?: string) => {
         // Se a vaga está concluída ou congelada, não mostrar contagem regressiva
