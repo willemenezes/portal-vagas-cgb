@@ -586,15 +586,12 @@ const JobManagement = () => {
       <CardContent className="p-0">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Gerenciamento de Vagas</h2>
-          <div className="flex gap-2">
-            {!talentBankJobExists && (
-              <Button variant="outline" onClick={handleCreateTalentBankJob} disabled={isCreatingTalentBank}>
-                {isCreatingTalentBank ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2" />}
-                Criar Banco de Talentos
-              </Button>
-            )}
-            <Button onClick={handleCreate}><Plus className="mr-2" /> Nova Vaga</Button>
-          </div>
+          {!talentBankJobExists && (
+            <Button variant="outline" onClick={handleCreateTalentBankJob} disabled={isCreatingTalentBank}>
+              {isCreatingTalentBank ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2" />}
+              Criar Banco de Talentos
+            </Button>
+          )}
         </div>
 
         <Dialog open={isModalOpen} onOpenChange={(open) => {
@@ -687,6 +684,19 @@ const JobManagement = () => {
                 </div>
                 <Clock className="w-8 h-8 text-orange-500" />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Botão Nova Vaga - Centralizado */}
+          <Card className="border-cgb-primary bg-gradient-to-br from-cgb-primary to-cgb-primary-dark">
+            <CardContent className="p-4 h-full flex items-center justify-center">
+              <Button 
+                onClick={handleCreate}
+                className="w-full bg-white text-cgb-primary hover:bg-gray-50 font-semibold shadow-md"
+                size="lg"
+              >
+                <Plus className="mr-2 h-5 w-5" /> Nova Vaga
+              </Button>
             </CardContent>
           </Card>
         </div>
