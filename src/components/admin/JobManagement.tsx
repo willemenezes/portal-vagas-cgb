@@ -161,6 +161,15 @@ const JobManagement = () => {
     });
   }, [processedJobs, rhProfile]);
 
+  // Função helper para calcular dias até expiração (reutilizada para consistência)
+  // IMPORTANTE: Definir ANTES de usar em filteredJobs e stats
+  const getDaysUntilExpiry = React.useCallback((expiryDate: string) => {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }, []);
+
   // Deduplicar "Banco de Talentos": manter apenas 1 (preferir ativo; senão, o mais recente)
   const jobsDeduped = React.useMemo(() => {
     const normalizedTitle = (t: string | undefined) => (t || '').trim().toLowerCase();
@@ -201,7 +210,7 @@ const JobManagement = () => {
 
       return matchesSearch && matchesStatus;
     });
-  }, [jobsDeduped, searchTerm, statusFilter]);
+  }, [jobsDeduped, searchTerm, statusFilter, getDaysUntilExpiry]);
 
   // Paginação baseada na lista filtrada
   const totalCount = filteredJobs.length;
@@ -209,14 +218,6 @@ const JobManagement = () => {
   const startIndex = currentPage * pageSize;
   const endIndex = Math.min(totalCount, startIndex + pageSize);
   const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
-
-  // Função helper para calcular dias até expiração (reutilizada para consistência)
-  const getDaysUntilExpiry = React.useCallback((expiryDate: string) => {
-    const now = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - now.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  }, []);
 
   // Calcular estatísticas
   // IMPORTANTE: Vagas concluídas ou congeladas NÃO devem contar como expiradas
@@ -269,7 +270,7 @@ const JobManagement = () => {
         return sum;
       }, 0)
     };
-  }, [jobsDeduped]);
+  }, [jobsDeduped, getDaysUntilExpiry]);
 
   const [formData, setFormData] = useState<Job | null>(null);
   const [requirementsText, setRequirementsText] = useState('');
