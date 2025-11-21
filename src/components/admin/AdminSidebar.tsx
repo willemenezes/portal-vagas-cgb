@@ -30,7 +30,7 @@ type AdminSidebarProps = {
 const NavItem = ({ icon: Icon, text, active, onClick, isNew = false }) => (
     <button
         onClick={onClick}
-        className={`w-full flex items-center gap-4 px-4 py-3 text-base font-semibold transition-all duration-200 rounded-lg group
+        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all duration-200 rounded-lg group flex-shrink-0
       ${active
                 ? "bg-cgb-primary text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900"
@@ -97,9 +97,9 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
     }
 
     return (
-        <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col p-5 shadow-2xl flex-shrink-0">
+        <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col p-5 shadow-2xl flex-shrink-0 overflow-hidden">
             {/* Header com botão de fechar (somente se onCollapse fornecido) */}
-            <div className="flex items-center justify-between mb-6 px-2 pt-2">
+            <div className="flex items-center justify-between mb-4 px-2 pt-2 flex-shrink-0">
                 <div className="flex items-center gap-3">
                     <img src="/CGB.png" alt="CGB Energia Logo" className="h-11 w-auto" loading="lazy" />
                     <span className="text-xl font-semibold tracking-wider text-cgb-primary-dark">Portal do RH</span>
@@ -116,8 +116,8 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                 )}
             </div>
 
-            {/* Nav sem scroll - visualização única */}
-            <nav className="flex flex-col gap-2.5 flex-1 min-h-0">
+            {/* Nav - ajustado para caber tudo */}
+            <nav className="flex flex-col gap-2 flex-1 overflow-hidden">
                 {menuItems.map((item) => (
                     <NavItem
                         key={item.id}
@@ -130,13 +130,13 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                 ))}
             </nav>
 
-            {/* Footer na parte inferior */}
-            <div className="mt-auto pt-4 border-t border-gray-200">
+            {/* Footer na parte inferior - sempre visível */}
+            <div className="flex-shrink-0 pt-3 mt-3 border-t border-gray-200">
                 <div className="flex flex-col gap-2">
                     <button
                         onClick={onLogout}
                         disabled={isLoggingOut}
-                        className={`w-full flex items-center gap-4 px-4 py-3 text-base font-semibold transition-colors rounded-lg group ${isLoggingOut
+                        className={`w-full flex items-center gap-4 px-4 py-2.5 text-base font-semibold transition-colors rounded-lg group ${isLoggingOut
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                             : "text-red-600 hover:bg-red-100 hover:text-red-700"
                             }`}
@@ -149,10 +149,10 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                         <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>
                     </button>
                 </div>
-                <div className="text-center text-gray-600 text-xs mt-5">
+                <div className="text-center text-gray-600 text-xs mt-3">
                     <p>&copy; 2025 Grupo CGB.</p>
-                    <p className="mt-1">Versão {__APP_VERSION__} ({__COMMIT_HASH__})</p>
-                    <p className="mt-1">Programado por Wille Menezes</p>
+                    <p className="mt-0.5">Versão {__APP_VERSION__} ({__COMMIT_HASH__})</p>
+                    <p className="mt-0.5">Programado por Wille Menezes</p>
                 </div>
             </div>
         </aside>
