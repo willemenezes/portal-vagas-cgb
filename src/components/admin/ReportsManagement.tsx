@@ -157,14 +157,26 @@ const ReportsManagement = () => {
                     const approvedCandidates = candidates.filter(c => c.status === 'Aprovado');
                     const approvedCount = approvedCandidates.length;
                     const conversionRate = totalCandidates > 0 ? `${Math.round((approvedCount / totalCandidates) * 100)}%` : "0%";
+                    
+                    // Tempo Médio de Contratação - MESMA LÓGICA DO DASHBOARD
                     let totalHiringTime = 0;
+                    let validHiringCount = 0; // Contar apenas valores válidos
+                    
                     approvedCandidates.forEach(candidate => {
                         const job = jobs.find(j => j.id === candidate.job_id);
                         if (job && job.created_at && candidate.updated_at) {
-                            totalHiringTime += differenceInDays(new Date(candidate.updated_at), new Date(job.created_at));
+                            const daysDiff = differenceInDays(new Date(candidate.updated_at), new Date(job.created_at));
+                            
+                            // MESMA LÓGICA DO DASHBOARD: Filtrar valores razoáveis (maior que 0 e menor que 365 dias)
+                            if (daysDiff > 0 && daysDiff < 365) {
+                                totalHiringTime += daysDiff;
+                                validHiringCount++;
+                            }
                         }
                     });
-                    const avgTimeToHire = approvedCount > 0 ? `${Math.round(totalHiringTime / approvedCount)} dias` : "0 dias";
+                    
+                    // Calcular média apenas com valores válidos (igual ao dashboard)
+                    const avgTimeToHire = validHiringCount > 0 ? `${Math.round(totalHiringTime / validHiringCount)} dias` : "0 dias";
                     const oneMonthAgo = subMonths(new Date(), 1);
                     const hiresThisMonth = approvedCandidates.filter(c => new Date(c.updated_at) > oneMonthAgo).length;
                     const approvedJobsCount = jobs.filter(j => j.approval_status === 'active').length;
@@ -350,15 +362,25 @@ const ReportsManagement = () => {
                 // 4. Taxa de Conversão
                 const conversionRate = totalCandidates > 0 ? `${Math.round((approvedCount / totalCandidates) * 100)}%` : "0%";
 
-                // 5. Tempo Médio de Contratação
+                // 5. Tempo Médio de Contratação - MESMA LÓGICA DO DASHBOARD
                 let totalHiringTime = 0;
+                let validHiringCount = 0; // Contar apenas valores válidos
+                
                 approvedCandidates.forEach(candidate => {
                     const job = jobs.find(j => j.id === candidate.job_id);
                     if (job && job.created_at && candidate.updated_at) {
-                        totalHiringTime += differenceInDays(new Date(candidate.updated_at), new Date(job.created_at));
+                        const daysDiff = differenceInDays(new Date(candidate.updated_at), new Date(job.created_at));
+                        
+                        // MESMA LÓGICA DO DASHBOARD: Filtrar valores razoáveis (maior que 0 e menor que 365 dias)
+                        if (daysDiff > 0 && daysDiff < 365) {
+                            totalHiringTime += daysDiff;
+                            validHiringCount++;
+                        }
                     }
                 });
-                const avgTimeToHire = approvedCount > 0 ? `${Math.round(totalHiringTime / approvedCount)} dias` : "0 dias";
+                
+                // Calcular média apenas com valores válidos (igual ao dashboard)
+                const avgTimeToHire = validHiringCount > 0 ? `${Math.round(totalHiringTime / validHiringCount)} dias` : "0 dias";
 
                 // 6. Contratações no Mês
                 const oneMonthAgo = subMonths(new Date(), 1);
