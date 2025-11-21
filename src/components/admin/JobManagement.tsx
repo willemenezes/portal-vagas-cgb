@@ -135,12 +135,22 @@ const JobManagement = () => {
   const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
   // Calcular estatísticas
+  // IMPORTANTE: Vagas concluídas ou congeladas NÃO devem contar como expiradas
   const stats = React.useMemo(() => {
     return {
       total: jobsDeduped.length,
-      expired: jobsDeduped.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
+      expired: jobsDeduped.filter(job => {
+        // Só contar como expirada se:
+        // 1. Tem data de expiração
+        // 2. A data já passou
+        // 3. A vaga está ATIVA (não concluída nem congelada)
+        const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+        return isActive && job.expires_at && new Date(job.expires_at) < new Date();
+      }).length,
       expiring_soon: jobsDeduped.filter(job => {
-        if (!job.expires_at) return false;
+        // Só contar como "expirando em breve" se a vaga está ativa
+        const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+        if (!isActive || !job.expires_at) return false;
         const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
         return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
       }).length,
