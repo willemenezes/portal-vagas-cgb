@@ -87,9 +87,12 @@ export const ContractDeadlineManagement: React.FC = () => {
             job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.city.toLowerCase().includes(searchTerm.toLowerCase());
 
+        // Helper para verificar se vaga está ativa (não concluída nem congelada)
+        const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+        
         const matchesStatus = statusFilter === 'all' ||
-            (statusFilter === 'expired' && job.expires_at && new Date(job.expires_at) < new Date()) ||
-            (statusFilter === 'expiring_soon' && job.expires_at && (() => {
+            (statusFilter === 'expired' && isActive && job.expires_at && new Date(job.expires_at) < new Date()) ||
+            (statusFilter === 'expiring_soon' && isActive && job.expires_at && (() => {
                 const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                 return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
             })()) ||
@@ -101,11 +104,21 @@ export const ContractDeadlineManagement: React.FC = () => {
     });
 
     // Calcular estatísticas (sobre lista filtrada por região)
+    // IMPORTANTE: Vagas concluídas ou congeladas NÃO devem contar como expiradas
     const stats = {
         total: jobsFilteredByRegion.length,
-        expired: jobsFilteredByRegion.filter(job => job.expires_at && new Date(job.expires_at) < new Date()).length,
+        expired: jobsFilteredByRegion.filter(job => {
+            // Só contar como expirada se:
+            // 1. Tem data de expiração
+            // 2. A data já passou
+            // 3. A vaga está ATIVA (não concluída nem congelada)
+            const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+            return isActive && job.expires_at && new Date(job.expires_at) < new Date();
+        }).length,
         expiring_soon: jobsFilteredByRegion.filter(job => {
-            if (!job.expires_at) return false;
+            // Só contar como "expirando em breve" se a vaga está ativa
+            const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+            if (!isActive || !job.expires_at) return false;
             const daysUntilExpiry = Math.ceil((new Date(job.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
         }).length,
