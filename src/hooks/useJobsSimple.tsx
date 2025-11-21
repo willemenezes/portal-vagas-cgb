@@ -30,7 +30,22 @@ export const useJobsSimple = () => {
             try {
                 const { data, error } = await supabase
                     .from('jobs')
-                    .select('*')
+                    .select(`
+                        id,
+                        title,
+                        department,
+                        city,
+                        state,
+                        type,
+                        description,
+                        requirements,
+                        benefits,
+                        workload,
+                        status,
+                        created_at,
+                        updated_at,
+                        flow_status
+                    `)
                     .eq('status', 'active')
                     .eq('flow_status', 'ativa')
                     .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
