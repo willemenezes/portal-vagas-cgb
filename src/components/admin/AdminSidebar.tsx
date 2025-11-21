@@ -97,7 +97,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
     }
 
     return (
-        <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col p-5 shadow-2xl flex-shrink-0 overflow-hidden">
+        <aside className="w-72 h-screen bg-cgb-silver text-gray-800 flex flex-col p-5 shadow-2xl flex-shrink-0">
             {/* Header com botão de fechar (somente se onCollapse fornecido) */}
             <div className="flex items-center justify-between mb-4 px-2 pt-2 flex-shrink-0">
                 <div className="flex items-center gap-3">
@@ -116,8 +116,8 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
                 )}
             </div>
 
-            {/* Nav - ajustado para caber tudo */}
-            <nav className="flex flex-col gap-2 flex-1 overflow-hidden">
+            {/* Nav com scroll suave apenas quando necessário */}
+            <nav className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
                 {menuItems.map((item) => (
                     <NavItem
                         key={item.id}
