@@ -354,18 +354,32 @@ export const useUpdateJob = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🔄 [useUpdateJob] ===== VAGA ATUALIZADA =====');
+      console.log('🔄 [useUpdateJob] Dados da vaga atualizada:', {
+        id: data?.id,
+        title: data?.title,
+        approval_status: data?.approval_status,
+        status: data?.status,
+        flow_status: data?.flow_status
+      });
+      
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
+      
       // CORREÇÃO CRÍTICA: Invalidar pendingJobs para TODOS os usuários (admin, gerente, recrutador)
       // Usar predicate para invalidar todas as variações da queryKey
-      queryClient.invalidateQueries({ 
+      const invalidatedPending = queryClient.invalidateQueries({ 
         predicate: (query) => {
           return query.queryKey[0] === 'pendingJobs';
         }
       });
+      
+      console.log('✅ [useUpdateJob] Cache de pendingJobs invalidado!');
+      console.log('🔄 [useUpdateJob] ===== FIM DA ATUALIZAÇÃO =====');
+      
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
