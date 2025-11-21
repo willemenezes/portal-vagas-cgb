@@ -45,6 +45,7 @@ export const useInviteCandidate = () => {
                 .from('jobs')
                 .select('*')
                 .eq('id', newJobId)
+                .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
                 .single();
 
             if (jobError) {

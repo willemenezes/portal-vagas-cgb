@@ -13,7 +13,8 @@ import {
     Gavel,
     Loader2,
     Calendar,
-    Menu
+    Menu,
+    Trash2
 } from "lucide-react";
 
 // Adicionei um tipo para as props para melhor organização
@@ -91,6 +92,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         // Adiciona Gestão de RH apenas para Admin
         if (userRole === 'admin') {
             menuItems.push({ id: "rh", icon: Shield, text: "Gestão de RH", action: () => setActiveTab("rh") });
+            menuItems.push({ id: "deleted-jobs", icon: Trash2, text: "Vagas Excluídas", action: () => setActiveTab("deleted-jobs") });
         }
     }
 

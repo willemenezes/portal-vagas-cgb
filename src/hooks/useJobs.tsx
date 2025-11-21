@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface Job {
   id: string;
@@ -40,6 +41,11 @@ export interface Job {
   justification?: string; // Texto da justificativa
   // Campo de contrato da empresa (CT)
   company_contract?: string; // Contrato da empresa (CT) relacionado à vaga
+  // Campos de soft delete (exclusão lógica)
+  deleted_at?: string | null; // Data e hora da exclusão lógica
+  deleted_by?: string | null; // ID do usuário que excluiu
+  deleted_by_name?: string; // Nome do usuário que excluiu (para exibição)
+  deleted_by_email?: string; // Email do usuário que excluiu (para exibição)
 }
 
 export const useJobs = () => {
@@ -55,6 +61,7 @@ export const useJobs = () => {
           .in('status', ['active', 'ativo'])
           .in('approval_status', ['active', 'ativo'])
           .eq('flow_status', 'ativa')
+          .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
           .order('created_at', { ascending: false });
 
         if (jobsError) {
@@ -125,6 +132,7 @@ export const useAllJobs = () => {
         const { data: jobs, error } = await supabase
           .from('jobs')
           .select('*')
+          .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -239,6 +247,7 @@ export const useJobById = (id: string) => {
         .from('jobs')
         .select('*')
         .eq('id', id)
+        .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
         .single();
 
       if (error) {
@@ -283,6 +292,7 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
         .from('jobs')
         .select('*')
         .eq('approval_status', 'pending_approval')
+        .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
         .order('created_at', { ascending: false });
 
       // NOVO: Filtro por departamento para gerentes
@@ -400,13 +410,20 @@ export const useUpdateJob = () => {
 
 export const useDeleteJob = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // SOFT DELETE: Marcar como excluída em vez de deletar fisicamente
       const { error } = await supabase
         .from('jobs')
-        .delete()
-        .eq('id', id);
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: user?.id || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .is('deleted_at', null); // Apenas se ainda não estiver excluída
 
       if (error) throw error;
     },
@@ -417,6 +434,125 @@ export const useDeleteJob = () => {
       queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] }); // Invalidar também a lista de excluídas
+    },
+  });
+};
+
+// Hook para restaurar vaga excluída (soft delete reverso)
+export const useRestoreJob = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .rpc('restore_job', { job_id: id });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
+    },
+  });
+};
+
+// Hook para listar vagas excluídas (auditoria)
+export const useDeletedJobs = () => {
+  return useQuery({
+    queryKey: ['deletedJobs'],
+    queryFn: async () => {
+      // Buscar vagas excluídas
+      const { data: jobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (jobsError) throw jobsError;
+
+      if (!jobs || jobs.length === 0) {
+        return [];
+      }
+
+      // Buscar informações dos usuários que excluíram
+      const userIds = [...new Set(jobs.map(j => j.deleted_by).filter(Boolean))];
+      
+      if (userIds.length === 0) {
+        return jobs.map((job: any) => ({
+          ...job,
+          deleted_by_name: null,
+          deleted_by_email: null,
+        }));
+      }
+
+      const { data: users, error: usersError } = await supabase
+        .from('rh_users')
+        .select('user_id, full_name, email')
+        .in('user_id', userIds);
+
+      if (usersError) {
+        console.warn('Erro ao buscar usuários que excluíram vagas:', usersError);
+      }
+
+      // Criar mapa de usuários
+      const usersMap = new Map((users || []).map(u => [u.user_id, u]));
+
+      // Mapear dados do usuário que excluiu e calcular dias até exclusão permanente
+      return jobs.map((job: any) => {
+        const user = job.deleted_by ? usersMap.get(job.deleted_by) : null;
+        const deletedDate = job.deleted_at ? new Date(job.deleted_at) : null;
+        const daysUntilPermanent = deletedDate 
+          ? Math.max(0, 30 - Math.floor((Date.now() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)))
+          : null;
+        
+        return {
+          ...job,
+          deleted_by_name: user?.full_name || null,
+          deleted_by_email: user?.email || null,
+          days_until_permanent_deletion: daysUntilPermanent,
+          will_be_deleted_soon: daysUntilPermanent !== null && daysUntilPermanent <= 7,
+        };
+      });
+    },
+    staleTime: 30 * 1000, // 30 segundos
+  });
+};
+
+// Hook para contar vagas que serão excluídas permanentemente (há mais de 30 dias)
+export const useJobsToPermanentlyDelete = () => {
+  return useQuery({
+    queryKey: ['jobsToPermanentlyDelete'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc('count_jobs_to_permanently_delete');
+
+      if (error) throw error;
+      return data || 0;
+    },
+    staleTime: 60 * 1000, // 1 minuto
+  });
+};
+
+// Hook para executar limpeza permanente de vagas antigas
+export const usePermanentlyDeleteOldJobs = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .rpc('permanently_delete_old_jobs');
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobsToPermanentlyDelete'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
     },
   });
 };
@@ -431,6 +567,7 @@ export const useUpdateJobFlowStatus = () => {
         .from('jobs')
         .select('flow_status, approval_status, status')
         .eq('id', jobId)
+        .is('deleted_at', null) // SOFT DELETE: Não permitir atualizar vagas excluídas
         .single();
 
       if (fetchError) throw fetchError;

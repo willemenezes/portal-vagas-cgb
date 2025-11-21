@@ -33,6 +33,7 @@ export const useJobsSimple = () => {
                     .select('*')
                     .eq('status', 'active')
                     .eq('flow_status', 'ativa')
+                    .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
                     .order('created_at', { ascending: false });
 
                 console.log('📊 Resultado da query:', { data, error });

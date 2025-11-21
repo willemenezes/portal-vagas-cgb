@@ -31,6 +31,7 @@ export const useJobsRobust = () => {
                 .eq('status', 'active')
                 .eq('approval_status', 'active')
                 .or('flow_status.eq.ativa,flow_status.is.null')
+                .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
                 .order('created_at', { ascending: false });
 
             if (error) {

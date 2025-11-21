@@ -1249,7 +1249,7 @@ const JobManagement = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-red-800">Excluir Vaga</h3>
-              <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
+              <p className="text-sm text-red-600">A vaga será marcada como excluída e pode ser recuperada posteriormente.</p>
             </div>
           </div>
 
@@ -1261,7 +1261,8 @@ const JobManagement = () => {
           )}
 
           <p className="text-gray-700">
-            Tem certeza de que deseja excluir esta vaga? Os candidatos associados continuarão no histórico, mas a vaga será removida da gestão.
+            Tem certeza de que deseja excluir esta vaga? Os candidatos associados continuarão no histórico. 
+            A vaga será marcada como excluída (soft delete) e pode ser recuperada na seção "Vagas Excluídas".
           </p>
 
           <div className="flex gap-3 justify-end pt-4 border-t">

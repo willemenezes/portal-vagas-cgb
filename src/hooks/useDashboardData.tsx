@@ -195,7 +195,8 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
             .select('state, city')
             .eq('status', 'active')
             .eq('approval_status', 'active')
-            .eq('flow_status', 'ativa');
+            .eq('flow_status', 'ativa')
+            .is('deleted_at', null); // SOFT DELETE: Apenas vagas não excluídas
 
         const { data: jobsForFilter, error: jobsError } = await jobsForFilterQuery;
         if (jobsError) throw jobsError;
@@ -219,7 +220,8 @@ const fetchDashboardData = async (rhProfile: RHUser | null, dateRange?: DateRang
             .select('id', { count: 'exact', head: true })
             .eq('status', 'active')
             .eq('approval_status', 'active')
-            .eq('flow_status', 'ativa');
+            .eq('flow_status', 'ativa')
+            .is('deleted_at', null); // SOFT DELETE: Apenas vagas não excluídas
 
         const { count, error: jobsError } = await jobsQuery;
         if (jobsError) throw jobsError;

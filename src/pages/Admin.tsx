@@ -14,6 +14,7 @@ import ReportsManagement from "@/components/admin/ReportsManagement";
 import UnifiedApprovals from "@/components/admin/UnifiedApprovals";
 import JobApprovalsWrapper from "@/components/admin/JobApprovalsWrapper";
 import ContractDeadlineManagement from "@/components/admin/ContractDeadlineManagement";
+import DeletedJobsManagement from "@/components/admin/DeletedJobsManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { Loader2, Menu, X } from "lucide-react";
@@ -121,6 +122,8 @@ const Admin = () => {
         return <ReportsManagement />;
       case "rh":
         return rhProfile?.role === 'admin' ? <RHManagement /> : null;
+      case "deleted-jobs":
+        return rhProfile?.role === 'admin' ? <DeletedJobsManagement /> : null;
       default:
         return <Dashboard />;
     }
