@@ -172,12 +172,10 @@ const ReportsManagement = () => {
                 case 'approvedJobs':
                     title = "Relatório de Vagas Processadas";
                     description = "Vagas que foram processadas pelos gestores e se tornaram ativas";
-                    headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
+                    headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Nº'];
                     rows = jobs
                         .filter(j => {
-                            // Incluir todas as vagas que foram processadas (aprovadas)
-                            // Isso inclui: ativas, concluídas, congeladas, etc.
-                            // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
+                            // FILTRO IDÊNTICO AO USADO NO DASHBOARD (JobManagement.tsx -> processedJobs)
                             const approval = String(j.approval_status || '').toLowerCase();
                             const status = String(j.status || '').toLowerCase();
                             const flowStatus = String(j.flow_status || '').toLowerCase();
@@ -196,15 +194,26 @@ const ReportsManagement = () => {
                             
                             return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
                         })
-                        .map(j => [
-                            j.title || '',
-                            j.department || '',
-                            `${j.city || ''}, ${j.state || ''}`,
-                            j.company_contract || 'N/A',
-                            format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
-                            getJobPortalStatus(j),
-                            String(j.quantity || 1)
-                        ]);
+                        .flatMap(j => {
+                            // Criar uma linha para cada vaga individual (quantity)
+                            // Se quantity = 3, cria 3 linhas (igual o dashboard soma 3)
+                            const quantity = j.quantity || 1;
+                            const rows = [];
+                            
+                            for (let i = 1; i <= quantity; i++) {
+                                rows.push([
+                                    j.title || '',
+                                    j.department || '',
+                                    `${j.city || ''}, ${j.state || ''}`,
+                                    j.company_contract || 'N/A',
+                                    format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
+                                    getJobPortalStatus(j),
+                                    `${i}/${quantity}`
+                                ]);
+                            }
+                            
+                            return rows;
+                        });
                     filename = "relatorio_vagas_aprovadas.pdf";
                     break;
 
@@ -365,12 +374,10 @@ const ReportsManagement = () => {
                 break;
 
             case 'approvedJobs':
-                headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Quantidade'];
+                headers = ['Título da Vaga', 'Departamento', 'Local', 'CT', 'Data de Aprovação', 'Status no Portal', 'Nº'];
                 rows = jobs
                     .filter(j => {
-                        // Incluir todas as vagas que foram processadas (aprovadas)
-                        // Isso inclui: ativas, concluídas, congeladas, etc.
-                        // Excluir apenas: rascunhos, pendentes de aprovação, rejeitadas
+                        // FILTRO IDÊNTICO AO USADO NO DASHBOARD (JobManagement.tsx -> processedJobs)
                         const approval = String(j.approval_status || '').toLowerCase();
                         const status = String(j.status || '').toLowerCase();
                         const flowStatus = String(j.flow_status || '').toLowerCase();
@@ -389,15 +396,26 @@ const ReportsManagement = () => {
                         
                         return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
                     })
-                    .map(j => [
-                        j.title || '',
-                        j.department || '',
-                        `${j.city || ''}, ${j.state || ''}`,
-                        j.company_contract || 'N/A',
-                        format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
-                        getJobPortalStatus(j),
-                        String(j.quantity || 1) // Mostrar quantity na coluna, não criar múltiplas linhas
-                    ]);
+                    .flatMap(j => {
+                        // Criar uma linha para cada vaga individual (quantity)
+                        // Se quantity = 3, cria 3 linhas (igual o dashboard soma 3)
+                        const quantity = j.quantity || 1;
+                        const rows = [];
+                        
+                        for (let i = 1; i <= quantity; i++) {
+                            rows.push([
+                                j.title || '',
+                                j.department || '',
+                                `${j.city || ''}, ${j.state || ''}`,
+                                j.company_contract || 'N/A',
+                                format(new Date(j.updated_at), "dd/MM/yyyy", { locale: ptBR }),
+                                getJobPortalStatus(j),
+                                `${i}/${quantity}`
+                            ]);
+                        }
+                        
+                        return rows;
+                    });
                 filename = "relatorio_vagas_aprovadas.csv";
                 break;
 
