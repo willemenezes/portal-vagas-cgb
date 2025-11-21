@@ -160,7 +160,9 @@ const JobManagement = () => {
         job.city.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Helper para verificar se vaga está ativa (não concluída nem congelada)
-      const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+      // Normalizar flow_status para comparação consistente
+      const normalizedFlowStatus = String(job.flow_status || '').toLowerCase().trim();
+      const isActive = normalizedFlowStatus !== 'concluida' && normalizedFlowStatus !== 'congelada';
 
       const matchesStatus = statusFilter === 'all' ||
         (statusFilter === 'expired' && isActive && job.expires_at && (() => {
@@ -171,9 +173,9 @@ const JobManagement = () => {
           const days = getDaysUntilExpiry(job.expires_at);
           return days <= 3 && days >= 0; // Inclui "expira hoje" (days === 0)
         })()) ||
-        (statusFilter === 'active' && job.flow_status === 'ativa') ||
-        (statusFilter === 'completed' && job.flow_status === 'concluida') ||
-        (statusFilter === 'congelada' && job.flow_status === 'congelada');
+        (statusFilter === 'active' && normalizedFlowStatus === 'ativa') ||
+        (statusFilter === 'completed' && normalizedFlowStatus === 'concluida') ||
+        (statusFilter === 'congelada' && normalizedFlowStatus === 'congelada');
 
       return matchesSearch && matchesStatus;
     });
