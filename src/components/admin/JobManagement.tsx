@@ -478,7 +478,17 @@ const JobManagement = () => {
         await createJob.mutateAsync(jobDataClean);
         toast({ title: "Vaga criada com sucesso!", description: "A nova vaga foi adicionada ao sistema." });
       } else {
+        console.log('💾 [JobManagement] Salvando vaga editada:', {
+          id: jobToSave.id,
+          approval_status: jobDataClean.approval_status,
+          status: jobDataClean.status,
+          flow_status: jobDataClean.flow_status
+        });
+        
         await updateJob.mutateAsync(jobDataClean);
+        
+        console.log('✅ [JobManagement] Vaga salva com sucesso! Status final:', jobDataClean.approval_status);
+        
         toast({ 
           title: "Vaga atualizada com sucesso!", 
           description: jobDataClean.approval_status === 'pending_approval' 
