@@ -88,6 +88,11 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         if (userRole === 'admin') {
             menuItems.splice(1, 0, { id: "job-requests", icon: Send, text: "Solicitações de Vagas", action: () => setActiveTab("job-requests") });
         }
+        
+        // Adiciona Aprovações para Admin (para ver vagas editadas aguardando aprovação)
+        if (userRole === 'admin') {
+            menuItems.splice(2, 0, { id: "unified-approvals", icon: CheckCircle, text: "Aprovações", action: () => setActiveTab("unified-approvals") });
+        }
 
         // Adiciona Gestão de RH apenas para Admin
         if (userRole === 'admin') {
