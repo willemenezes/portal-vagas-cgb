@@ -108,11 +108,45 @@ export const useAllJobs = () => {
     queryKey: ['allJobs'],
     queryFn: async () => {
       try {
+        // OTIMIZAÇÃO: Usar select específico em vez de * para reduzir payload
+        // Adicionar limite de segurança para evitar sobrecarga
         const { data: jobs, error } = await supabase
           .from('jobs')
-          .select('*')
+          .select(`
+            id,
+            title,
+            department,
+            city,
+            state,
+            type,
+            description,
+            requirements,
+            benefits,
+            workload,
+            status,
+            approval_status,
+            rejection_reason,
+            created_at,
+            updated_at,
+            quantity,
+            quantity_filled,
+            expires_at,
+            solicitante_nome,
+            solicitante_funcao,
+            observacoes_internas,
+            tipo_solicitacao,
+            nome_substituido,
+            flow_status,
+            created_by,
+            approved_by,
+            approved_at,
+            is_justificativa,
+            justification,
+            company_contract
+          `)
           .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(1000); // Limite de segurança
 
         if (error) throw error;
 
@@ -137,10 +171,11 @@ export const useAllJobs = () => {
       }
     },
     retry: 1, // Reduzir tentativas para evitar sobrecarga
-    staleTime: 2 * 60 * 1000, // 2 minutos - aumentar para reduzir requisições
+    staleTime: 5 * 60 * 1000, // 5 minutos - aumentar para reduzir requisições
     refetchOnMount: false, // Não refazer ao montar para evitar delay
     refetchOnWindowFocus: false, // Não refazer ao focar para evitar delay
     refetchInterval: false, // Desabilitar refetch automático para evitar sobrecarga
+    gcTime: 10 * 60 * 1000, // 10 minutos de cache
   });
 };
 

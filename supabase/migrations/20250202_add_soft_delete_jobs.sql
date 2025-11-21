@@ -12,6 +12,11 @@ ALTER TABLE public.jobs
 ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 
 -- 3. Criar índice para performance em queries que filtram vagas não excluídas
+-- Índice parcial para melhorar performance de queries que buscam apenas vagas ativas
+CREATE INDEX IF NOT EXISTS idx_jobs_deleted_at_null ON public.jobs(created_at DESC) 
+WHERE deleted_at IS NULL;
+
+-- Índice adicional para queries que filtram por deleted_at
 CREATE INDEX IF NOT EXISTS idx_jobs_deleted_at ON public.jobs(deleted_at) 
 WHERE deleted_at IS NULL;
 
