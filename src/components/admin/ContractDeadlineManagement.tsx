@@ -114,14 +114,6 @@ export const ContractDeadlineManagement: React.FC = () => {
         return matchesSearch && matchesStatus;
     });
 
-    // Função para calcular dias até expiração (reutilizada para consistência)
-    const getDaysUntilExpiry = (expiryDate: string) => {
-        const now = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry.getTime() - now.getTime();
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-
     // Calcular estatísticas (sobre lista filtrada por região)
     // IMPORTANTE: Vagas concluídas ou congeladas NÃO devem contar como expiradas
     // IMPORTANTE: "Expira hoje" (days === 0) NÃO deve contar como expirada
