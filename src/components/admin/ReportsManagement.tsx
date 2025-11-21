@@ -154,7 +154,8 @@ const ReportsManagement = () => {
                     description = "Principais métricas de desempenho do processo de recrutamento";
                     const activeJobs = jobs.filter(j => j.status === 'active').length;
                     const totalCandidates = candidates.length;
-                    const approvedCandidates = candidates.filter(c => c.status === 'Aprovado');
+                    // MESMA LÓGICA DO DASHBOARD: Incluir 'Aprovado' e 'Contratado'
+                    const approvedCandidates = candidates.filter(c => c.status === 'Aprovado' || c.status === 'Contratado');
                     const approvedCount = approvedCandidates.length;
                     const conversionRate = totalCandidates > 0 ? `${Math.round((approvedCount / totalCandidates) * 100)}%` : "0%";
                     
@@ -355,8 +356,8 @@ const ReportsManagement = () => {
                 // 2. Total de Candidatos
                 const totalCandidates = candidates.length;
 
-                // 3. Candidatos Aprovados
-                const approvedCandidates = candidates.filter(c => c.status === 'Aprovado');
+                // 3. Candidatos Aprovados/Contratados - MESMA LÓGICA DO DASHBOARD
+                const approvedCandidates = candidates.filter(c => c.status === 'Aprovado' || c.status === 'Contratado');
                 const approvedCount = approvedCandidates.length;
 
                 // 4. Taxa de Conversão
