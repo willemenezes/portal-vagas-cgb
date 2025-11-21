@@ -226,8 +226,18 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
 
       // IMPORTANTE: Admin e Recrutador veem TODAS as vagas pendentes (sem filtros)
       // Apenas Gerente tem filtros por departamento/região
-      if (rhProfile?.role === 'admin' || rhProfile?.role === 'recruiter') {
-        console.log('✅ [usePendingJobs] Admin/Recrutador - Buscando TODAS as vagas pendentes (SEM FILTROS)');
+      // Verificar tanto role === 'admin' quanto is_admin === true para garantir
+      const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
+      const isRecruiter = rhProfile?.role === 'recruiter';
+      
+      if (isAdmin || isRecruiter) {
+        console.log('✅ [usePendingJobs] Admin/Recrutador detectado - Buscando TODAS as vagas pendentes (SEM FILTROS)');
+        console.log('🔍 [usePendingJobs] Detalhes:', {
+          role: rhProfile?.role,
+          is_admin: rhProfile?.is_admin,
+          isAdmin,
+          isRecruiter
+        });
         // Não aplicar nenhum filtro - admin/recrutador vê tudo
       } else if (rhProfile?.role === 'manager') {
         console.log('🔍 [usePendingJobs] Gerente - Aplicando filtros por permissões');
