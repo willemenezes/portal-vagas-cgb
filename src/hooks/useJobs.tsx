@@ -141,8 +141,6 @@ export const useAllJobs = () => {
             nome_substituido,
             flow_status,
             created_by,
-            approved_by,
-            approved_at,
             is_justificativa,
             justification,
             company_contract
