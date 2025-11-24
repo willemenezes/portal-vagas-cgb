@@ -142,15 +142,14 @@ const CandidateManagement = () => {
       }
     }
 
-    // 3. Filtro de busca por texto
-    if (searchTerm.trim()) {
+    // 3. Filtro de busca por texto - APENAS NOME para recrutador e admin
+    if (searchTerm.trim() && rhProfile && (rhProfile.role === 'recruiter' || rhProfile.role === 'admin' || rhProfile.is_admin)) {
       result = result.filter(c => {
         if (!c) return false;
         const searchLower = searchTerm.toLowerCase();
+        // Buscar apenas pelo nome do candidato
         const matchName = (c.name || '').toLowerCase().includes(searchLower);
-        const matchEmail = (c.email || '').toLowerCase().includes(searchLower);
-        const matchJob = (c.job?.title || '').toLowerCase().includes(searchLower);
-        return matchName || matchEmail || matchJob;
+        return matchName;
       });
     }
 
@@ -330,7 +329,18 @@ const CandidateManagement = () => {
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-grow"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><Input placeholder="Buscar por nome, e-mail ou cargo..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input 
+                placeholder={rhProfile && (rhProfile.role === 'recruiter' || rhProfile.role === 'admin' || rhProfile.is_admin) 
+                  ? "Buscar por nome do candidato..." 
+                  : "Buscar por nome, e-mail ou cargo..."} 
+                className="pl-10" 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)}
+                disabled={!rhProfile || (rhProfile.role !== 'recruiter' && rhProfile.role !== 'admin' && !rhProfile.is_admin)}
+              />
+            </div>
             <Select value={filters.jobId} onValueChange={value => setFilters(prev => ({ ...prev, jobId: value }))}><SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.jobId === 'all' ? 'Todas as Vagas' : (() => {
               const selectedJob = jobs.find(j => j.id === filters.jobId);
               return selectedJob ? `${selectedJob.title} - ${selectedJob.city}, ${selectedJob.state}` : 'Vaga';
