@@ -332,13 +332,10 @@ const CandidateManagement = () => {
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input 
-                placeholder={rhProfile && (rhProfile.role === 'recruiter' || rhProfile.role === 'admin' || rhProfile.is_admin) 
-                  ? "Buscar por nome do candidato..." 
-                  : "Buscar por nome, e-mail ou cargo..."} 
+                placeholder="Buscar por nome do candidato..." 
                 className="pl-10" 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)}
-                disabled={!rhProfile || (rhProfile.role !== 'recruiter' && rhProfile.role !== 'admin' && !rhProfile.is_admin)}
               />
             </div>
             <Select value={filters.jobId} onValueChange={value => setFilters(prev => ({ ...prev, jobId: value }))}><SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.jobId === 'all' ? 'Todas as Vagas' : (() => {
