@@ -628,8 +628,22 @@ const SelectionProcess = () => {
             // 1. Atualizar status do candidato para Aprovado
             await updateStatus.mutateAsync({ id: candidate.id, status: 'Aprovado' });
 
-            // 2. NOVA FUNCIONALIDADE: Diminuir quantidade de vagas automaticamente
-            const currentQuantity = job.quantity || 0;
+            // 2. CORREÇÃO CRÍTICA: Buscar vaga atualizada do banco para ter quantity correto
+            // Isso evita problemas quando múltiplos candidatos são aprovados rapidamente
+            const { data: updatedJob, error: jobError } = await supabase
+                .from('jobs')
+                .select('quantity, flow_status')
+                .eq('id', job.id)
+                .single();
+
+            if (jobError) {
+                console.error('❌ [SelectionProcess] Erro ao buscar vaga atualizada:', jobError);
+                throw jobError;
+            }
+
+            // 3. NOVA FUNCIONALIDADE: Diminuir quantidade de vagas automaticamente
+            // Usar quantity atualizado do banco, não do estado
+            const currentQuantity = updatedJob?.quantity || job.quantity || 0;
             const newQuantity = Math.max(0, currentQuantity - 1); // Não pode ser negativo
 
             console.log('📊 [SelectionProcess] Atualizando quantidade de vagas:', {
@@ -637,7 +651,9 @@ const SelectionProcess = () => {
                 jobTitle: job.title,
                 currentQuantity,
                 newQuantity,
-                candidateName: candidate.name
+                candidateName: candidate.name,
+                quantityDoBanco: updatedJob?.quantity,
+                quantityDoEstado: job.quantity
             });
 
             // Preparar dados para atualização
@@ -658,13 +674,13 @@ const SelectionProcess = () => {
                 ...updateData
             });
 
-            // 3. Criar nota sobre a aprovação
+            // 4. Criar nota sobre a aprovação
             if (user) {
-                const finalFlowStatus = (job.quantity || 0) - 1 === 0 ? 'concluida' : flowStatus;
+                const finalFlowStatus = newQuantity === 0 ? 'concluida' : flowStatus;
                 await createNote.mutateAsync({
                     candidate_id: candidate.id,
                     author_id: user.id,
-                    note: `Candidato aprovado. ${(job.quantity || 0) - 1 === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `Status da vaga atualizado para: ${finalFlowStatus === 'ativa' ? 'Ativa' : finalFlowStatus === 'concluida' ? 'Concluída' : 'Congelada'}`}`,
+                    note: `Candidato aprovado. ${newQuantity === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `Status da vaga atualizado para: ${finalFlowStatus === 'ativa' ? 'Ativa' : finalFlowStatus === 'concluida' ? 'Concluída' : 'Congelada'}. Restam ${newQuantity} vaga(s).`}`,
                     activity_type: 'Aprovação'
                 });
             }
@@ -675,12 +691,12 @@ const SelectionProcess = () => {
                 'congelada': 'Congelada'
             };
 
-            const finalFlowStatus = (job.quantity || 0) - 1 === 0 ? 'concluida' : flowStatus;
+            const finalFlowStatus = newQuantity === 0 ? 'concluida' : flowStatus;
             const finalStatusLabel = statusLabels[finalFlowStatus];
 
             toast({
                 title: "Candidato Aprovado!",
-                description: `${candidate.name} foi aprovado. ${(job.quantity || 0) - 1 === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `A vaga foi marcada como ${finalStatusLabel}.`} ${(job.quantity || 0) > 1 ? `Restam ${(job.quantity || 0) - 1} vaga(s).` : ''}`,
+                description: `${candidate.name} foi aprovado. ${newQuantity === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `A vaga foi marcada como ${finalStatusLabel}.`} ${newQuantity > 0 ? `Restam ${newQuantity} vaga(s).` : ''}`,
             });
         } catch (error: any) {
             toast({
