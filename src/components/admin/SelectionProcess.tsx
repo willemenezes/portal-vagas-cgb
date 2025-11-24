@@ -143,7 +143,7 @@ const SelectionProcess = () => {
     const [layoutMode, setLayoutMode] = useState<'grid' | 'horizontal'>('grid');
     const [showJobStatusModal, setShowJobStatusModal] = useState(false);
     const [pendingApproval, setPendingApproval] = useState<{ candidate: Candidate; job: Job } | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [jobSearchTerm, setJobSearchTerm] = useState('');
 
     const jobsForSelection = useMemo(() => {
         if (isRhProfileLoading) {
@@ -154,6 +154,19 @@ const SelectionProcess = () => {
         // Filtrar apenas vagas ativas (flow_status = 'ativa')
         let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
         console.log(`📊 [SelectionProcess] Vagas ativas (antes de filtros): ${activeJobs.length}`);
+        
+        // NOVA: Aplicar filtro de busca por termo de pesquisa
+        if (jobSearchTerm.trim()) {
+            const searchLower = jobSearchTerm.toLowerCase();
+            activeJobs = activeJobs.filter(job => {
+                const matchTitle = (job.title || '').toLowerCase().includes(searchLower);
+                const matchCity = (job.city || '').toLowerCase().includes(searchLower);
+                const matchState = (job.state || '').toLowerCase().includes(searchLower);
+                const matchDepartment = (job.department || '').toLowerCase().includes(searchLower);
+                return matchTitle || matchCity || matchState || matchDepartment;
+            });
+            console.log(`🔍 [SelectionProcess] Vagas após busca "${jobSearchTerm}": ${activeJobs.length}`);
+        }
 
         // BUG FIX: Filtro de região e departamento para RECRUTADOR, GERENTE e SOLICITADOR
         if (rhProfile && 'role' in rhProfile) {
@@ -261,7 +274,7 @@ const SelectionProcess = () => {
         }
 
         return activeJobs;
-    }, [allJobs, rhProfile, isRhProfileLoading]);
+    }, [allJobs, rhProfile, isRhProfileLoading, jobSearchTerm]);
 
     useEffect(() => {
         console.log(`🔍 [SelectionProcess] useEffect - selectedJobId: ${selectedJobId}, jobsForSelection.length: ${jobsForSelection.length}`);
@@ -339,25 +352,12 @@ const SelectionProcess = () => {
     };
 
     // BUG FIX: Não precisa mais filtrar localmente, pois jobCandidates já vem filtrado do servidor
-    // Agora também filtra por termo de busca
     const filteredCandidates = useMemo(() => {
         if (!selectedJobId || !Array.isArray(jobCandidates)) return [];
         // jobCandidates já está filtrado por job_id no hook useCandidatesByJob
-        
-        // Aplicar filtro de busca se houver termo
-        let result = jobCandidates;
-        if (searchTerm.trim()) {
-            const searchLower = searchTerm.toLowerCase();
-            result = jobCandidates.filter(c => {
-                const matchName = (c.name || '').toLowerCase().includes(searchLower);
-                const matchEmail = (c.email || '').toLowerCase().includes(searchLower);
-                return matchName || matchEmail;
-            });
-        }
-        
-        console.log(`🔍 [SelectionProcess] filteredCandidates: ${result.length} candidatos (de ${jobCandidates.length})`, result.map(c => ({ id: c.id, name: c.name, status: c.status })));
-        return result;
-    }, [selectedJobId, jobCandidates, searchTerm]);
+        console.log(`🔍 [SelectionProcess] filteredCandidates: ${jobCandidates.length} candidatos`, jobCandidates.map(c => ({ id: c.id, name: c.name, status: c.status })));
+        return jobCandidates;
+    }, [selectedJobId, jobCandidates]);
 
     const columns = useMemo(() => {
         // Gera as colunas dinamicamente a partir das constantes
@@ -702,34 +702,38 @@ const SelectionProcess = () => {
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex-1 w-full md:w-auto">
+            <header className="flex items-center justify-between gap-4">
+                <div className="flex-1 flex items-center gap-4">
+                    {/* NOVA: Caixa de pesquisa para vagas */}
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Input
+                            placeholder="Buscar vaga por título, cidade ou departamento..."
+                            className="pl-10"
+                            value={jobSearchTerm}
+                            onChange={(e) => setJobSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    
                     <Select onValueChange={setSelectedJobId} value={selectedJobId || ''}>
                         <SelectTrigger className="w-full md:w-96 text-lg font-semibold">
                             <SelectValue placeholder="Selecione a vaga..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {jobsForSelection.map((job: Job) => (
-                                <SelectItem key={job.id} value={job.id!}>
-                                    {job.title} - {job.city}, {job.state}
+                            {jobsForSelection.length === 0 ? (
+                                <SelectItem value="" disabled>
+                                    {jobSearchTerm.trim() ? 'Nenhuma vaga encontrada' : 'Nenhuma vaga disponível'}
                                 </SelectItem>
-                            ))}
+                            ) : (
+                                jobsForSelection.map((job: Job) => (
+                                    <SelectItem key={job.id} value={job.id!}>
+                                        {job.title} - {job.city}, {job.state}
+                                    </SelectItem>
+                                ))
+                            )}
                         </SelectContent>
                     </Select>
                 </div>
-
-                {/* NOVA: Caixa de pesquisa para candidatos */}
-                {selectedJobId && (
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <Input
-                            placeholder="Buscar candidato por nome ou e-mail..."
-                            className="pl-10"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                )}
 
                 <div className="flex items-center gap-2">
                     <Button
