@@ -70,6 +70,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
         menuItems = [
             { id: "dashboard", icon: Home, text: "Dashboard", action: () => setActiveTab("dashboard") },
             { id: "jobs", icon: Briefcase, text: "Minhas Solicitações", action: () => setActiveTab("jobs") },
+            { id: "selection-process", icon: TrendingUp, text: "Processos Seletivos", action: () => setActiveTab("selection-process") },
         ];
     } else {
         // Menu para Admin e Recrutador
