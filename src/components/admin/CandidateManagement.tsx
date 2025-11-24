@@ -19,6 +19,7 @@ import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/consta
 import { useCandidatesCounts } from '@/hooks/useCandidates';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const CandidateManagement = () => {
   const { user } = useAuth();
