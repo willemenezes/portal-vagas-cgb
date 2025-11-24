@@ -277,7 +277,7 @@ const SelectionProcess = () => {
         }
 
         return activeJobs;
-    }, [allJobs, rhProfile, isRhProfileLoading, jobSearchTerm]);
+    }, [allJobs, rhProfile, isRhProfileLoading]);
 
     useEffect(() => {
         console.log(`🔍 [SelectionProcess] useEffect - selectedJobId: ${selectedJobId}, jobsForSelection.length: ${jobsForSelection.length}`);
@@ -770,7 +770,7 @@ const SelectionProcess = () => {
             <header className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">
-                        <Popover>
+                        <Popover open={isJobSelectOpen} onOpenChange={setIsJobSelectOpen}>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
@@ -778,11 +778,12 @@ const SelectionProcess = () => {
                                     className="w-full md:w-96 text-lg font-semibold justify-between"
                                 >
                                     {selectedJobId
-                                        ? jobsForSelection.find((job) => job.id === selectedJobId)?.title + 
-                                          " - " + 
-                                          jobsForSelection.find((job) => job.id === selectedJobId)?.city + 
-                                          ", " + 
-                                          jobsForSelection.find((job) => job.id === selectedJobId)?.state
+                                        ? (() => {
+                                            const selectedJob = jobsForSelection.find((job) => job.id === selectedJobId);
+                                            return selectedJob 
+                                                ? `${selectedJob.title} - ${selectedJob.city}, ${selectedJob.state}`
+                                                : "Selecione a vaga...";
+                                        })()
                                         : "Selecione a vaga..."}
                                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
@@ -791,13 +792,9 @@ const SelectionProcess = () => {
                                 <Command>
                                     <CommandInput 
                                         placeholder="Buscar vaga por título, cidade ou departamento..." 
-                                        value={jobSearchTerm}
-                                        onValueChange={setJobSearchTerm}
                                     />
                                     <CommandList>
-                                        <CommandEmpty>
-                                            {jobSearchTerm.trim() ? 'Nenhuma vaga encontrada' : 'Nenhuma vaga disponível'}
-                                        </CommandEmpty>
+                                        <CommandEmpty>Nenhuma vaga encontrada.</CommandEmpty>
                                         <CommandGroup>
                                             {jobsForSelection.map((job) => (
                                                 <CommandItem
@@ -805,7 +802,7 @@ const SelectionProcess = () => {
                                                     value={`${job.title} ${job.city} ${job.state} ${job.department || ''}`}
                                                     onSelect={() => {
                                                         setSelectedJobId(job.id);
-                                                        setJobSearchTerm(''); // Limpar busca após seleção
+                                                        setIsJobSelectOpen(false); // Fechar popover após seleção
                                                     }}
                                                 >
                                                     <Check
