@@ -2,11 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check } from "lucide-react";
 import { useAllJobs, Job, useUpdateJobFlowStatus, useUpdateJob } from '@/hooks/useJobs';
 import { useCandidates, Candidate, useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { useCandidatesByJob } from '@/hooks/useCandidatesByJob';
 import { SELECTION_STATUSES, SelectionStatus, STATUS_COLORS } from '@/lib/constants';
-import { Loader2, PlusCircle, Linkedin, Gavel, Grid3X3, ArrowRightLeft, RefreshCw, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Linkedin, Gavel, Grid3X3, ArrowRightLeft, RefreshCw, Search, ChevronDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import CandidateDetailModal from './CandidateDetailModal';
 import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
@@ -767,24 +770,58 @@ const SelectionProcess = () => {
             <header className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">
-                        <Select onValueChange={setSelectedJobId} value={selectedJobId || ''}>
-                            <SelectTrigger className="w-full md:w-96 text-lg font-semibold">
-                                <SelectValue placeholder="Selecione a vaga..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {jobsForSelection.length === 0 ? (
-                                    <SelectItem value="" disabled>
-                                        {jobSearchTerm.trim() ? 'Nenhuma vaga encontrada' : 'Nenhuma vaga disponível'}
-                                    </SelectItem>
-                                ) : (
-                                    jobsForSelection.map((job: Job) => (
-                                        <SelectItem key={job.id} value={job.id!}>
-                                            {job.title} - {job.city}, {job.state}
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full md:w-96 text-lg font-semibold justify-between"
+                                >
+                                    {selectedJobId
+                                        ? jobsForSelection.find((job) => job.id === selectedJobId)?.title + 
+                                          " - " + 
+                                          jobsForSelection.find((job) => job.id === selectedJobId)?.city + 
+                                          ", " + 
+                                          jobsForSelection.find((job) => job.id === selectedJobId)?.state
+                                        : "Selecione a vaga..."}
+                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full md:w-96 p-0" align="start">
+                                <Command>
+                                    <CommandInput 
+                                        placeholder="Buscar vaga por título, cidade ou departamento..." 
+                                        value={jobSearchTerm}
+                                        onValueChange={setJobSearchTerm}
+                                    />
+                                    <CommandList>
+                                        <CommandEmpty>
+                                            {jobSearchTerm.trim() ? 'Nenhuma vaga encontrada' : 'Nenhuma vaga disponível'}
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                            {jobsForSelection.map((job) => (
+                                                <CommandItem
+                                                    key={job.id}
+                                                    value={`${job.title} ${job.city} ${job.state} ${job.department || ''}`}
+                                                    onSelect={() => {
+                                                        setSelectedJobId(job.id);
+                                                        setJobSearchTerm(''); // Limpar busca após seleção
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            selectedJobId === job.id ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {job.title} - {job.city}, {job.state}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -823,16 +860,6 @@ const SelectionProcess = () => {
                     </div>
                 </div>
 
-                {/* NOVA: Caixa de pesquisa para vagas - ABAIXO do seletor */}
-                <div className="relative w-full md:w-96">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                        placeholder="Buscar vaga por título, cidade ou departamento..."
-                        className="pl-10"
-                        value={jobSearchTerm}
-                        onChange={(e) => setJobSearchTerm(e.target.value)}
-                    />
-                </div>
             </header>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
