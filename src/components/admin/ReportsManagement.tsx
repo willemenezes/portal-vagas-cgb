@@ -6,12 +6,13 @@ import { useAllCandidates } from "@/hooks/useCandidates";
 import { useAllResumes } from "@/hooks/useResumes";
 import { useAllJobs } from "@/hooks/useJobs";
 import { useToast } from "@/hooks/use-toast";
-import { format, subMonths, differenceInDays } from 'date-fns';
+import { format, subMonths, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllRejectionNotes } from "@/hooks/useAllRejectionNotes";
 import { generatePDFReport, generateDashboardPDF } from "@/utils/pdf-reports";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
+import { calculateTotalProcessTime } from '@/utils/stageTimeCalculator';
 
 const ReportsManagement = () => {
     const { user } = useAuth();
@@ -310,30 +311,43 @@ const ReportsManagement = () => {
 
         switch (type) {
             case 'candidates':
-                headers = ['Nome', 'Email', 'Telefone', 'Vaga Aplicada', 'Status', 'Localização', 'Possui CNH', 'Tipo de Veículo', 'Link do Currículo'];
+                headers = ['Nome', 'Email', 'Telefone', 'Vaga Aplicada', 'Status', 'Localização', 'Possui CNH', 'Tipo de Veículo', 'Tempo Total (dias)', 'Tempo na Etapa Atual (dias)', 'Link do Currículo'];
                 rows = candidates
                     .filter(c => c.job_id !== null)
-                    .map(c => [
-                        c.name || '', c.email || '', c.phone || '',
-                        c.job?.title || 'N/A', c.status || 'N/A',
-                        `${c.city || ''}, ${c.state || ''}`,
-                        (c.cnh && c.cnh.toLowerCase() !== 'não possuo') ? 'Sim' : 'Não',
-                        c.vehicle || 'N/A',
-                        c.resume_file_url || ''
-                    ]);
+                    .map(c => {
+                        const totalTime = calculateTotalProcessTime(c);
+                        const currentStageTime = c.status_entered_at 
+                            ? differenceInDays(new Date(), parseISO(c.status_entered_at))
+                            : (c.created_at ? differenceInDays(new Date(), parseISO(c.created_at)) : 0);
+                        
+                        return [
+                            c.name || '', c.email || '', c.phone || '',
+                            c.job?.title || 'N/A', c.status || 'N/A',
+                            `${c.city || ''}, ${c.state || ''}`,
+                            (c.cnh && c.cnh.toLowerCase() !== 'não possuo') ? 'Sim' : 'Não',
+                            c.vehicle || 'N/A',
+                            totalTime.toString(),
+                            Math.max(0, currentStageTime).toString(),
+                            c.resume_file_url || ''
+                        ];
+                    });
                 filename = "relatorio_candidatos_gerais.csv";
                 break;
 
             case 'hired':
-                headers = ['Nome', 'Email', 'Telefone', 'Vaga Contratada', 'Data da Aprovação', 'Link do Currículo'];
+                headers = ['Nome', 'Email', 'Telefone', 'Vaga Contratada', 'Data da Aprovação', 'Tempo Total do Processo (dias)', 'Link do Currículo'];
                 rows = candidates
                     .filter(c => c.status === 'Aprovado')
-                    .map(c => [
-                        c.name || '', c.email || '', c.phone || '',
-                        c.job?.title || 'N/A',
-                        format(new Date(c.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR }),
-                        c.resume_file_url || ''
-                    ]);
+                    .map(c => {
+                        const totalTime = calculateTotalProcessTime(c);
+                        return [
+                            c.name || '', c.email || '', c.phone || '',
+                            c.job?.title || 'N/A',
+                            format(new Date(c.updated_at || c.created_at || new Date()), "dd/MM/yyyy HH:mm", { locale: ptBR }),
+                            totalTime.toString(),
+                            c.resume_file_url || ''
+                        ];
+                    });
                 filename = "relatorio_contratados.csv";
                 break;
 

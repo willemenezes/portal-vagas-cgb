@@ -27,6 +27,7 @@ import { maskCPF, maskRG } from '@/utils/legal-validation';
 import { useCandidateReport } from '@/hooks/useCandidateReport';
 // import { generateCandidateReportPDF } from '@/utils/pdf'; // Removido - função PDF desabilitada
 import { useCandidateReports, useSaveCandidateReport } from '@/hooks/useReports';
+import { calculateStageTimes, calculateTotalProcessTime, formatStageTimesSummary } from '@/utils/stageTimeCalculator';
 
 // Props do componente
 interface CandidateDetailModalProps {
@@ -188,6 +189,8 @@ const CommunicationView = ({ candidate }: { candidate: Candidate }) => {
 // Seção de Histórico
 const HistoryView = ({ candidate }: { candidate: Candidate }) => {
     const { data: history = [], isLoading: isLoadingHistory } = useCandidateHistory(candidate?.id || null);
+    const stageTimes = calculateStageTimes(candidate, history);
+    const totalProcessTime = calculateTotalProcessTime(candidate);
 
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'S';
 
@@ -252,6 +255,48 @@ const HistoryView = ({ candidate }: { candidate: Candidate }) => {
     return (
         <div className="p-8 space-y-6">
             <h2 className="text-xl font-bold text-gray-800">Histórico do Candidato</h2>
+            
+            {/* NOVA SEÇÃO: Tempo em Cada Etapa */}
+            {stageTimes.length > 0 && (
+                <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Activity className="w-5 h-5 text-blue-600" />
+                            <h3 className="text-lg font-semibold text-blue-900">Tempo do Processo Seletivo</h3>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200">
+                                <span className="font-semibold text-gray-700">Tempo Total:</span>
+                                <span className="text-lg font-bold text-blue-600">{totalProcessTime} dias</span>
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-gray-700 mb-2">Tempo em cada etapa:</p>
+                                {stageTimes.map((stage, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-100">
+                                        <div className="flex-1">
+                                            <span className="font-medium text-gray-800">{stage.stage}</span>
+                                            {stage.startDate && (
+                                                <span className="text-xs text-gray-500 ml-2">
+                                                    ({format(new Date(stage.startDate), "dd/MM/yyyy", { locale: ptBR })})
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold text-blue-600">{stage.days} dia(s)</span>
+                                            {stage.endDate === null && (
+                                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                                    Em andamento
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+            
             <div className="relative border-l-2 border-gray-200 ml-4">
                 {history.map((item) => {
                     const { Icon, color } = getHistoryIcon(item);
