@@ -19,6 +19,7 @@ export interface Candidate {
   updated_at: string | null;
   legal_validation_comment?: string | null;
   tj_validation_started_at?: string | null;
+  status_entered_at?: string | null;
   resume_file_url?: string | null;
   resume_file_name?: string | null;
   cnh?: string | null;

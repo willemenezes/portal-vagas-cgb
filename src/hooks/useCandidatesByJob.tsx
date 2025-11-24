@@ -17,6 +17,7 @@ export interface CandidateByJob {
     legal_validation_comment?: string | null;
     legal_status?: 'pendente' | 'aprovado' | 'aprovado_com_restricao' | 'reprovado';
     tj_validation_started_at?: string | null;
+    status_entered_at?: string | null;
     resume_file_url?: string | null;
     resume_file_name?: string | null;
     cnh?: string | null;

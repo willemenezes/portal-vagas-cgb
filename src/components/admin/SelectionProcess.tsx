@@ -33,7 +33,8 @@ const getInitials = (name: string) => {
     return `${firstInitial}${lastInitial}`.toUpperCase();
 };
 
-// Helper mais robusto para calcular os dias
+// Helper mais robusto para calcular os dias na etapa atual
+// Agora usa status_entered_at para calcular apenas o tempo na etapa atual
 const getDaysInStage = (dateString: string | null): number => {
     if (!dateString) return 0;
     const date = parseISO(dateString);
@@ -45,7 +46,9 @@ const getDaysInStage = (dateString: string | null): number => {
 }
 
 const KanbanCard = ({ candidate, index, onClick }) => {
-    const daysInStage = getDaysInStage(candidate.created_at);
+    // CORREÇÃO: Usar status_entered_at em vez de created_at para contar apenas o tempo na etapa atual
+    // Se status_entered_at não existir, usar created_at como fallback (para candidatos antigos)
+    const daysInStage = getDaysInStage(candidate.status_entered_at || candidate.created_at);
     const borderColor = STATUS_COLORS[candidate.status as SelectionStatus]?.replace('bg-', 'border-').split(' ')[0] || 'border-gray-300';
 
     const legalStatusIconMap = {
