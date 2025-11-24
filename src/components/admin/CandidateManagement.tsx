@@ -330,12 +330,14 @@ const CandidateManagement = () => {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
               <Input 
                 placeholder="Buscar por nome do candidato..." 
-                className="pl-10" 
+                className="pl-10 w-full" 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)}
+                type="text"
+                autoComplete="off"
               />
             </div>
             <Select value={filters.jobId} onValueChange={value => setFilters(prev => ({ ...prev, jobId: value }))}><SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.jobId === 'all' ? 'Todas as Vagas' : (() => {
