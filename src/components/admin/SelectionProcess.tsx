@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAllJobs, Job, useUpdateJobFlowStatus } from '@/hooks/useJobs';
+import { useAllJobs, Job, useUpdateJobFlowStatus, useUpdateJob } from '@/hooks/useJobs';
 import { useCandidates, Candidate, useUpdateCandidateStatus } from '@/hooks/useCandidates';
 import { useCandidatesByJob } from '@/hooks/useCandidatesByJob';
 import { SELECTION_STATUSES, SelectionStatus, STATUS_COLORS } from '@/lib/constants';
@@ -92,6 +92,7 @@ const SelectionProcess = () => {
     // const { data: candidates = [], isLoading: isLoadingCandidates } = useCandidates();
     const updateStatus = useUpdateCandidateStatus();
     const updateJobFlowStatus = useUpdateJobFlowStatus();
+    const updateJob = useUpdateJob();
     const createNote = useCreateCandidateNote();
     const { user } = useAuth();
     const { data: rhProfile, isLoading: isRhProfileLoading } = useRHProfile(user?.id);
@@ -608,15 +609,43 @@ const SelectionProcess = () => {
             // 1. Atualizar status do candidato para Aprovado
             await updateStatus.mutateAsync({ id: candidate.id, status: 'Aprovado' });
 
-            // 2. Atualizar flow_status da vaga
-            await updateJobFlowStatus.mutateAsync({ jobId: job.id, flowStatus });
+            // 2. NOVA FUNCIONALIDADE: Diminuir quantidade de vagas automaticamente
+            const currentQuantity = job.quantity || 0;
+            const newQuantity = Math.max(0, currentQuantity - 1); // Não pode ser negativo
+
+            console.log('📊 [SelectionProcess] Atualizando quantidade de vagas:', {
+                jobId: job.id,
+                jobTitle: job.title,
+                currentQuantity,
+                newQuantity,
+                candidateName: candidate.name
+            });
+
+            // Preparar dados para atualização
+            const updateData: any = { quantity: newQuantity };
+
+            // Se quantity chegou a 0, marcar vaga como concluída automaticamente
+            if (newQuantity === 0) {
+                updateData.flow_status = 'concluida';
+                console.log('✅ [SelectionProcess] Todas as vagas foram preenchidas! Marcando vaga como concluída automaticamente.');
+            } else {
+                // Caso contrário, usar o flowStatus escolhido pelo usuário
+                updateData.flow_status = flowStatus;
+            }
+
+            // Atualizar quantity e flow_status da vaga
+            await updateJob.mutateAsync({
+                id: job.id,
+                ...updateData
+            });
 
             // 3. Criar nota sobre a aprovação
             if (user) {
+                const finalFlowStatus = (job.quantity || 0) - 1 === 0 ? 'concluida' : flowStatus;
                 await createNote.mutateAsync({
                     candidate_id: candidate.id,
                     author_id: user.id,
-                    note: `Candidato aprovado. Status da vaga atualizado para: ${flowStatus === 'ativa' ? 'Ativa' : flowStatus === 'concluida' ? 'Concluída' : 'Congelada'}`,
+                    note: `Candidato aprovado. ${(job.quantity || 0) - 1 === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `Status da vaga atualizado para: ${finalFlowStatus === 'ativa' ? 'Ativa' : finalFlowStatus === 'concluida' ? 'Concluída' : 'Congelada'}`}`,
                     activity_type: 'Aprovação'
                 });
             }
@@ -627,9 +656,12 @@ const SelectionProcess = () => {
                 'congelada': 'Congelada'
             };
 
+            const finalFlowStatus = (job.quantity || 0) - 1 === 0 ? 'concluida' : flowStatus;
+            const finalStatusLabel = statusLabels[finalFlowStatus];
+
             toast({
                 title: "Candidato Aprovado!",
-                description: `${candidate.name} foi aprovado e a vaga foi marcada como ${statusLabels[flowStatus]}.`,
+                description: `${candidate.name} foi aprovado. ${(job.quantity || 0) - 1 === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `A vaga foi marcada como ${finalStatusLabel}.`} ${(job.quantity || 0) > 1 ? `Restam ${(job.quantity || 0) - 1} vaga(s).` : ''}`,
             });
         } catch (error: any) {
             toast({
