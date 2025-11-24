@@ -35,6 +35,7 @@ const CandidateManagement = () => {
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all', jobId: 'all', state: 'all', cnh: 'all', vehicle: 'all',
   });
@@ -329,23 +330,57 @@ const CandidateManagement = () => {
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-grow">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" style={{ zIndex: 1 }} />
-                <input
-                  type="text"
-                  placeholder="Buscar por nome do candidato..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    console.log('🔍 [CandidateManagement] Busca alterada:', e.target.value);
-                    setSearchTerm(e.target.value);
-                  }}
-                  className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  autoComplete="off"
-                  style={{ position: 'relative', zIndex: 0 }}
-                />
-              </div>
-            </div>
+            {/* Busca por nome - apenas para recrutador e admin */}
+            {rhProfile && (rhProfile.role === 'recruiter' || rhProfile.role === 'admin' || rhProfile.is_admin) ? (
+              <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="h-10 w-10 p-0"
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="start">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Buscar candidato por nome</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Digite o nome do candidato..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          console.log('🔍 [CandidateManagement] Busca alterada:', e.target.value);
+                          setSearchTerm(e.target.value);
+                        }}
+                        className="pl-10"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setIsSearchOpen(false);
+                          }
+                        }}
+                      />
+                    </div>
+                    {searchTerm && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setIsSearchOpen(false);
+                        }}
+                      >
+                        Limpar busca
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : null}
             <Select value={filters.jobId} onValueChange={value => setFilters(prev => ({ ...prev, jobId: value }))}><SelectTrigger><Briefcase className="w-4 h-4 mr-2" /> <span>{filters.jobId === 'all' ? 'Todas as Vagas' : (() => {
               const selectedJob = jobs.find(j => j.id === filters.jobId);
               return selectedJob ? `${selectedJob.title} - ${selectedJob.city}, ${selectedJob.state}` : 'Vaga';
