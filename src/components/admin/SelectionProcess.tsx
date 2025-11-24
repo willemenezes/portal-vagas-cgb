@@ -26,6 +26,7 @@ import { differenceInDays, parseISO, isValid } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
 import { JobStatusUpdateModal } from './JobStatusUpdateModal';
+import { cn } from "@/lib/utils";
 
 // Helper para obter iniciais do nome
 const getInitials = (name: string) => {
