@@ -153,7 +153,7 @@ const SelectionProcess = () => {
         let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
         console.log(`📊 [SelectionProcess] Vagas ativas (antes de filtros): ${activeJobs.length}`);
 
-        // BUG FIX: Filtro de região e departamento para RECRUTADOR e GERENTE
+        // BUG FIX: Filtro de região e departamento para RECRUTADOR, GERENTE e SOLICITADOR
         if (rhProfile && 'role' in rhProfile) {
             const assignedStates = (rhProfile.assigned_states as string[]) || [];
             const assignedCities = (rhProfile.assigned_cities as string[]) || [];
@@ -168,7 +168,8 @@ const SelectionProcess = () => {
             // Aplicar filtros apenas se houver permissões específicas atribuídas
             const hasStateFilter = assignedStates.length > 0;
             const hasCityFilter = assignedCities.length > 0;
-            const hasDepartmentFilter = rhProfile.role === 'manager' && assignedDepartments.length > 0;
+            // CORREÇÃO: Aplicar filtro de departamento também para SOLICITADOR
+            const hasDepartmentFilter = (rhProfile.role === 'manager' || rhProfile.role === 'solicitador') && assignedDepartments.length > 0;
 
             if (hasStateFilter || hasCityFilter || hasDepartmentFilter) {
                 const beforeFilter = activeJobs.length;
