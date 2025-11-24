@@ -764,72 +764,74 @@ const SelectionProcess = () => {
 
     return (
         <div className="space-y-6">
-            <header className="flex items-center justify-between gap-4">
-                <div className="flex-1 flex items-center gap-4">
-                    {/* NOVA: Caixa de pesquisa para vagas */}
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <Input
-                            placeholder="Buscar vaga por título, cidade ou departamento..."
-                            className="pl-10"
-                            value={jobSearchTerm}
-                            onChange={(e) => setJobSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    
-                    <Select onValueChange={setSelectedJobId} value={selectedJobId || ''}>
-                        <SelectTrigger className="w-full md:w-96 text-lg font-semibold">
-                            <SelectValue placeholder="Selecione a vaga..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {jobsForSelection.length === 0 ? (
-                                <SelectItem value="" disabled>
-                                    {jobSearchTerm.trim() ? 'Nenhuma vaga encontrada' : 'Nenhuma vaga disponível'}
-                                </SelectItem>
-                            ) : (
-                                jobsForSelection.map((job: Job) => (
-                                    <SelectItem key={job.id} value={job.id!}>
-                                        {job.title} - {job.city}, {job.state}
+            <header className="flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                        <Select onValueChange={setSelectedJobId} value={selectedJobId || ''}>
+                            <SelectTrigger className="w-full md:w-96 text-lg font-semibold">
+                                <SelectValue placeholder="Selecione a vaga..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {jobsForSelection.length === 0 ? (
+                                    <SelectItem value="" disabled>
+                                        {jobSearchTerm.trim() ? 'Nenhuma vaga encontrada' : 'Nenhuma vaga disponível'}
                                     </SelectItem>
-                                ))
-                            )}
-                        </SelectContent>
-                    </Select>
+                                ) : (
+                                    jobsForSelection.map((job: Job) => (
+                                        <SelectItem key={job.id} value={job.id!}>
+                                            {job.title} - {job.city}, {job.state}
+                                        </SelectItem>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                // Forçar refresh dos dados
+                                queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
+                                toast({ title: "Dados atualizados!", description: "Lista de candidatos foi atualizada." });
+                            }}
+                            className="flex items-center gap-2"
+                            disabled={isLoadingCandidates}
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isLoadingCandidates ? 'animate-spin' : ''}`} />
+                            Atualizar
+                        </Button>
+                        <Button
+                            variant={layoutMode === 'grid' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setLayoutMode('grid')}
+                            className="flex items-center gap-2"
+                        >
+                            <Grid3X3 className="w-4 h-4" />
+                            Blocos
+                        </Button>
+                        <Button
+                            variant={layoutMode === 'horizontal' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setLayoutMode('horizontal')}
+                            className="flex items-center gap-2"
+                        >
+                            <ArrowRightLeft className="w-4 h-4" />
+                            Horizontal
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                            // Forçar refresh dos dados
-                            queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
-                            toast({ title: "Dados atualizados!", description: "Lista de candidatos foi atualizada." });
-                        }}
-                        className="flex items-center gap-2"
-                        disabled={isLoadingCandidates}
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isLoadingCandidates ? 'animate-spin' : ''}`} />
-                        Atualizar
-                    </Button>
-                    <Button
-                        variant={layoutMode === 'grid' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setLayoutMode('grid')}
-                        className="flex items-center gap-2"
-                    >
-                        <Grid3X3 className="w-4 h-4" />
-                        Blocos
-                    </Button>
-                    <Button
-                        variant={layoutMode === 'horizontal' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setLayoutMode('horizontal')}
-                        className="flex items-center gap-2"
-                    >
-                        <ArrowRightLeft className="w-4 h-4" />
-                        Horizontal
-                    </Button>
+                {/* NOVA: Caixa de pesquisa para vagas - ABAIXO do seletor */}
+                <div className="relative w-full md:w-96">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                        placeholder="Buscar vaga por título, cidade ou departamento..."
+                        className="pl-10"
+                        value={jobSearchTerm}
+                        onChange={(e) => setJobSearchTerm(e.target.value)}
+                    />
                 </div>
             </header>
 
