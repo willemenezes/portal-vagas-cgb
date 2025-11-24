@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle, Building } from 'lucide-react';
+import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle, Building, AlertCircle } from 'lucide-react';
 import { Job, useUpdateJob, useAllJobs, useDeleteJob, usePendingJobs } from '@/hooks/useJobs';
 import { useJobRequests } from '@/hooks/useJobRequests';
 import { useAuth } from '@/hooks/useAuth';
@@ -555,6 +555,26 @@ const JobRequestsManagement = () => {
                                                         )}
                                                     </div>
                                                     <p className="text-sm text-gray-600 line-clamp-2">{job.description}</p>
+                                                    
+                                                    {/* NOVA: Observação sobre o status solicitado */}
+                                                    {job.flow_status && (job.flow_status === 'concluida' || job.flow_status === 'congelada') && (
+                                                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                                                            <div className="flex items-start gap-2">
+                                                                <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                                                <div className="text-xs text-blue-800">
+                                                                    <strong>Observação:</strong> Esta vaga foi editada e o recrutador solicitou que seja marcada como{' '}
+                                                                    <strong>
+                                                                        {job.flow_status === 'concluida' ? 'Concluída' : job.flow_status === 'congelada' ? 'Congelada' : job.flow_status}
+                                                                    </strong>.
+                                                                    {' '}Ao aprovar, a vaga será mantida como{' '}
+                                                                    <strong>
+                                                                        {job.flow_status === 'concluida' ? 'Concluída' : job.flow_status === 'congelada' ? 'Congelada' : job.flow_status}
+                                                                    </strong>.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    
                                                     <div className="text-xs text-gray-500 flex items-center gap-1">
                                                         <Calendar className="w-3 h-3" />
                                                         Última atualização: {new Date(job.updated_at || job.created_at).toLocaleString('pt-BR')}
@@ -579,13 +599,21 @@ const JobRequestsManagement = () => {
                                                     className="bg-green-600 hover:bg-green-700"
                                                     onClick={async () => {
                                                         try {
+                                                            // CORREÇÃO: Manter o flow_status original ao invés de sempre marcar como 'ativa'
+                                                            const finalFlowStatus = job.flow_status || 'ativa';
+                                                            const statusLabel = finalFlowStatus === 'concluida' ? 'Concluída' : 
+                                                                                finalFlowStatus === 'congelada' ? 'Congelada' : 'Ativa';
+                                                            
                                                             await updateJob.mutateAsync({
                                                                 id: job.id,
                                                                 approval_status: 'active',
                                                                 status: 'active',
-                                                                flow_status: 'ativa'
+                                                                flow_status: finalFlowStatus // Manter o status original solicitado
                                                             });
-                                                            toast({ title: 'Vaga Aprovada!', description: 'A vaga está ativa e pública.' });
+                                                            toast({ 
+                                                                title: 'Vaga Aprovada!', 
+                                                                description: `A vaga foi aprovada e está marcada como ${statusLabel}.` 
+                                                            });
                                                             refetchPendingJobs();
                                                         } catch (error) {
                                                             toast({ title: 'Erro', description: 'Não foi possível aprovar a vaga.', variant: 'destructive' });
