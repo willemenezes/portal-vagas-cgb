@@ -146,7 +146,7 @@ const SelectionProcess = () => {
     const [layoutMode, setLayoutMode] = useState<'grid' | 'horizontal'>('grid');
     const [showJobStatusModal, setShowJobStatusModal] = useState(false);
     const [pendingApproval, setPendingApproval] = useState<{ candidate: Candidate; job: Job } | null>(null);
-    const [jobSearchTerm, setJobSearchTerm] = useState('');
+    const [isJobSelectOpen, setIsJobSelectOpen] = useState(false);
 
     const jobsForSelection = useMemo(() => {
         if (isRhProfileLoading) {
@@ -158,18 +158,7 @@ const SelectionProcess = () => {
         let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
         console.log(`📊 [SelectionProcess] Vagas ativas (antes de filtros): ${activeJobs.length}`);
         
-        // NOVA: Aplicar filtro de busca por termo de pesquisa
-        if (jobSearchTerm.trim()) {
-            const searchLower = jobSearchTerm.toLowerCase();
-            activeJobs = activeJobs.filter(job => {
-                const matchTitle = (job.title || '').toLowerCase().includes(searchLower);
-                const matchCity = (job.city || '').toLowerCase().includes(searchLower);
-                const matchState = (job.state || '').toLowerCase().includes(searchLower);
-                const matchDepartment = (job.department || '').toLowerCase().includes(searchLower);
-                return matchTitle || matchCity || matchState || matchDepartment;
-            });
-            console.log(`🔍 [SelectionProcess] Vagas após busca "${jobSearchTerm}": ${activeJobs.length}`);
-        }
+        // NOTA: O filtro de busca agora é feito pelo Command component internamente
 
         // BUG FIX: Filtro de região e departamento para RECRUTADOR, GERENTE e SOLICITADOR
         if (rhProfile && 'role' in rhProfile) {
