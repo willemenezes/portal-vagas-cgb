@@ -18,7 +18,6 @@ import { useRHProfile } from '@/hooks/useRH';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MessageSquare } from 'lucide-react';
 import { useAllRejectionNotes } from '@/hooks/useAllRejectionNotes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
