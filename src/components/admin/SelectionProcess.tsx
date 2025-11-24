@@ -494,19 +494,65 @@ const SelectionProcess = () => {
                 setPendingApproval({ candidate, job });
                 setShowJobStatusModal(true);
             } else {
-                // Se não encontrar a vaga, apenas atualiza o status normalmente
-                updateStatus.mutate({ id: draggableId, status: newStatus }, {
-                    onSuccess: () => {
-                        toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
-                        if (user) createNote.mutate({
-                            candidate_id: draggableId,
-                            author_id: user.id,
-                            note: `Status alterado para "${newStatus}"`,
-                            activity_type: 'Mudança de Status'
-                        });
-                    },
-                    onError: (error) => toast({ title: "Erro ao atualizar", description: `Não foi possível mover o candidato. ${error.message}`, variant: "destructive" })
-                });
+                // CORREÇÃO: Se não encontrar a vaga, buscar do banco e atualizar quantity também
+                console.warn('⚠️ [SelectionProcess] Vaga não encontrada no estado, buscando do banco...');
+                const { data: jobFromDb, error: jobError } = await supabase
+                    .from('jobs')
+                    .select('id, quantity, flow_status, title')
+                    .eq('id', candidate.job_id)
+                    .single();
+                
+                if (jobFromDb && !jobError) {
+                    // Buscar vaga atualizada antes de calcular
+                    const { data: updatedJob } = await supabase
+                        .from('jobs')
+                        .select('quantity')
+                        .eq('id', candidate.job_id)
+                        .single();
+                    
+                    const currentQuantity = updatedJob?.quantity || jobFromDb.quantity || 0;
+                    const newQuantity = Math.max(0, currentQuantity - 1);
+                    
+                    const updateData: any = { quantity: newQuantity };
+                    if (newQuantity === 0) {
+                        updateData.flow_status = 'concluida';
+                    }
+                    
+                    await updateJob.mutateAsync({
+                        id: candidate.job_id,
+                        ...updateData
+                    });
+                    
+                    updateStatus.mutate({ id: draggableId, status: newStatus }, {
+                        onSuccess: () => {
+                            toast({ 
+                                title: "Candidato Aprovado!", 
+                                description: `${candidate.name} foi aprovado. ${newQuantity === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída.' : `Restam ${newQuantity} vaga(s).`}` 
+                            });
+                            if (user) createNote.mutate({
+                                candidate_id: draggableId,
+                                author_id: user.id,
+                                note: `Candidato aprovado. ${newQuantity === 0 ? 'Todas as vagas foram preenchidas - vaga marcada como concluída automaticamente.' : `Restam ${newQuantity} vaga(s).`}`,
+                                activity_type: 'Aprovação'
+                            });
+                        },
+                        onError: (error) => toast({ title: "Erro ao atualizar", description: `Não foi possível mover o candidato. ${error.message}`, variant: "destructive" })
+                    });
+                } else {
+                    // Se não encontrar a vaga nem no banco, apenas atualiza o status
+                    updateStatus.mutate({ id: draggableId, status: newStatus }, {
+                        onSuccess: () => {
+                            toast({ title: "Status atualizado!", description: `O candidato foi movido para ${newStatus}.` });
+                            if (user) createNote.mutate({
+                                candidate_id: draggableId,
+                                author_id: user.id,
+                                note: `Status alterado para "${newStatus}"`,
+                                activity_type: 'Mudança de Status'
+                            });
+                        },
+                        onError: (error) => toast({ title: "Erro ao atualizar", description: `Não foi possível mover o candidato. ${error.message}`, variant: "destructive" })
+                    });
+                }
             }
         } else {
             // Verificar se o candidato está sendo movido PARA "Validação TJ"
