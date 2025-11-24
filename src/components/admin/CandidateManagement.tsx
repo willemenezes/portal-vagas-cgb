@@ -330,19 +330,19 @@ const CandidateManagement = () => {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
-                <Input 
-                  placeholder="Buscar por nome do candidato..." 
-                  className="pl-10 w-full bg-white border border-gray-300 rounded-md px-3 py-2" 
-                  value={searchTerm} 
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" style={{ zIndex: 1 }} />
+                <input
+                  type="text"
+                  placeholder="Buscar por nome do candidato..."
+                  value={searchTerm}
                   onChange={(e) => {
                     console.log('🔍 [CandidateManagement] Busca alterada:', e.target.value);
                     setSearchTerm(e.target.value);
                   }}
-                  type="text"
+                  className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   autoComplete="off"
-                  style={{ zIndex: 1 }}
+                  style={{ position: 'relative', zIndex: 0 }}
                 />
               </div>
             </div>
