@@ -111,39 +111,11 @@ export const useAllJobs = () => {
       const startTime = performance.now();
 
       try {
-        // OTIMIZAÇÃO: Selecionar apenas campos necessários para melhor performance
-        // Evitar select('*') que traz todos os campos e pode ser lento
+        // CORREÇÃO: Usar select('*') para evitar erros com colunas que podem não existir
+        // A otimização de seleção específica causou erros quando algumas colunas não existem no banco
         const { data: jobs, error } = await supabase
           .from('jobs')
-          .select(`
-            id,
-            title,
-            department,
-            city,
-            state,
-            type,
-            description,
-            requirements,
-            benefits,
-            workload,
-            status,
-            approval_status,
-            flow_status,
-            quantity,
-            quantity_filled,
-            expires_at,
-            created_at,
-            updated_at,
-            created_by,
-            created_by_name,
-            approved_by,
-            approved_by_name,
-            solicitante_nome,
-            solicitante_funcao,
-            observacoes_internas,
-            rejection_reason,
-            company_contract
-          `)
+          .select('*')
           .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
           .order('created_at', { ascending: false })
           .limit(1000); // Limite de segurança
