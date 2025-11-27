@@ -15,7 +15,6 @@ import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hoo
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { useToast } from "@/hooks/use-toast";
-import { useJobRequests, JobRequest, CreateJobRequestData } from "@/hooks/useJobRequests";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -23,7 +22,6 @@ import { departments } from "@/data/departments";
 import { contracts } from "@/data/contracts";
 import { WORKLOAD_OPTIONS } from "@/data/workload-options";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JobQuantityBadge from "./JobQuantityBadge";
 import JobFlowStatusBadge from "./JobFlowStatusBadge";
 import { JobTitleSelect } from "./JobTitleSelect";
@@ -65,6 +63,8 @@ const JobManagement = () => {
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [cityFilter, setCityFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
 
   // Paginação
   const [currentPage, setCurrentPage] = useState(0);
@@ -74,25 +74,15 @@ const JobManagement = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Hook para job requests (apenas para RH Admin/Admin)
-  const {
-    jobRequests,
-    createJobFromRequest,
-    approveAndCreateJob,
-    updateJobRequest,
-    updateJobRequestStatus,
-    deleteJobRequest,
-    isLoading: isLoadingRequests
-  } = useJobRequests();
 
   // Filtrar apenas vagas processadas (aprovadas) - mesmo critério do relatório
   // IMPORTANTE: Incluir vagas concluídas e congeladas mesmo que não tenham approval_status === 'active'
   const processedJobs = React.useMemo(() => {
     if (!allJobs || allJobs.length === 0) return [];
-    
+
     console.log('🔄 [JobManagement] Processando', allJobs.length, 'vagas...');
     const startTime = performance.now();
-    
+
     const filtered = allJobs.filter(j => {
       // Incluir todas as vagas que foram processadas (aprovadas)
       // Isso inclui: ativas, concluídas, congeladas, etc.
@@ -100,26 +90,26 @@ const JobManagement = () => {
       const approval = String(j.approval_status || '').toLowerCase();
       const status = String(j.status || '').toLowerCase();
       const flowStatus = String(j.flow_status || '').toLowerCase();
-      
+
       // Se tem flow_status de concluída ou congelada, SEMPRE incluir (mesmo sem approval_status)
       if (flowStatus === 'concluida' || flowStatus === 'congelada') {
         // Apenas verificar se não é rejeitada
         return !['rejected', 'rejeitado'].includes(approval);
       }
-      
+
       // Para outras vagas, verificar se foi aprovada OU tem flow_status ativa
       const isApproved = ['active', 'ativo'].includes(approval);
       const hasFlowStatus = flowStatus === 'ativa';
       const isNotDraft = !['draft', 'rascunho'].includes(status) && !['draft', 'rascunho'].includes(approval);
       const isNotPending = !['pending_approval', 'aprovacao_pendente'].includes(approval);
       const isNotRejected = !['rejected', 'rejeitado'].includes(approval);
-      
+
       return (isApproved || hasFlowStatus) && isNotDraft && isNotPending && isNotRejected;
     });
-    
+
     const endTime = performance.now();
     console.log(`✅ [JobManagement] ${filtered.length} vagas processadas em ${Math.round(endTime - startTime)}ms`);
-    
+
     return filtered;
   }, [allJobs]);
 
@@ -156,7 +146,7 @@ const JobManagement = () => {
 
       const matchState = normalizedStates.length === 0 || normalizedStates.includes(jobState);
       const matchCity = normalizedCities.length === 0 || normalizedCities.includes(jobCity);
-      
+
       return matchState && matchCity;
     });
   }, [processedJobs, rhProfile]);
@@ -183,18 +173,50 @@ const JobManagement = () => {
     return chosenTalent ? [chosenTalent, ...others] : others;
   }, [jobs]);
 
-  // Filtrar vagas por busca e status
+  // Extrair listas únicas de cidades e departamentos das vagas disponíveis
+  const uniqueCities = React.useMemo(() => {
+    const cities = new Set<string>();
+    jobsDeduped.forEach(job => {
+      if (job.city && job.city.trim()) {
+        cities.add(job.city.trim());
+      }
+    });
+    return Array.from(cities).sort();
+  }, [jobsDeduped]);
+
+  const uniqueDepartments = React.useMemo(() => {
+    const depts = new Set<string>();
+    jobsDeduped.forEach(job => {
+      if (job.department && job.department.trim()) {
+        depts.add(job.department.trim());
+      }
+    });
+    return Array.from(depts).sort();
+  }, [jobsDeduped]);
+
+  // Filtrar vagas por busca, status, cidade e departamento
   const filteredJobs = React.useMemo(() => {
     return jobsDeduped.filter(job => {
-      const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // Filtro de busca (título, departamento ou cidade)
+      const matchesSearch = searchTerm.trim() === '' ||
+        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.city.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Filtro por cidade
+      const matchesCity = cityFilter === 'all' ||
+        (job.city && job.city.trim().toLowerCase() === cityFilter.toLowerCase());
+
+      // Filtro por departamento
+      const matchesDepartment = departmentFilter === 'all' ||
+        (job.department && job.department.trim().toLowerCase() === departmentFilter.toLowerCase());
 
       // Helper para verificar se vaga está ativa (não concluída nem congelada)
       // Normalizar flow_status para comparação consistente
       const normalizedFlowStatus = String(job.flow_status || '').toLowerCase().trim();
       const isActive = normalizedFlowStatus !== 'concluida' && normalizedFlowStatus !== 'congelada';
 
+      // Filtro por status
       const matchesStatus = statusFilter === 'all' ||
         (statusFilter === 'expired' && isActive && job.expires_at && (() => {
           const days = getDaysUntilExpiry(job.expires_at);
@@ -204,9 +226,9 @@ const JobManagement = () => {
         (statusFilter === 'completed' && normalizedFlowStatus === 'concluida') ||
         (statusFilter === 'congelada' && normalizedFlowStatus === 'congelada');
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesCity && matchesDepartment && matchesStatus;
     });
-  }, [jobsDeduped, searchTerm, statusFilter, getDaysUntilExpiry]);
+  }, [jobsDeduped, searchTerm, statusFilter, cityFilter, departmentFilter, getDaysUntilExpiry]);
 
   // Paginação baseada na lista filtrada
   const totalCount = filteredJobs.length;
@@ -220,14 +242,14 @@ const JobManagement = () => {
   // IMPORTANTE: "Expira hoje" (days === 0) NÃO deve contar como expirada
   // IMPORTANTE: Considerar o campo 'quantity' de cada vaga (ex: 3 vagas em Castanhal = quantity: 3)
   const getQuantity = (job: Job) => job.quantity || 1; // Se não tiver quantity, assume 1
-  
+
   const stats = React.useMemo(() => {
     // DEBUG: Log para verificar vagas concluídas
     const completedJobs = jobsDeduped.filter(job => {
       const flowStatus = String(job.flow_status || '').toLowerCase().trim();
       return flowStatus === 'concluida';
     });
-    
+
     console.log('📊 [JobManagement] Calculando estatísticas:', {
       totalJobs: jobsDeduped.length,
       completedJobsCount: completedJobs.length,
@@ -239,7 +261,7 @@ const JobManagement = () => {
         approval_status: j.approval_status
       }))
     });
-    
+
     const completedSum = jobsDeduped.reduce((sum, job) => {
       const flowStatus = String(job.flow_status || '').toLowerCase().trim();
       if (flowStatus === 'concluida') {
@@ -249,9 +271,9 @@ const JobManagement = () => {
       }
       return sum;
     }, 0);
-    
+
     console.log('📊 [JobManagement] Total de vagas concluídas calculado:', completedSum);
-    
+
     return {
       total: jobsDeduped.reduce((sum, job) => sum + getQuantity(job), 0),
       expired: jobsDeduped.reduce((sum, job) => {
@@ -289,46 +311,6 @@ const JobManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingTalentBank, setIsCreatingTalentBank] = useState(false);
 
-  // Estados para edição de job requests
-  const [editingRequest, setEditingRequest] = useState<JobRequest | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<JobRequest | null>(null);
-
-  // Filtrar job requests aprovadas que ainda não foram convertidas em vagas
-  const approvedRequests = (jobRequests?.filter((request) => {
-    if (request.status !== 'aprovado' || request.job_created) return false;
-    return true; // Todos veem todas
-  })) || [];
-
-  // Filtrar job requests reprovadas (para histórico)
-  const rejectedRequests = (jobRequests?.filter((request) => {
-    if (request.status !== 'rejeitado') return false;
-    return true; // Todos veem todas as reprovadas
-  })) || [];
-
-  // BUG FIX: Admin deve ver TODAS as solicitações (pendentes + aprovadas), mas NÃO reprovadas na seção principal
-  const allRequestsForAdmin = rhProfile?.role === 'admin'
-    ? (jobRequests?.filter((request) => {
-      if (request.job_created) return false; // Excluir apenas as já convertidas em vagas
-      if (request.status === 'rejeitado') return false; // Reprovadas vão para aba separada
-      return true; // Admin vê pendentes + aprovadas na seção principal
-    })) || []
-    : approvedRequests;
-
-  // DEBUG: Verificar todas as solicitações para admin
-  React.useEffect(() => {
-    if (rhProfile?.role === 'admin' && jobRequests) {
-      console.log('🔍 [JobManagement] DEBUG Admin - Todas as solicitações:', jobRequests.length);
-      console.log('🔍 [JobManagement] DEBUG Admin - Solicitações por status:', {
-        pendente: jobRequests.filter(r => r.status === 'pendente').length,
-        aprovado: jobRequests.filter(r => r.status === 'aprovado').length,
-        rejeitado: jobRequests.filter(r => r.status === 'rejeitado').length
-      });
-      console.log('🔍 [JobManagement] DEBUG Admin - TESTETI:', jobRequests.find(r => r.title === 'TESTETI'));
-      console.log('🔍 [JobManagement] DEBUG Admin - ApprovedRequests:', approvedRequests.length);
-      console.log('🔍 [JobManagement] DEBUG Admin - AllRequestsForAdmin:', allRequestsForAdmin.length);
-    }
-  }, [jobRequests, rhProfile, approvedRequests]);
 
   const talentBankJobExists = jobsDeduped.some(job => job.title === "Banco de Talentos");
 
@@ -460,7 +442,7 @@ const JobManagement = () => {
         const currentApprovalStatus = String(currentJob?.approval_status || '').toLowerCase();
         const currentStatus = String(currentJob?.status || '').toLowerCase();
         const isCurrentlyActive = ['active', 'ativo'].includes(currentApprovalStatus) || ['active', 'ativo'].includes(currentStatus);
-        
+
         console.log('🔍 [JobManagement] ===== VERIFICANDO VAGA PARA EDIÇÃO =====');
         console.log('🔍 [JobManagement] Dados da vaga atual:', {
           jobId: jobToSave.id,
@@ -475,7 +457,7 @@ const JobManagement = () => {
           statusToSend,
           newApprovalStatus: jobDataClean.approval_status
         });
-        
+
         // REGRA PRINCIPAL: Se o usuário escolheu "Enviar para Aprovação", SEMPRE forçar pending_approval
         if (submissionStatus === 'aprovacao_pendente' || statusToSend === 'pending_approval') {
           console.log('✅ [JobManagement] Usuário escolheu "Enviar para Aprovação" - FORÇANDO pending_approval');
@@ -499,7 +481,7 @@ const JobManagement = () => {
           console.log('✅ [JobManagement] Admin escolheu "Publicar Direto" - mantendo como active');
           // Manter o statusToSend que já está como 'active'
         }
-        
+
         console.log('🔍 [JobManagement] Status FINAL que será salvo:', {
           approval_status: jobDataClean.approval_status,
           status: jobDataClean.status,
@@ -520,16 +502,16 @@ const JobManagement = () => {
           status: jobDataClean.status,
           flow_status: jobDataClean.flow_status
         });
-        
+
         await updateJob.mutateAsync(jobDataClean);
-        
+
         console.log('✅ [JobManagement] Vaga salva com sucesso! Status final:', jobDataClean.approval_status);
-        
-        toast({ 
-          title: "Vaga atualizada com sucesso!", 
-          description: jobDataClean.approval_status === 'pending_approval' 
-            ? "A vaga foi reativada e precisa ser aprovada novamente por admin/gerente." 
-            : "As alterações foram salvas." 
+
+        toast({
+          title: "Vaga atualizada com sucesso!",
+          description: jobDataClean.approval_status === 'pending_approval'
+            ? "A vaga foi reativada e precisa ser aprovada novamente por admin/gerente."
+            : "As alterações foram salvas."
         });
       }
       setIsModalOpen(false);
@@ -558,80 +540,6 @@ const JobManagement = () => {
     }
   };
 
-  // Função para criar vaga a partir de job request aprovada
-  const handleCreateJobFromRequest = async (requestId: string) => {
-    try {
-      await createJobFromRequest.mutateAsync(requestId);
-      // Toast de sucesso é mostrado no onSuccess da mutation
-    } catch (error: any) {
-      console.error('❌ [JobManagement] Erro ao criar vaga:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Não foi possível criar a vaga. Tente novamente.';
-      toast({
-        title: "Erro ao criar vaga",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Função para aprovar e criar vaga diretamente
-  const handleApproveAndCreateJob = async (requestId: string) => {
-    try {
-      await approveAndCreateJob.mutateAsync({
-        requestId,
-        notes: "Aprovado e criado pelo RH Admin"
-      });
-      toast({
-        title: "Vaga aprovada e criada!",
-        description: "A solicitação foi aprovada e a vaga foi criada diretamente."
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao aprovar e criar vaga",
-        description: "Não foi possível aprovar e criar a vaga. Tente novamente.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Função para editar job request
-  const handleEditRequest = (request: JobRequest) => {
-    setEditingRequest(request);
-    setIsEditModalOpen(true);
-  };
-
-  // Função para salvar edição de job request
-  const handleSaveEditRequest = async (data: Partial<CreateJobRequestData>) => {
-    if (!editingRequest) return;
-
-    try {
-      await updateJobRequest.mutateAsync({
-        id: editingRequest.id,
-        data
-      });
-      setIsEditModalOpen(false);
-      setEditingRequest(null);
-    } catch (error) {
-      // Error já tratado no hook
-    }
-  };
-
-  // Função para confirmar exclusão de job request
-  const handleDeleteRequest = async (request: JobRequest) => {
-    setDeleteConfirmRequest(request);
-  };
-
-  // Função para executar exclusão
-  const confirmDeleteRequest = async () => {
-    if (!deleteConfirmRequest) return;
-
-    try {
-      await deleteJobRequest.mutateAsync(deleteConfirmRequest.id);
-      setDeleteConfirmRequest(null);
-    } catch (error) {
-      // Error já tratado no hook
-    }
-  };
 
   return (
     <Card className="p-4 shadow-lg bg-white rounded-lg">
@@ -742,7 +650,7 @@ const JobManagement = () => {
           {/* Botão Nova Vaga - Centralizado */}
           <Card className="border-indigo-200 bg-indigo-50">
             <CardContent className="p-4 h-full flex items-center justify-center">
-              <Button 
+              <Button
                 onClick={handleCreate}
                 className="w-full bg-indigo-600 text-white hover:bg-indigo-700 font-semibold shadow-sm"
                 size="lg"
@@ -756,7 +664,8 @@ const JobManagement = () => {
         {/* Filtros */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col gap-4">
+              {/* Busca */}
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -768,9 +677,11 @@ const JobManagement = () => {
                   />
                 </div>
               </div>
-              <div className="flex gap-2">
+
+              {/* Filtros por Status, Cidade e Departamento */}
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48">
                     <SelectValue placeholder="Filtrar por status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -781,347 +692,56 @@ const JobManagement = () => {
                     <SelectItem value="congelada">Congeladas</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select value={cityFilter} onValueChange={setCityFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filtrar por cidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as cidades</SelectItem>
+                    {uniqueCities.map(city => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filtrar por departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os departamentos</SelectItem>
+                    {uniqueDepartments.map(dept => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Botão para limpar filtros */}
+                {(cityFilter !== 'all' || departmentFilter !== 'all' || statusFilter !== 'all' || searchTerm.trim() !== '') && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCityFilter('all');
+                      setDepartmentFilter('all');
+                      setStatusFilter('all');
+                      setSearchTerm('');
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Limpar Filtros
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Seção de Job Requests - Tabs para Aprovadas e Reprovadas */}
-        {((rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length > 0 || rejectedRequests.length > 0) && (
-          <div className="mb-6">
-            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-3 text-green-800">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold">Solicitações de Vagas</h2>
-                      <p className="text-sm text-green-600 font-normal mt-1">
-                        Gerencie solicitações aprovadas e reprovadas pelos gerentes
-                      </p>
-                    </div>
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Tabs defaultValue="approved" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="approved" className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Aprovadas
-                      <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
-                        {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).length}
-                      </Badge>
-                    </TabsTrigger>
-                    <TabsTrigger value="rejected" className="flex items-center gap-2">
-                      <XCircle className="w-4 h-4" />
-                      Reprovadas
-                      <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
-                        {rejectedRequests.length}
-                      </Badge>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  {/* Aba de Aprovadas */}
-                  <TabsContent value="approved" className="mt-0">
-                    <div className="grid gap-4">
-                      {(rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests)
-                        .filter(request => request.status === 'aprovado' && !request.job_created)
-                        .map((request) => (
-                    <Card key={request.id} className="bg-white border border-green-200 shadow-md hover:shadow-lg transition-shadow duration-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">{request.title}</h3>
-                              {request.status === 'aprovado' ? (
-                                <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
-                                  ✓ Aprovado
-                                </Badge>
-                              ) : request.status === 'pendente' ? (
-                                <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">
-                                  ⏳ Pendente
-                                </Badge>
-                              ) : request.status === 'rejeitado' ? (
-                                <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
-                                  ✗ Rejeitado
-                                </Badge>
-                              ) : null}
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
-                              <div className="flex items-center gap-1.5 text-gray-600">
-                                <div className="p-0.5 bg-gray-100 rounded">
-                                  <Briefcase className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-gray-500">Departamento</p>
-                                  <p className="text-sm font-medium">{request.department}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-gray-600">
-                                <div className="p-0.5 bg-gray-100 rounded">
-                                  <Users className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-gray-500">Localização</p>
-                                  <p className="text-sm font-medium">{request.city}, {request.state}</p>
-                                </div>
-                              </div>
-                              {request.company_contract && (
-                                <div className="flex items-center gap-1.5 text-gray-600">
-                                  <div className="p-0.5 bg-gray-100 rounded">
-                                    <FileText className="w-3.5 h-3.5" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] text-gray-500">CT</p>
-                                    <p className="text-sm font-medium">{request.company_contract}</p>
-                                  </div>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1.5 text-gray-600">
-                                <div className="p-0.5 bg-gray-100 rounded">
-                                  <Clock className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-gray-500">Carga Horária</p>
-                                  <p className="text-sm font-medium">{request.workload}</p>
-                                </div>
-                              </div>
-                              {request.status === 'aprovado' && request.approved_by && (
-                                <div className="flex items-center gap-1.5 text-gray-600">
-                                  <div className="p-0.5 bg-green-100 rounded">
-                                    <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] text-gray-500">Aprovado por</p>
-                                    <p className="text-sm font-medium text-green-700">{request.approved_by}</p>
-                                  </div>
-                                </div>
-                              )}
-                              {request.status === 'rejeitado' && request.approved_by && (
-                                <div className="flex items-center gap-1.5 text-gray-600">
-                                  <div className="p-0.5 bg-red-100 rounded">
-                                    <XCircle className="w-3.5 h-3.5 text-red-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] text-gray-500">Rejeitado por</p>
-                                    <p className="text-sm font-medium text-red-700">{request.approved_by}</p>
-                                  </div>
-                                </div>
-                              )}
-                              {request.status === 'pendente' && (
-                                <div className="flex items-center gap-1.5 text-gray-600">
-                                  <div className="p-0.5 bg-yellow-100 rounded">
-                                    <Clock className="w-3.5 h-3.5 text-yellow-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] text-gray-500">Status</p>
-                                    <p className="text-sm font-medium text-yellow-700">Aguardando aprovação</p>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {request.description && (
-                              <div className="mb-2 p-2 bg-gray-50 rounded text-xs">
-                                <p className="text-xs font-medium text-gray-700 mb-0.5">Descrição:</p>
-                                <p className="text-xs text-gray-600 leading-snug line-clamp-2">{request.description}</p>
-                              </div>
-                            )}
-
-                            {request.notes && (
-                              <div className="mb-2 p-2 bg-blue-50 rounded border-l-2 border-blue-200 text-xs">
-                                <p className="text-xs font-medium text-blue-800 mb-0.5">Observações do Gerente:</p>
-                                <p className="text-xs text-blue-700 leading-snug line-clamp-2">{request.notes}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5 justify-end pt-2 border-t border-gray-100">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditRequest(request)}
-                            className="flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 h-7 text-xs px-2"
-                          >
-                            <Edit className="w-3 h-3" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteRequest(request)}
-                            className="flex items-center gap-1.5 text-red-600 border-red-200 hover:bg-red-50 h-7 text-xs px-2"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Cancelar
-                          </Button>
-                          {request.status === 'aprovado' && !request.job_created && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleCreateJobFromRequest(request.id)}
-                              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white h-7 text-xs px-2"
-                              disabled={createJobFromRequest.isPending}
-                            >
-                              {createJobFromRequest.isPending ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Plus className="w-3 h-3" />
-                              )}
-                              Publicar Vaga
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                      ))}
-                    </div>
-                    {((rhProfile?.role === 'admin' ? allRequestsForAdmin : approvedRequests).filter(r => r.status === 'aprovado' && !r.job_created).length === 0) && (
-                      <div className="text-center py-8 text-gray-500">
-                        <CheckCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                        <p>Nenhuma solicitação aprovada no momento</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  {/* Aba de Reprovadas - Apenas visualização (histórico) */}
-                  <TabsContent value="rejected" className="mt-0">
-                    <div className="grid gap-4">
-                      {rejectedRequests.map((request) => (
-                        <Card key={request.id} className="bg-white border border-red-200 shadow-md hover:shadow-lg transition-shadow duration-200">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="text-lg font-semibold text-gray-900">{request.title}</h3>
-                                  <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
-                                    ✗ Rejeitado
-                                  </Badge>
-                                </div>
-
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
-                                  <div className="flex items-center gap-1.5 text-gray-600">
-                                    <div className="p-0.5 bg-gray-100 rounded">
-                                      <Briefcase className="w-3.5 h-3.5" />
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] text-gray-500">Departamento</p>
-                                      <p className="text-sm font-medium">{request.department}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-gray-600">
-                                    <div className="p-0.5 bg-gray-100 rounded">
-                                      <Users className="w-3.5 h-3.5" />
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] text-gray-500">Localização</p>
-                                      <p className="text-sm font-medium">{request.city}, {request.state}</p>
-                                    </div>
-                                  </div>
-                                  {request.company_contract && (
-                                    <div className="flex items-center gap-1.5 text-gray-600">
-                                      <div className="p-0.5 bg-gray-100 rounded">
-                                        <FileText className="w-3.5 h-3.5" />
-                                      </div>
-                                      <div>
-                                        <p className="text-[10px] text-gray-500">CT</p>
-                                        <p className="text-sm font-medium">{request.company_contract}</p>
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-1.5 text-gray-600">
-                                    <div className="p-0.5 bg-gray-100 rounded">
-                                      <Clock className="w-3.5 h-3.5" />
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] text-gray-500">Carga Horária</p>
-                                      <p className="text-sm font-medium">{request.workload}</p>
-                                    </div>
-                                  </div>
-                                  {request.approved_by && (
-                                    <div className="flex items-center gap-1.5 text-gray-600">
-                                      <div className="p-0.5 bg-red-100 rounded">
-                                        <XCircle className="w-3.5 h-3.5 text-red-600" />
-                                      </div>
-                                      <div>
-                                        <p className="text-[10px] text-gray-500">Rejeitado por</p>
-                                        <p className="text-sm font-medium text-red-700">{request.approved_by}</p>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {request.description && (
-                                  <div className="mb-2 p-2 bg-gray-50 rounded text-xs">
-                                    <p className="text-xs font-medium text-gray-700 mb-0.5">Descrição:</p>
-                                    <p className="text-xs text-gray-600 leading-snug line-clamp-2">{request.description}</p>
-                                  </div>
-                                )}
-
-                                {request.notes && (
-                                  <div className="mb-2 p-2 bg-blue-50 rounded border-l-2 border-blue-200 text-xs">
-                                    <p className="text-xs font-medium text-blue-800 mb-0.5">Observações do Gerente:</p>
-                                    <p className="text-xs text-blue-700 leading-snug">{request.notes}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-1.5 justify-end pt-2 border-t border-gray-100">
-                              {rhProfile?.role === 'admin' && (
-                                <Button
-                                  size="sm"
-                                  onClick={async () => {
-                                    try {
-                                      await updateJobRequestStatus.mutateAsync({
-                                        id: request.id,
-                                        status: 'aprovado',
-                                        notes: 'Reaprovado pelo administrador'
-                                      });
-                                      toast({
-                                        title: "Solicitação reaprovada!",
-                                        description: "A solicitação foi reaprovada e aparecerá na aba de Aprovadas.",
-                                      });
-                                    } catch (error) {
-                                      toast({
-                                        title: "Erro ao reaprovar",
-                                        description: "Não foi possível reaprovar a solicitação.",
-                                        variant: "destructive"
-                                      });
-                                    }
-                                  }}
-                                  className="flex items-center gap-1.5 bg-yellow-600 hover:bg-yellow-700 text-white h-7 text-xs px-2"
-                                  disabled={updateJobRequestStatus.isPending}
-                                >
-                                  {updateJobRequestStatus.isPending ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <CheckCircle className="w-3 h-3" />
-                                  )}
-                                  Reaprovar
-                                </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    {rejectedRequests.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <XCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                        <p>Nenhuma solicitação reprovada no momento</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {isLoading ? (
           <div className="flex flex-col justify-center items-center h-64 gap-4">
@@ -1137,8 +757,8 @@ const JobManagement = () => {
             <div className="text-center">
               <p className="text-lg font-semibold text-gray-700">Erro ao carregar vagas</p>
               <p className="text-sm text-gray-500 mt-1">{jobsError instanceof Error ? jobsError.message : "Erro desconhecido"}</p>
-              <Button 
-                onClick={() => window.location.reload()} 
+              <Button
+                onClick={() => window.location.reload()}
                 className="mt-4"
                 variant="outline"
               >
@@ -1262,87 +882,6 @@ const JobManagement = () => {
         )}
       </CardContent>
 
-      {/* Modal de Edição de Job Request */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit className="w-5 h-5 text-blue-600" />
-              Editar Solicitação de Vaga
-            </DialogTitle>
-          </DialogHeader>
-          {editingRequest && (
-            <JobRequestEditForm
-              request={editingRequest}
-              onSave={handleSaveEditRequest}
-              onCancel={() => setIsEditModalOpen(false)}
-              isLoading={updateJobRequest.isPending}
-              rhProfile={rhProfile}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Confirmação de Exclusão */}
-      {/* Confirmação para cancelar solicitação de vaga */}
-      <SimpleModal
-        open={!!deleteConfirmRequest}
-        onClose={() => setDeleteConfirmRequest(null)}
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Trash2 className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-red-800">Confirmar Cancelamento</h3>
-              <p className="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
-            </div>
-          </div>
-
-          {deleteConfirmRequest && (
-            <div className="p-4 bg-gray-50 rounded-lg border">
-              <p className="font-medium text-gray-900 mb-1">
-                {deleteConfirmRequest.title}
-              </p>
-              <p className="text-sm text-gray-600">
-                {deleteConfirmRequest.department} • {deleteConfirmRequest.city}, {deleteConfirmRequest.state}
-              </p>
-            </div>
-          )}
-
-          <p className="text-gray-700">
-            Tem certeza de que deseja cancelar esta solicitação de vaga?
-            Esta ação removerá permanentemente a solicitação do sistema.
-          </p>
-
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirmRequest(null)}
-            >
-              Manter Solicitação
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteRequest}
-              disabled={deleteJobRequest.isPending}
-            >
-              {deleteJobRequest.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Cancelando...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Cancelar Solicitação
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </SimpleModal>
 
       {/* Confirmação para exclusão de vaga */}
       <SimpleModal
@@ -1368,7 +907,7 @@ const JobManagement = () => {
           )}
 
           <p className="text-gray-700">
-            Tem certeza de que deseja excluir esta vaga? Os candidatos associados continuarão no histórico. 
+            Tem certeza de que deseja excluir esta vaga? Os candidatos associados continuarão no histórico.
             A vaga será marcada como excluída (soft delete) e pode ser recuperada na seção "Vagas Excluídas".
           </p>
 
@@ -1813,423 +1352,6 @@ const JobForm = ({
       </fieldset>
     </form>
   )
-};
-
-// Componente para formulário de edição de job request
-const JobRequestEditForm = ({
-  request,
-  onSave,
-  onCancel,
-  isLoading,
-  rhProfile
-}: {
-  request: JobRequest;
-  onSave: (data: Partial<CreateJobRequestData>) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-  rhProfile?: RHUser | null;
-}) => {
-  const [formData, setFormData] = useState({
-    title: request.title || '',
-    department: request.department || '',
-    // Limpar distrito se a cidade tiver formato "Cidade - Distrito"
-    city: request.city ? request.city.split(' - ')[0] : '',
-    state: request.state || '',
-    type: request.type || 'CLT',
-    description: request.description || '',
-    requirements: Array.isArray(request.requirements) ? request.requirements : [],
-    benefits: Array.isArray(request.benefits) ? request.benefits : [],
-    workload: request.workload || '40h/semana',
-    justification: request.justification || '',
-    // Campos adicionais para completar a vaga
-    solicitante_nome: request.solicitante_nome || '',
-    solicitante_funcao: request.solicitante_funcao || '',
-    observacoes_internas: request.observacoes_internas || '',
-    tipo_solicitacao: request.tipo_solicitacao || 'aumento_quadro',
-    nome_substituido: request.nome_substituido || '',
-    quantity: request.quantity || 1,
-    company_contract: request.company_contract || ''
-  });
-
-  // Estados para lista suspensa de estados e cidades
-  const [states, setStates] = useState<State[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [loadingStates, setLoadingStates] = useState(true);
-  const [loadingCities, setLoadingCities] = useState(false);
-  const [openCityPopover, setOpenCityPopover] = useState(false);
-
-  // Buscar estados
-  useEffect(() => {
-    const fetchStates = async () => {
-      try {
-        setLoadingStates(true);
-        const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
-        let data = await response.json();
-
-        // Filtrar estados se o usuário tiver restrições
-        if (rhProfile && !rhProfile.is_admin && rhProfile.assigned_states && rhProfile.assigned_states.length > 0) {
-          data = data.filter((state: State) => rhProfile.assigned_states.includes(state.sigla));
-        }
-
-        setStates(data);
-      } catch (error) {
-        console.error("Erro ao buscar estados:", error);
-      } finally {
-        setLoadingStates(false);
-      }
-    };
-    fetchStates();
-  }, [rhProfile]);
-
-  // Buscar cidades quando estado é selecionado
-  useEffect(() => {
-    if (!formData.state) {
-      setCities([]);
-      return;
-    }
-
-    const fetchCities = async () => {
-      try {
-        setLoadingCities(true);
-
-        // Primeiro buscar o ID do estado pela sigla
-        const stateResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${formData.state}`);
-        const stateData = await stateResponse.json();
-
-        if (stateData && stateData.id) {
-          // Agora buscar as cidades usando o ID do estado
-          const citiesResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateData.id}/municipios?orderBy=nome`);
-          const citiesData = await citiesResponse.json();
-          setCities(citiesData);
-        } else {
-          console.error("Estado não encontrado:", formData.state);
-          setCities([]);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar cidades:", error);
-        setCities([]);
-      } finally {
-        setLoadingCities(false);
-      }
-    };
-    fetchCities();
-  }, [formData.state]);
-
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Se mudou o estado, resetar cidade
-    if (field === 'state') {
-      setFormData(prev => ({ ...prev, [field]: value, city: '' }));
-    }
-  };
-
-  const handleStateChange = (value: string) => {
-    handleChange('state', value);
-  };
-
-  const handleCitySelect = (cityName: string) => {
-    setFormData(prev => ({ ...prev, city: cityName }));
-    setOpenCityPopover(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <JobTitleSelect
-          value={formData.title || ""}
-          onChange={(value) => handleChange('title', value)}
-          required
-          maxLength={255}
-          id="title"
-        />
-        <div className="space-y-2">
-          <Label htmlFor="department">Departamento *</Label>
-          <Select value={formData.department} onValueChange={(value) => handleChange('department', value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {departments.map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="company_contract">CT *</Label>
-          <Select value={formData.company_contract || ""} onValueChange={(value) => handleChange('company_contract', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o contrato" />
-            </SelectTrigger>
-            <SelectContent>
-              {contracts.map(contract => (
-                <SelectItem key={contract} value={contract}>{contract}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="state">Estado *</Label>
-          <Select 
-            value={formData.state} 
-            onValueChange={handleStateChange}
-            disabled={loadingStates}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={loadingStates ? "Carregando..." : "Selecione o estado"} />
-            </SelectTrigger>
-            <SelectContent>
-              {loadingStates ? (
-                <div className="flex items-center justify-center p-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                </div>
-              ) : (
-                states.map(state => (
-                  <SelectItem key={state.sigla} value={state.sigla}>
-                    {state.nome}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="workload">Carga Horária *</Label>
-          <Select value={formData.workload} onValueChange={(value) => handleChange('workload', value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="40h/semana">40h/semana</SelectItem>
-              <SelectItem value="44h/semana">44h/semana</SelectItem>
-              <SelectItem value="36h/semana">36h/semana</SelectItem>
-              <SelectItem value="30h/semana">30h/semana</SelectItem>
-              <SelectItem value="20h/semana">20h/semana</SelectItem>
-              <SelectItem value="Meio período">Meio período</SelectItem>
-              <SelectItem value="Período integral">Período integral</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="city">Cidade *</Label>
-          <Popover open={openCityPopover} onOpenChange={setOpenCityPopover}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openCityPopover}
-                className="w-full justify-between"
-                disabled={!formData.state || loadingCities}
-              >
-                <span className="truncate">
-                  {loadingCities
-                    ? "Carregando cidades..."
-                    : (formData.city ? formData.city : "Selecione a cidade")
-                  }
-                </span>
-                {loadingCities ? (
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-              <Command>
-                <CommandInput placeholder="Buscar cidade..." />
-                <CommandList>
-                  {loadingCities ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      <span>Carregando cidades...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
-                      <CommandGroup>
-                        {cities.map((city) => (
-                          <CommandItem
-                            key={city.id}
-                            value={city.nome}
-                            onSelect={() => handleCitySelect(city.nome)}
-                          >
-                            {city.nome}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </>
-                  )}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Descrição da Vaga *</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => handleChange('description', e.target.value)}
-          rows={4}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="justification">Justificativa</Label>
-        <Textarea
-          id="justification"
-          value={formData.justification}
-          onChange={(e) => handleChange('justification', e.target.value)}
-          rows={3}
-          placeholder="Justifique a necessidade desta vaga..."
-        />
-      </div>
-
-      {/* Campos adicionais para completar a vaga */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="requirements">Requisitos (um por linha)</Label>
-          <Textarea
-            id="requirements"
-            value={Array.isArray(formData.requirements) ? formData.requirements.join('\n') : ''}
-            onChange={(e) => handleChange('requirements', e.target.value.split('\n').filter(r => r.trim()))}
-            rows={5}
-            placeholder="Digite os requisitos da vaga..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="benefits">Benefícios (um por linha)</Label>
-          <Textarea
-            id="benefits"
-            value={Array.isArray(formData.benefits) ? formData.benefits.join('\n') : ''}
-            onChange={(e) => handleChange('benefits', e.target.value.split('\n').filter(b => b.trim()))}
-            rows={5}
-            placeholder="Digite os benefícios oferecidos..."
-          />
-        </div>
-      </div>
-
-      {/* Campos de Controle Interno */}
-      <div className="border-t pt-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">📋 Controle Interno</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="solicitante_nome">Nome do Solicitante</Label>
-            <Input
-              id="solicitante_nome"
-              value={formData.solicitante_nome || ''}
-              onChange={(e) => handleChange('solicitante_nome', e.target.value)}
-              placeholder="Ex: João Silva"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="solicitante_funcao">Gerente Responsável</Label>
-            <Input
-              id="solicitante_funcao"
-              value={formData.solicitante_funcao || ''}
-              onChange={(e) => handleChange('solicitante_funcao', e.target.value)}
-              placeholder="Ex: Fernando Sousa - Gerente Tático - CT .150.35"
-            />
-          </div>
-        </div>
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="observacoes_internas">Observações Internas</Label>
-          <Textarea
-            id="observacoes_internas"
-            value={formData.observacoes_internas || ''}
-            onChange={(e) => handleChange('observacoes_internas', e.target.value)}
-            placeholder="Observações adicionais para controle interno..."
-            rows={2}
-          />
-        </div>
-
-        {/* Tipo de Solicitação */}
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="tipo_solicitacao">Tipo de Solicitação</Label>
-          <Select
-            value={formData.tipo_solicitacao || 'aumento_quadro'}
-            onValueChange={(value) => handleChange('tipo_solicitacao', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo de solicitação" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="aumento_quadro">Aumento de Quadro</SelectItem>
-              <SelectItem value="substituicao">Substituição</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Campo condicional para substituição */}
-        {formData.tipo_solicitacao === "substituicao" && (
-          <div className="space-y-2 mt-4">
-            <Label htmlFor="nome_substituido">Nomes das Pessoas que Sairam</Label>
-            <Textarea
-              id="nome_substituido"
-              value={formData.nome_substituido || ''}
-              onChange={(e) => handleChange('nome_substituido', e.target.value)}
-              placeholder="Digite 1 nome por linha (até 20 nomes recomendados)"
-              rows={6}
-            />
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500">ℹ️ Um nome por linha. Campo aceita múltiplos nomes.</p>
-              <p className={`text-xs ${((formData.nome_substituido || '').split('\n').filter(n => n.trim()).length > 20) ? 'text-red-600' : 'text-gray-500'}`}>
-                {((formData.nome_substituido || '').split('\n').filter(n => n.trim()).length)} nomes {((formData.nome_substituido || '').split('\n').filter(n => n.trim()).length > 20) ? '(recomendado até 20)' : ''}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Quantidade de vagas */}
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="quantity">Quantidade de Vagas</Label>
-          <Input
-            id="quantity"
-            type="number"
-            min="1"
-            max="50"
-            value={formData.quantity || 1}
-            onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 1)}
-            placeholder="1"
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-3 justify-end pt-4 border-t">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Edit className="w-4 h-4 mr-2" />
-              Salvar Alterações
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
-  );
 };
 
 export default JobManagement;
