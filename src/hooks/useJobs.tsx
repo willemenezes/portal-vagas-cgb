@@ -109,7 +109,7 @@ export const useAllJobs = () => {
     queryFn: async () => {
       console.log('🔄 [useAllJobs] Iniciando busca de vagas...');
       const startTime = performance.now();
-      
+
       try {
         // OTIMIZAÇÃO: Selecionar apenas campos necessários para melhor performance
         // Evitar select('*') que traz todos os campos e pode ser lento
@@ -132,7 +132,6 @@ export const useAllJobs = () => {
             quantity,
             quantity_filled,
             expires_at,
-            hired_count,
             created_at,
             updated_at,
             created_by,
@@ -142,7 +141,8 @@ export const useAllJobs = () => {
             solicitante_nome,
             solicitante_funcao,
             observacoes_internas,
-            rejection_reason
+            rejection_reason,
+            company_contract
           `)
           .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
           .order('created_at', { ascending: false })
@@ -258,7 +258,7 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
       // Verificar tanto role === 'admin' quanto is_admin === true para garantir
       const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
       const isRecruiter = rhProfile?.role === 'recruiter';
-      
+
       if (isAdmin || isRecruiter) {
         console.log('✅ [usePendingJobs] Admin/Recrutador detectado - Buscando TODAS as vagas pendentes (SEM FILTROS)');
         console.log('🔍 [usePendingJobs] Detalhes:', {
@@ -293,7 +293,7 @@ export const usePendingJobs = (rhProfile: RHUser | null | undefined) => {
       const { data, error } = await query;
 
       console.log('📊 [usePendingJobs] Resultado:', data?.length || 0, 'vagas encontradas para role:', rhProfile?.role);
-      
+
       // DEBUG: Listar TODAS as vagas encontradas com detalhes
       if (data && data.length > 0) {
         console.log('📋 [usePendingJobs] Vagas pendentes encontradas:', data.map(j => ({
@@ -401,14 +401,14 @@ export const useUpdateJob = () => {
         console.error('❌ [useUpdateJob] Erro ao atualizar vaga:', error);
         throw error;
       }
-      
+
       console.log('✅ [useUpdateJob] Vaga atualizada no banco:', {
         id: data?.id,
         flow_status: data?.flow_status,
         quantity: data?.quantity,
         approval_status: data?.approval_status
       });
-      
+
       return data;
     },
     onSuccess: async (data) => {
@@ -420,12 +420,12 @@ export const useUpdateJob = () => {
         status: data?.status,
         flow_status: data?.flow_status
       });
-      
+
       // BUG FIX: Invalidar TODAS as queries relacionadas para atualização automática da UI
       await queryClient.invalidateQueries({ queryKey: ['jobs'] });
       await queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       await queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
-      
+
       // CORREÇÃO CRÍTICA: Invalidar pendingJobs para TODOS os usuários (admin, gerente, recrutador)
       console.log('🔄 [useUpdateJob] ===== INVALIDANDO PENDINGJOBS =====');
       await queryClient.invalidateQueries({
@@ -438,34 +438,34 @@ export const useUpdateJob = () => {
         },
         refetchType: 'all'
       });
-      
+
       // EXTRA: Forçar refetch imediato de todas as queries pendingJobs
       const allQueries = queryClient.getQueryCache().getAll();
       const pendingJobsQueries = allQueries.filter(q => q.queryKey[0] === 'pendingJobs');
       console.log('🔍 [useUpdateJob] Encontradas', pendingJobsQueries.length, 'queries de pendingJobs para refetch');
-      
+
       for (const query of pendingJobsQueries) {
         console.log('🔄 [useUpdateJob] Forçando refetch para:', query.queryKey);
         await queryClient.refetchQueries({ queryKey: query.queryKey, type: 'active' });
       }
-      
+
       // CORREÇÃO CRÍTICA: Invalidar pendingJobs para TODOS os usuários (admin, gerente, recrutador)
       // Usar predicate para invalidar todas as variações da queryKey
-      const invalidatedPending = queryClient.invalidateQueries({ 
+      const invalidatedPending = queryClient.invalidateQueries({
         predicate: (query) => {
           return query.queryKey[0] === 'pendingJobs';
         }
       });
-      
+
       console.log('✅ [useUpdateJob] Cache de pendingJobs invalidado!');
       console.log('🔄 [useUpdateJob] ===== FIM DA ATUALIZAÇÃO =====');
-      
+
       // CORREÇÃO CRÍTICA: Invalidar e refetch allJobs para garantir que estatísticas sejam atualizadas
       console.log('🔄 [useUpdateJob] Invalidando allJobs para atualizar estatísticas...');
       await queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       await queryClient.refetchQueries({ queryKey: ['allJobs'], type: 'active' });
       console.log('✅ [useUpdateJob] allJobs invalidado e refetchado!');
-      
+
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });
     },
@@ -481,7 +481,7 @@ export const useDeleteJob = () => {
       // SOFT DELETE: Marcar como excluída em vez de deletar fisicamente
       const { error } = await supabase
         .from('jobs')
-        .update({ 
+        .update({
           deleted_at: new Date().toISOString(),
           deleted_by: user?.id || null,
           updated_at: new Date().toISOString()
@@ -544,7 +544,7 @@ export const useDeletedJobs = () => {
 
       // Buscar informações dos usuários que excluíram
       const userIds = [...new Set(jobs.map(j => j.deleted_by).filter(Boolean))];
-      
+
       if (userIds.length === 0) {
         return jobs.map((job: any) => ({
           ...job,
@@ -569,10 +569,10 @@ export const useDeletedJobs = () => {
       return jobs.map((job: any) => {
         const user = job.deleted_by ? usersMap.get(job.deleted_by) : null;
         const deletedDate = job.deleted_at ? new Date(job.deleted_at) : null;
-        const daysUntilPermanent = deletedDate 
+        const daysUntilPermanent = deletedDate
           ? Math.max(0, 30 - Math.floor((Date.now() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)))
           : null;
-        
+
         return {
           ...job,
           deleted_by_name: user?.full_name || null,
