@@ -231,7 +231,10 @@ export const useAllCandidates = (rhProfile?: { role?: string; assigned_states?: 
       })) as Candidate[];
     },
     staleTime: 10 * 60 * 1000, // 10 minutos de cache (mais longo para dados completos)
-    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Não refazer ao montar para evitar delay no carregamento
+    refetchOnWindowFocus: false, // Não refazer ao focar para evitar delay
+    gcTime: 20 * 60 * 1000, // 20 minutos de cache (aumentado para dados pesados)
+    retry: 1, // Reduzir tentativas para resposta mais rápida
   });
 };
 

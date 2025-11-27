@@ -91,7 +91,29 @@ export const useAllResumes = (rhProfile?: { role?: string; assigned_states?: str
       while (hasMore) {
         let query = supabase
           .from('resumes')
-          .select('*')
+          .select(`
+            id,
+            name,
+            email,
+            phone,
+            city,
+            state,
+            position,
+            submitted_date,
+            resume_file_url,
+            resume_file_name,
+            age,
+            workedAtCGB,
+            whatsapp,
+            pcd,
+            travel,
+            cnh,
+            vehicle,
+            vehicleModel,
+            vehicleYear,
+            created_at,
+            updated_at
+          `)
           .order('submitted_date', { ascending: false })
           .range(from, from + batchSize - 1);
 
@@ -129,7 +151,10 @@ export const useAllResumes = (rhProfile?: { role?: string; assigned_states?: str
       return allResumes;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos de cache
-    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Não refazer ao montar para evitar delay no carregamento
+    refetchOnWindowFocus: false, // Não refazer ao focar para evitar delay
+    gcTime: 20 * 60 * 1000, // 20 minutos de cache (aumentado para dados pesados)
+    retry: 1, // Reduzir tentativas para resposta mais rápida
   });
 };
 

@@ -111,10 +111,39 @@ export const useAllJobs = () => {
       const startTime = performance.now();
       
       try {
-        // OTIMIZAÇÃO: Adicionar limite de segurança para evitar sobrecarga
+        // OTIMIZAÇÃO: Selecionar apenas campos necessários para melhor performance
+        // Evitar select('*') que traz todos os campos e pode ser lento
         const { data: jobs, error } = await supabase
           .from('jobs')
-          .select('*')
+          .select(`
+            id,
+            title,
+            department,
+            city,
+            state,
+            type,
+            description,
+            requirements,
+            benefits,
+            workload,
+            status,
+            approval_status,
+            flow_status,
+            quantity,
+            quantity_filled,
+            expires_at,
+            hired_count,
+            created_at,
+            updated_at,
+            created_by,
+            created_by_name,
+            approved_by,
+            approved_by_name,
+            solicitante_nome,
+            solicitante_funcao,
+            observacoes_internas,
+            rejection_reason
+          `)
           .is('deleted_at', null) // SOFT DELETE: Apenas vagas não excluídas
           .order('created_at', { ascending: false })
           .limit(1000); // Limite de segurança
@@ -152,13 +181,13 @@ export const useAllJobs = () => {
         throw error;
       }
     },
-    retry: 2, // Aumentar para 2 tentativas
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Exponential backoff
-    staleTime: 3 * 60 * 1000, // 3 minutos
+    retry: 1, // Reduzir tentativas para resposta mais rápida em caso de erro
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff mais rápido
+    staleTime: 5 * 60 * 1000, // 5 minutos (aumentado para reduzir refetch)
     refetchOnMount: false, // Não refazer ao montar para evitar delay
     refetchOnWindowFocus: false, // Não refazer ao focar para evitar delay
     refetchInterval: false, // Desabilitar refetch automático para evitar sobrecarga
-    gcTime: 10 * 60 * 1000, // 10 minutos de cache
+    gcTime: 15 * 60 * 1000, // 15 minutos de cache (aumentado)
   });
 };
 
