@@ -354,6 +354,13 @@ export const useUpdateJob = () => {
         ...validJobFields
       } = job;
 
+      console.log('🔄 [useUpdateJob] Atualizando vaga:', {
+        id,
+        fields: validJobFields,
+        flow_status: validJobFields.flow_status,
+        quantity: validJobFields.quantity
+      });
+
       const { data, error } = await supabase
         .from('jobs')
         .update(validJobFields)
@@ -361,7 +368,18 @@ export const useUpdateJob = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useUpdateJob] Erro ao atualizar vaga:', error);
+        throw error;
+      }
+      
+      console.log('✅ [useUpdateJob] Vaga atualizada no banco:', {
+        id: data?.id,
+        flow_status: data?.flow_status,
+        quantity: data?.quantity,
+        approval_status: data?.approval_status
+      });
+      
       return data;
     },
     onSuccess: async (data) => {
@@ -412,6 +430,12 @@ export const useUpdateJob = () => {
       
       console.log('✅ [useUpdateJob] Cache de pendingJobs invalidado!');
       console.log('🔄 [useUpdateJob] ===== FIM DA ATUALIZAÇÃO =====');
+      
+      // CORREÇÃO CRÍTICA: Invalidar e refetch allJobs para garantir que estatísticas sejam atualizadas
+      console.log('🔄 [useUpdateJob] Invalidando allJobs para atualizar estatísticas...');
+      await queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      await queryClient.refetchQueries({ queryKey: ['allJobs'], type: 'active' });
+      console.log('✅ [useUpdateJob] allJobs invalidado e refetchado!');
       
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['candidatesByJob'] });

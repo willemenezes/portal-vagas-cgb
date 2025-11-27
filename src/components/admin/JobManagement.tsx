@@ -222,6 +222,36 @@ const JobManagement = () => {
   const getQuantity = (job: Job) => job.quantity || 1; // Se não tiver quantity, assume 1
   
   const stats = React.useMemo(() => {
+    // DEBUG: Log para verificar vagas concluídas
+    const completedJobs = jobsDeduped.filter(job => {
+      const flowStatus = String(job.flow_status || '').toLowerCase().trim();
+      return flowStatus === 'concluida';
+    });
+    
+    console.log('📊 [JobManagement] Calculando estatísticas:', {
+      totalJobs: jobsDeduped.length,
+      completedJobsCount: completedJobs.length,
+      completedJobsDetails: completedJobs.map(j => ({
+        id: j.id,
+        title: j.title,
+        flow_status: j.flow_status,
+        quantity: j.quantity,
+        approval_status: j.approval_status
+      }))
+    });
+    
+    const completedSum = jobsDeduped.reduce((sum, job) => {
+      const flowStatus = String(job.flow_status || '').toLowerCase().trim();
+      if (flowStatus === 'concluida') {
+        const qty = getQuantity(job);
+        console.log(`✅ [JobManagement] Contando vaga concluída: ${job.title} (quantity: ${qty}, flow_status: ${job.flow_status})`);
+        return sum + qty;
+      }
+      return sum;
+    }, 0);
+    
+    console.log('📊 [JobManagement] Total de vagas concluídas calculado:', completedSum);
+    
     return {
       total: jobsDeduped.reduce((sum, job) => sum + getQuantity(job), 0),
       expired: jobsDeduped.reduce((sum, job) => {
@@ -243,12 +273,7 @@ const JobManagement = () => {
         }
         return sum;
       }, 0),
-      completed: jobsDeduped.reduce((sum, job) => {
-        if (job.flow_status === 'concluida') {
-          return sum + getQuantity(job);
-        }
-        return sum;
-      }, 0),
+      completed: completedSum,
       congelada: jobsDeduped.reduce((sum, job) => {
         if (job.flow_status === 'congelada') {
           return sum + getQuantity(job);

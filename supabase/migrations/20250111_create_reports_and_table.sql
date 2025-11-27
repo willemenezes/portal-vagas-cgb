@@ -109,3 +109,4 @@ COMMENT ON COLUMN public.candidate_reports.metadata IS 'Campos adicionais: vers√
 
 
 
+
