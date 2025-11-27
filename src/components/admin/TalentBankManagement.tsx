@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +45,8 @@ const TalentBankManagement = () => {
     const [resumeToInvite, setResumeToInvite] = useState<Resume | null>(null);
     const [selectedJobId, setSelectedJobId] = useState<string>('');
     const [isInviting, setIsInviting] = useState(false);
+    const [jobSearchOpen, setJobSearchOpen] = useState(false);
+    const [jobSearchTerm, setJobSearchTerm] = useState('');
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
         // Scroll para o topo da lista quando mudar de página
@@ -55,11 +60,13 @@ const TalentBankManagement = () => {
         return talentJob ? talentJob.id : null;
     }, [allJobs]);
 
-    // Filtrar vagas ativas (excluindo Banco de Talentos)
+    // Filtrar apenas vagas ativas (flow_status='ativa' e quantity>0) excluindo Banco de Talentos
     const availableJobs = useMemo(() => {
         return allJobs.filter(job =>
-            job.status === 'active' &&
-            job.title !== "Banco de Talentos"
+            job.title !== "Banco de Talentos" &&
+            job.flow_status === 'ativa' &&
+            (job.quantity ?? 0) > 0 &&
+            !job.deleted_at
         );
     }, [allJobs]);
 
@@ -107,7 +114,7 @@ const TalentBankManagement = () => {
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '') // Remove acentos
             .trim();
-        
+
         if (vehicleLower.includes('carro')) return 'carro';
         if (vehicleLower.includes('moto')) return 'moto';
         if (vehicleLower.includes('nao') || vehicleLower.includes('não') || vehicleLower.includes('não possuo')) return 'nao';
@@ -438,7 +445,14 @@ const TalentBankManagement = () => {
             </Card>
 
             {/* Dialog para Convite para Vaga */}
-            <Dialog open={!!resumeToInvite} onOpenChange={() => setResumeToInvite(null)}>
+            <Dialog open={!!resumeToInvite} onOpenChange={(open) => {
+                if (!open) {
+                    setResumeToInvite(null);
+                    setSelectedJobId('');
+                    setJobSearchOpen(false);
+                    setJobSearchTerm('');
+                }
+            }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
@@ -453,31 +467,72 @@ const TalentBankManagement = () => {
                     <div className="space-y-4">
                         <div>
                             <label className="text-sm font-medium">Selecione a Vaga:</label>
-                            <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue placeholder="Escolha uma vaga..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableJobs.map(job => {
-                                        const isCompatible = resumeToInvite ? getCompatibleJobs(resumeToInvite).some(j => j.id === job.id) : false;
-                                        return (
-                                            <SelectItem key={job.id} value={job.id}>
-                                                <div className="flex items-center gap-2">
-                                                    <span>{job.title}</span>
-                                                    {isCompatible && (
-                                                        <Badge variant="secondary" className="text-xs">
-                                                            Compatível
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {job.city}, {job.state}
-                                                </div>
-                                            </SelectItem>
-                                        );
-                                    })}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={jobSearchOpen} onOpenChange={setJobSearchOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={jobSearchOpen}
+                                        className="w-full mt-2 justify-between"
+                                    >
+                                        <span className="truncate">
+                                            {selectedJobId
+                                                ? availableJobs.find(job => job.id === selectedJobId)?.title || "Escolha uma vaga..."
+                                                : "Escolha uma vaga..."}
+                                        </span>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                    <Command>
+                                        <CommandInput
+                                            placeholder="Buscar vaga..."
+                                            value={jobSearchTerm}
+                                            onValueChange={setJobSearchTerm}
+                                        />
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma vaga encontrada.</CommandEmpty>
+                                            <CommandGroup>
+                                                {availableJobs
+                                                    .filter(job =>
+                                                        jobSearchTerm === '' ||
+                                                        job.title.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+                                                        job.city.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+                                                        job.department.toLowerCase().includes(jobSearchTerm.toLowerCase())
+                                                    )
+                                                    .map(job => {
+                                                        const isCompatible = resumeToInvite ? getCompatibleJobs(resumeToInvite).some(j => j.id === job.id) : false;
+                                                        return (
+                                                            <CommandItem
+                                                                key={job.id}
+                                                                value={job.id}
+                                                                onSelect={() => {
+                                                                    setSelectedJobId(job.id);
+                                                                    setJobSearchOpen(false);
+                                                                    setJobSearchTerm('');
+                                                                }}
+                                                            >
+                                                                <div className="flex flex-col w-full">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-medium">{job.title}</span>
+                                                                        {isCompatible && (
+                                                                            <Badge variant="secondary" className="text-xs">
+                                                                                Compatível
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs text-gray-500">
+                                                                        {job.city}, {job.state} • {job.department}
+                                                                    </span>
+                                                                </div>
+                                                            </CommandItem>
+                                                        );
+                                                    })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         {selectedJobId && resumeToInvite && (

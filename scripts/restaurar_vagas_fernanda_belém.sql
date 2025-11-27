@@ -132,3 +132,4 @@ WHERE
 -- 1. Executar o script buscar_vagas_por_titulo.sql para encontrar os IDs exatos
 -- 2. Usar o script restaurar_vaga_especifica_por_id.sql com os IDs encontrados
 
+

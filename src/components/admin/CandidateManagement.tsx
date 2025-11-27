@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Loader2, Search, FileText, MapPin, Briefcase, Users, Trash2, UserPlus, Send, ChevronLeft, ChevronRight, AlertTriangle, ChevronsUpDown } from 'lucide-react';
 import { ResumeButton } from './ResumeButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ import { useCandidatesCounts } from '@/hooks/useCandidates';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const CandidateManagement = () => {
   const { user } = useAuth();
@@ -47,8 +49,8 @@ const CandidateManagement = () => {
   // 🔥 CORREÇÃO: Passar filtro de vaga para o hook aplicar no servidor
   // MOVIDO PARA DEPOIS da declaração de filters para evitar erro de inicialização
   const { data: candidatesData, isLoading, error } = useCandidates(
-    currentPage, 
-    pageSize, 
+    currentPage,
+    pageSize,
     { jobId: filters.jobId !== 'all' ? filters.jobId : null }
   );
   const candidates = candidatesData?.candidates || [];
@@ -59,6 +61,8 @@ const CandidateManagement = () => {
   const [candidateToInvite, setCandidateToInvite] = useState<Candidate | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [isInviting, setIsInviting] = useState(false);
+  const [jobSearchOpen, setJobSearchOpen] = useState(false);
+  const [jobSearchTerm, setJobSearchTerm] = useState('');
 
   const talentBankJobId = useMemo(() => jobs.find(job => job.title === "Banco de Talentos")?.id, [jobs]);
 
@@ -72,25 +76,25 @@ const CandidateManagement = () => {
   // Isso garante que ao filtrar por vaga, os candidatos apareçam imediatamente na página 1
   useEffect(() => {
     const jobIdChanged = previousJobIdRef.current !== filters.jobId;
-    
+
     if (jobIdChanged) {
       console.log('🔄 [CandidateManagement] Filtro de vaga mudou:', {
         anterior: previousJobIdRef.current,
         novo: filters.jobId
       });
-      
+
       // 1. Resetar página para 0 ANTES de invalidar
       setCurrentPage(0);
-      
+
       // 2. Invalidar todas as queries de candidatos para forçar refetch
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: ['candidates', 'paginated'],
         refetchType: 'active' // Refetch apenas queries ativas
       });
-      
+
       // 3. Atualizar referência
       previousJobIdRef.current = filters.jobId;
-      
+
       // 4. Scroll para o topo
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -100,8 +104,8 @@ const CandidateManagement = () => {
   useEffect(() => {
     // Apenas resetar página se não for mudança de jobId (já tratado acima)
     if (previousJobIdRef.current === filters.jobId) {
-    setCurrentPage(0);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      setCurrentPage(0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [filters.status, filters.state, filters.cnh, filters.vehicle, searchTerm]);
 
@@ -204,7 +208,15 @@ const CandidateManagement = () => {
     return result;
   }, [candidates, searchTerm, filters, talentBankJobId, rhProfile]);
 
-  const jobsForFilter = useMemo(() => jobs.filter(job => job.id !== talentBankJobId), [jobs, talentBankJobId]);
+  // Filtrar apenas vagas ativas (flow_status='ativa' e quantity>0) para convites
+  const jobsForFilter = useMemo(() => {
+    return jobs.filter(job =>
+      job.id !== talentBankJobId &&
+      job.flow_status === 'ativa' &&
+      (job.quantity ?? 0) > 0 &&
+      !job.deleted_at
+    );
+  }, [jobs, talentBankJobId]);
 
   const summary = useMemo(() => {
     if (!Array.isArray(filteredCandidates)) return { Total: 0 };
@@ -461,7 +473,14 @@ const CandidateManagement = () => {
       </Card>
 
       {/* Dialog para Convite para Nova Vaga */}
-      <Dialog open={!!candidateToInvite} onOpenChange={() => setCandidateToInvite(null)}>
+      <Dialog open={!!candidateToInvite} onOpenChange={(open) => {
+        if (!open) {
+          setCandidateToInvite(null);
+          setSelectedJobId('');
+          setJobSearchOpen(false);
+          setJobSearchTerm('');
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -476,23 +495,62 @@ const CandidateManagement = () => {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Selecione a Nova Vaga:</label>
-              <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Escolha uma vaga..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobsForFilter.map(job => (
-                    <SelectItem key={job.id} value={job.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{job.title}</span>
-                        <span className="text-xs text-gray-500">
-                          {job.city}, {job.state}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={jobSearchOpen} onOpenChange={setJobSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={jobSearchOpen}
+                    className="w-full mt-2 justify-between"
+                  >
+                    <span className="truncate">
+                      {selectedJobId
+                        ? jobsForFilter.find(job => job.id === selectedJobId)?.title || "Escolha uma vaga..."
+                        : "Escolha uma vaga..."}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="Buscar vaga..."
+                      value={jobSearchTerm}
+                      onValueChange={setJobSearchTerm}
+                    />
+                    <CommandList>
+                      <CommandEmpty>Nenhuma vaga encontrada.</CommandEmpty>
+                      <CommandGroup>
+                        {jobsForFilter
+                          .filter(job =>
+                            jobSearchTerm === '' ||
+                            job.title.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+                            job.city.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+                            job.department.toLowerCase().includes(jobSearchTerm.toLowerCase())
+                          )
+                          .map(job => (
+                            <CommandItem
+                              key={job.id}
+                              value={job.id}
+                              onSelect={() => {
+                                setSelectedJobId(job.id);
+                                setJobSearchOpen(false);
+                                setJobSearchTerm('');
+                              }}
+                            >
+                              <div className="flex flex-col w-full">
+                                <span className="font-medium">{job.title}</span>
+                                <span className="text-xs text-gray-500">
+                                  {job.city}, {job.state} • {job.department}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {selectedJobId && candidateToInvite && (
