@@ -1970,6 +1970,17 @@ const JobRequestsManagement = () => {
                                 if (!editFormData) return;
                                     
                                     try {
+                                        // Valores válidos para tipo de contrato
+                                        const validContractTypes = ['CLT', 'Estágio', 'Aprendiz', 'Terceirizado', 'Temporário', 'PJ', 'Freelancer'];
+                                        const contractType = validContractTypes.includes(editFormData.type) 
+                                            ? editFormData.type 
+                                            : 'CLT'; // Fallback para CLT se inválido
+                                        
+                                        console.log('📝 [Edit] Validando tipo de contrato:', {
+                                            original: editFormData.type,
+                                            validado: contractType
+                                        });
+                                        
                                         await updateJobRequest.mutateAsync({
                                             id: editFormData.id,
                                             data: {
@@ -1977,7 +1988,7 @@ const JobRequestsManagement = () => {
                                                 department: editFormData.department,
                                                 city: editFormData.city,
                                                 state: editFormData.state,
-                                                type: editFormData.type,
+                                                type: contractType, // Usar valor validado
                                                 description: editFormData.description,
                                                 requirements: editFormData.requirements.split('\n').filter(r => r.trim() !== ''),
                                                 benefits: editFormData.benefits.split('\n').filter(b => b.trim() !== ''),
