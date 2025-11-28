@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle, Building, AlertCircle } from 'lucide-react';
+import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle, Building, AlertCircle, ChevronsUpDown } from 'lucide-react';
 import { Job, useUpdateJob, useAllJobs, useDeleteJob, usePendingJobs } from '@/hooks/useJobs';
 import { useJobRequests } from '@/hooks/useJobRequests';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +20,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { departments } from '@/data/departments';
 import { contracts } from '@/data/contracts';
 import { WORKLOAD_OPTIONS } from '@/data/workload-options';
+import { JobTitleSelect } from './JobTitleSelect';
+import { STATES } from '@/data/cities-states';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+
+interface IBGEState {
+    id: number;
+    sigla: string;
+    nome: string;
+}
+
+interface IBGECity {
+    id: number;
+    nome: string;
+}
+
+const CONTRACT_TYPE_OPTIONS = [
+    'CLT',
+    'Estágio',
+    'Aprendiz',
+    'Terceirizado',
+    'Temporário',
+    'PJ',
+    'Freelancer'
+];
 
 const JobRequestsManagement = () => {
     const { toast } = useToast();
@@ -58,6 +83,11 @@ const JobRequestsManagement = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState<any>(null);
     const [userNames, setUserNames] = useState<Record<string, string>>({});
+    const [editStates, setEditStates] = useState<IBGEState[]>([]);
+    const [loadingEditStates, setLoadingEditStates] = useState(false);
+    const [editCities, setEditCities] = useState<IBGECity[]>([]);
+    const [loadingEditCities, setLoadingEditCities] = useState(false);
+    const [isEditCityComboOpen, setIsEditCityComboOpen] = useState(false);
 
     // Paginação para vagas pendentes
     const [pendingPage, setPendingPage] = useState(0);
@@ -113,6 +143,58 @@ const JobRequestsManagement = () => {
             fetchUserNames(allJobs);
         }
     }, [allJobs]);
+
+    useEffect(() => {
+        const fetchStates = async () => {
+            try {
+                setLoadingEditStates(true);
+                const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    setEditStates(data);
+                } else {
+                    setEditStates(STATES.map(state => ({ id: 0, sigla: state.code, nome: state.name })));
+                }
+            } catch (error) {
+                console.error('Erro ao carregar estados para edição:', error);
+                setEditStates(STATES.map(state => ({ id: 0, sigla: state.code, nome: state.name })));
+            } finally {
+                setLoadingEditStates(false);
+            }
+        };
+
+        fetchStates();
+    }, []);
+
+    useEffect(() => {
+        if (!editFormData?.state) {
+            setEditCities([]);
+            return;
+        }
+
+        const fetchCities = async () => {
+            try {
+                setLoadingEditCities(true);
+                const stateResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${editFormData.state}`);
+                const stateData = await stateResponse.json();
+
+                if (stateData && stateData.id) {
+                    const citiesResponse = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateData.id}/municipios?orderBy=nome`);
+                    const citiesData = await citiesResponse.json();
+                    setEditCities(citiesData);
+                } else {
+                    setEditCities([]);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar cidades para edição:', error);
+                setEditCities([]);
+            } finally {
+                setLoadingEditCities(false);
+            }
+        };
+
+        fetchCities();
+    }, [editFormData?.state]);
 
     const getSafeDateLabel = (dateString: string | undefined | null): string => {
         if (!dateString) return 'sem data';
@@ -494,6 +576,11 @@ const JobRequestsManagement = () => {
         }
         return <Badge className="bg-gray-500">Indefinido</Badge>;
     };
+
+    const formattedEditCities = editCities.map((city) => ({
+        label: city.nome,
+        value: city.nome
+    }));
 
     if (isLoadingRequests) {
         return (
@@ -1565,15 +1652,14 @@ const JobRequestsManagement = () => {
                     <div className="space-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-title">Título da Vaga *</Label>
-                                    <Input
-                                        id="edit-title"
-                                        value={String(editFormData.title || '')}
-                                        onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                                        placeholder="Ex: Analista de Sistemas"
-                                    />
-                                </div>
+                                <JobTitleSelect
+                                    id="edit-title"
+                                    value={String(editFormData.title || '')}
+                                    onChange={(value) => setEditFormData({ ...editFormData, title: value })}
+                                    required
+                                    maxLength={255}
+                                    showCharCount
+                                />
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-department">Departamento *</Label>
                                     <Select
@@ -1594,28 +1680,95 @@ const JobRequestsManagement = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-city">Cidade *</Label>
-                                    <Input
-                                        id="edit-city"
-                                        value={String(editFormData.city || '')}
-                                        onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
-                                        placeholder="Ex: Belém"
-                                    />
+                                    <Popover open={isEditCityComboOpen} onOpenChange={setIsEditCityComboOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={isEditCityComboOpen}
+                                                className="w-full justify-between"
+                                                disabled={!editFormData.state || loadingEditCities}
+                                            >
+                                                {loadingEditCities ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        Carregando cidades...
+                                                    </>
+                                                ) : editFormData.city ? (
+                                                    formattedEditCities.find(city => city.value === editFormData.city)?.label || editFormData.city
+                                                ) : (
+                                                    "Selecione a cidade..."
+                                                )}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[400px] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Pesquisar cidade..." />
+                                                <CommandList>
+                                                    {loadingEditCities ? (
+                                                        <CommandEmpty>
+                                                            <div className="flex items-center justify-center py-4">
+                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                Carregando cidades...
+                                                            </div>
+                                                        </CommandEmpty>
+                                                    ) : (
+                                                        <>
+                                                            <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {formattedEditCities.map((city) => (
+                                                                    <CommandItem
+                                                                        key={city.value}
+                                                                        value={city.label}
+                                                                        onSelect={() => {
+                                                                            setEditFormData({ ...editFormData, city: city.value });
+                                                                            setIsEditCityComboOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <Check
+                                                                            className={`mr-2 h-4 w-4 ${editFormData.city === city.value ? 'opacity-100' : 'opacity-0'}`}
+                                                                        />
+                                                                        {city.label}
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </>
+                                                    )}
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    {!editFormData.state && (
+                                        <p className="text-xs text-gray-500">
+                                            Selecione primeiro o estado
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-state">Estado *</Label>
                                     <Select
                                         value={editFormData.state || ''}
-                                        onValueChange={(value) => setEditFormData({ ...editFormData, state: value })}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, state: value, city: '' })}
+                                        disabled={loadingEditStates}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Selecione o estado" />
+                                            <SelectValue placeholder={loadingEditStates ? "Carregando estados..." : "Selecione o estado"} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="PA">Pará</SelectItem>
-                                            <SelectItem value="MA">Maranhão</SelectItem>
-                                            <SelectItem value="TO">Tocantins</SelectItem>
+                                            {(editStates.length > 0 ? editStates : STATES.map(state => ({ sigla: state.code, nome: state.name }))).map((state) => (
+                                                <SelectItem key={state.sigla} value={state.sigla}>
+                                                    {state.nome}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
+                                    {loadingEditStates && (
+                                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                            Carregando estados...
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-type">Tipo de Contrato *</Label>
@@ -1624,12 +1777,12 @@ const JobRequestsManagement = () => {
                                         onValueChange={(value) => setEditFormData({ ...editFormData, type: value })}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue />
+                                            <SelectValue placeholder="Selecione o tipo de contrato" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {contracts.map((contract) => (
-                                                <SelectItem key={contract} value={contract}>
-                                                    {contract}
+                                            {CONTRACT_TYPE_OPTIONS.map((contractType) => (
+                                                <SelectItem key={contractType} value={contractType}>
+                                                    {contractType}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -1665,12 +1818,21 @@ const JobRequestsManagement = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-company-contract">CT (Contrato) *</Label>
-                                    <Input
-                                        id="edit-company-contract"
-                                        value={String(editFormData.company_contract || '')}
-                                        onChange={(e) => setEditFormData({ ...editFormData, company_contract: e.target.value })}
-                                        placeholder="Ex: CT-001"
-                                    />
+                                    <Select
+                                        value={editFormData.company_contract || ''}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, company_contract: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione o contrato" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {contracts.map((contract) => (
+                                                <SelectItem key={contract} value={contract}>
+                                                    {contract}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -1720,6 +1882,64 @@ const JobRequestsManagement = () => {
                                     rows={3}
                                     placeholder="Justifique a necessidade desta vaga..."
                                 />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-solicitante-nome">Nome do Solicitante</Label>
+                                    <Input
+                                        id="edit-solicitante-nome"
+                                        value={String(editFormData.solicitante_nome || '')}
+                                        onChange={(e) => setEditFormData({ ...editFormData, solicitante_nome: e.target.value })}
+                                        placeholder="Ex: João Silva"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-solicitante-funcao">Gerente Responsável</Label>
+                                    <Input
+                                        id="edit-solicitante-funcao"
+                                        value={String(editFormData.solicitante_funcao || '')}
+                                        onChange={(e) => setEditFormData({ ...editFormData, solicitante_funcao: e.target.value })}
+                                        placeholder="Ex: Fernando Sousa - Gerente Tático - CT 150.35"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-observacoes">Observações Internas</Label>
+                                <Textarea
+                                    id="edit-observacoes"
+                                    value={String(editFormData.observacoes_internas || '')}
+                                    onChange={(e) => setEditFormData({ ...editFormData, observacoes_internas: e.target.value })}
+                                    rows={3}
+                                    placeholder="Observações adicionais para controle interno..."
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-tipo-solicitacao">Tipo de Solicitação *</Label>
+                                    <Select
+                                        value={editFormData.tipo_solicitacao || 'aumento_quadro'}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, tipo_solicitacao: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione o tipo de solicitação" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="aumento_quadro">Aumento de Quadro</SelectItem>
+                                            <SelectItem value="substituicao">Substituição</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {editFormData.tipo_solicitacao === 'substituicao' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit-nome-substituido">Nome do Substituído</Label>
+                                        <Input
+                                            id="edit-nome-substituido"
+                                            value={String(editFormData.nome_substituido || '')}
+                                            onChange={(e) => setEditFormData({ ...editFormData, nome_substituido: e.target.value })}
+                                            placeholder="Digite 1 nome por linha"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
