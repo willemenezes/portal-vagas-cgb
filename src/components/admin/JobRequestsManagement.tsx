@@ -1688,9 +1688,9 @@ const JobRequestsManagement = () => {
                                 ) : (
                                     <>
                                         <Check className="w-4 h-4 mr-2" />
-                                    Salvar Alterações
-                                </>
-                            )}
+                                        Salvar Alterações
+                                    </>
+                                )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
