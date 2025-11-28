@@ -412,9 +412,9 @@ const JobRequestsManagement = () => {
         return 'Indefinido';
     };
 
-    // BUG FIX: Usar jobRequests para pendentes, allJobs para aprovadas
-    // Filtrar solicitações pendentes (usar jobRequests)
-    const pendingJobs = pendingRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // BUG FIX CORRIGIDO: Usar approvedRequests para "Solicitações Aprovadas para Criação"
+    // Essas são solicitações com status='aprovado' que ainda não viraram vagas (job_created=false)
+    const pendingJobs = approvedRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Filtrar vagas aprovadas/publicadas (usar allJobs - vagas já criadas)
     const approvedJobs = allJobs.filter(job =>
@@ -426,7 +426,7 @@ const JobRequestsManagement = () => {
         job.flow_status === 'concluida'
     ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Paginação para vagas pendentes
+    // Paginação para solicitações aprovadas aguardando criação
     const totalPendingJobs = pendingJobs.length;
     const totalPendingPages = Math.max(1, Math.ceil(totalPendingJobs / pendingPageSize));
     const pendingStartIndex = pendingPage * pendingPageSize;
