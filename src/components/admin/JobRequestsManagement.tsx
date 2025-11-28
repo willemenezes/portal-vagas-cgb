@@ -779,27 +779,30 @@ const JobRequestsManagement = () => {
                                                         size="sm"
                                                         className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                                         onClick={() => {
-                                                            // Garantir que todos os valores sejam strings válidas
-                                                            setEditFormData({
+                                                            // Garantir que todos os valores sejam tipos primitivos válidos
+                                                            const formData = {
                                                                 id: String(job.id || ''),
-                                                                title: String(job.title || ''),
-                                                                department: String(job.department || ''),
-                                                                city: String(job.city || ''),
-                                                                state: String(job.state || ''),
-                                                                type: String(job.type || 'CLT'),
-                                                                description: String(job.description || ''),
-                                                                requirements: Array.isArray(job.requirements) ? job.requirements.join('\n') : String(job.requirements || ''),
-                                                                benefits: Array.isArray(job.benefits) ? job.benefits.join('\n') : String(job.benefits || ''),
-                                                                workload: String(job.workload || '40h/semana'),
-                                                                justification: String(job.justification || ''),
-                                                                quantity: Number(job.quantity) || 1,
-                                                                company_contract: String(job.company_contract || ''),
-                                                                solicitante_nome: String(job.solicitante_nome || ''),
-                                                                solicitante_funcao: String(job.solicitante_funcao || ''),
-                                                                observacoes_internas: String(job.observacoes_internas || ''),
-                                                                tipo_solicitacao: String(job.tipo_solicitacao || 'aumento_quadro'),
-                                                                nome_substituido: String(job.nome_substituido || '')
-                                                            });
+                                                                title: typeof job.title === 'string' ? job.title : String(job.title || ''),
+                                                                department: typeof job.department === 'string' ? job.department : String(job.department || ''),
+                                                                city: typeof job.city === 'string' ? job.city : String(job.city || ''),
+                                                                state: typeof job.state === 'string' ? job.state : String(job.state || ''),
+                                                                type: typeof job.type === 'string' ? job.type : String(job.type || 'CLT'),
+                                                                description: typeof job.description === 'string' ? job.description : String(job.description || ''),
+                                                                requirements: Array.isArray(job.requirements) ? job.requirements.join('\n') : (typeof job.requirements === 'string' ? job.requirements : ''),
+                                                                benefits: Array.isArray(job.benefits) ? job.benefits.join('\n') : (typeof job.benefits === 'string' ? job.benefits : ''),
+                                                                workload: typeof job.workload === 'string' ? job.workload : String(job.workload || '40h/semana'),
+                                                                justification: typeof job.justification === 'string' ? job.justification : String(job.justification || ''),
+                                                                quantity: typeof job.quantity === 'number' ? job.quantity : (Number(job.quantity) || 1),
+                                                                company_contract: typeof job.company_contract === 'string' ? job.company_contract : String(job.company_contract || ''),
+                                                                solicitante_nome: typeof job.solicitante_nome === 'string' ? job.solicitante_nome : String(job.solicitante_nome || ''),
+                                                                solicitante_funcao: typeof job.solicitante_funcao === 'string' ? job.solicitante_funcao : String(job.solicitante_funcao || ''),
+                                                                observacoes_internas: typeof job.observacoes_internas === 'string' ? job.observacoes_internas : String(job.observacoes_internas || ''),
+                                                                tipo_solicitacao: typeof job.tipo_solicitacao === 'string' ? job.tipo_solicitacao : String(job.tipo_solicitacao || 'aumento_quadro'),
+                                                                nome_substituido: typeof job.nome_substituido === 'string' ? job.nome_substituido : String(job.nome_substituido || '')
+                                                            };
+                                                            
+                                                            console.log('📝 [Edit] Dados do formulário:', formData);
+                                                            setEditFormData(formData);
                                                             setIsEditModalOpen(true);
                                                         }}
                                                     >
