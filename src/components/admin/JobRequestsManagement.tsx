@@ -55,7 +55,7 @@ const JobRequestsManagement = () => {
     const deleteJob = useDeleteJob();
     
     // BUG FIX: Usar o hook correto para solicitações de vagas
-    const { jobRequests, isLoading: isLoadingRequests, updateJobRequest, isUpdating } = useJobRequests();
+    const { jobRequests, isLoading: isLoadingRequests, updateJobRequest, createJobFromRequest, isUpdating } = useJobRequests();
     
     // CORREÇÃO: Buscar vagas editadas aguardando aprovação
     const { data: pendingEditedJobs = [], isLoading: isLoadingEditedJobs, refetch: refetchPendingJobs } = usePendingJobs(rhProfile);
@@ -218,22 +218,20 @@ const JobRequestsManagement = () => {
         }
     };
 
-    const handleApproval = async (jobId: string) => {
+    const handleApproval = async (requestId: string) => {
         try {
-            await updateJob.mutateAsync({
-                id: jobId,
-                approval_status: 'active',
-                status: 'active',
-                flow_status: 'ativa'
-            });
+            // CORREÇÃO: Para solicitações aprovadas, precisamos CRIAR a vaga primeiro
+            // usando createJobFromRequest, não atualizar uma vaga que não existe
+            await createJobFromRequest.mutateAsync(requestId);
             toast({
-                title: '✅ Vaga Aprovada!',
-                description: 'A vaga agora está ativa e pública no portal.'
+                title: '✅ Vaga Publicada!',
+                description: 'A vaga foi criada e está ativa e pública no portal.'
             });
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Erro ao publicar vaga:', error);
             toast({
                 title: '❌ Erro',
-                description: 'Não foi possível aprovar a vaga.',
+                description: error?.message || 'Não foi possível publicar a vaga.',
                 variant: 'destructive'
             });
         }
