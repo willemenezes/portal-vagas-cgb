@@ -36,18 +36,22 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-    // Filtrar apenas job requests aprovadas que ainda não foram convertidas em vagas
-    const approvedRequests = jobRequests?.filter(request => {
-        // Primeiro filtro: deve estar aprovada e não ter vaga criada
+    // Filtrar job requests aprovadas que ainda não foram convertidas em vagas (pendentes)
+    const approvedRequestsPending = jobRequests?.filter(request => {
+        // Deve estar aprovada e não ter vaga criada
         if (request.status !== 'aprovado' || request.job_created) {
             return false;
         }
+        return true;
+    }) || [];
 
-        // Segundo filtro: aplicar filtro de região para recrutadores - REMOVIDO para evitar problemas
-        // if (!rhProfile || rhProfile.is_admin) {
-        //     return true; // Admin vê todas
-        // }
-        return true; // Todos veem todas por enquanto
+    // Filtrar job requests aprovadas que já foram convertidas em vagas (histórico)
+    const approvedRequestsCreated = jobRequests?.filter(request => {
+        // Deve estar aprovada e já ter vaga criada
+        if (request.status !== 'aprovado' || !request.job_created) {
+            return false;
+        }
+        return true;
     }) || [];
 
     const handleCreateJob = async (requestId: string) => {
@@ -109,37 +113,22 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
         );
     }
 
-    if (approvedRequests.length === 0) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        Solicitações Aprovadas para Criação
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center py-8">
-                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                    <p className="text-gray-600">Nenhuma solicitação aprovada aguardando criação de vaga.</p>
-                </CardContent>
-            </Card>
-        );
-    }
-
     return (
         <>
-            <Card className="bg-green-50 border-green-200">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-800">
-                        <CheckCircle className="w-5 h-5" />
-                        Solicitações Aprovadas para Criação
-                        <Badge variant="secondary" className="ml-2">
-                            {approvedRequests.length}
-                        </Badge>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {approvedRequests.map((request) => (
+            {/* Seção de Solicitações Pendentes (ainda não criadas) */}
+            {approvedRequestsPending.length > 0 ? (
+                <Card className="bg-green-50 border-green-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-green-800">
+                            <CheckCircle className="w-5 h-5" />
+                            Solicitações Aprovadas para Criação
+                            <Badge variant="secondary" className="ml-2">
+                                {approvedRequestsPending.length}
+                            </Badge>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {approvedRequestsPending.map((request) => (
                         <div key={request.id} className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -255,9 +244,101 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                                 </div>
                             </div>
                         </div>
-                    ))}
-                </CardContent>
-            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            Solicitações Aprovadas para Criação
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center py-8">
+                        <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                        <p className="text-gray-600">Nenhuma solicitação aprovada aguardando criação de vaga.</p>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Seção de Solicitações Já Criadas (histórico) */}
+            {approvedRequestsCreated.length > 0 && (
+                <Card className="bg-blue-50 border-blue-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-blue-800">
+                            <Briefcase className="w-5 h-5" />
+                            Solicitações Já Convertidas em Vagas
+                            <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
+                                {approvedRequestsCreated.length}
+                            </Badge>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {approvedRequestsCreated.map((request) => (
+                            <div key={request.id} className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <h3 className="font-semibold text-gray-900">{request.title}</h3>
+                                            <Badge variant="outline" className="text-blue-700 border-blue-300">
+                                                Vaga Criada
+                                            </Badge>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                                            <div className="flex items-center gap-1">
+                                                <Building className="w-4 h-4" />
+                                                <span>{request.department}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <MapPin className="w-4 h-4" />
+                                                <span>{request.city}, {request.state}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4" />
+                                                <span>{request.workload}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Calendar className="w-4 h-4" />
+                                                <span>
+                                                    Aprovado {formatDistanceToNow(new Date(request.approved_at), { 
+                                                        addSuffix: true, 
+                                                        locale: ptBR 
+                                                    })}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-sm text-gray-600 mb-3">
+                                            <p className="font-medium mb-1">Aprovado por:</p>
+                                            <p className="text-gray-500">{request.approved_by}</p>
+                                            {request.notes && (
+                                                <>
+                                                    <p className="font-medium mb-1 mt-2">Observações:</p>
+                                                    <p className="text-gray-500">{request.notes}</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 ml-4">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleViewDetails(request)}
+                                            className="flex items-center gap-1"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            Ver Detalhes
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Modal de Detalhes */}
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -397,15 +478,17 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
                     >
                         Fechar
                     </Button>
-                    <Button
-                        onClick={() => {
-                            setIsDetailsOpen(false);
-                            handleCreateJob(selectedRequest.id);
-                        }}
-                        className="bg-green-600 hover:bg-green-700"
-                    >
-                        Criar Vaga
-                    </Button>
+                    {selectedRequest && !selectedRequest.job_created && (
+                        <Button
+                            onClick={() => {
+                                setIsDetailsOpen(false);
+                                handleCreateJob(selectedRequest.id);
+                            }}
+                            className="bg-green-600 hover:bg-green-700"
+                        >
+                            Criar Vaga
+                        </Button>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
