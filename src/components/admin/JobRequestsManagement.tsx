@@ -420,9 +420,17 @@ const JobRequestsManagement = () => {
         return 'Indefinido';
     };
 
-    // BUG FIX CORRIGIDO: Usar approvedRequests para "Solicitações Aprovadas para Criação"
-    // Essas são solicitações com status='aprovado' que ainda não viraram vagas (job_created=false)
-    const pendingJobs = approvedRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Solicitações aguardando aprovação da gerência (status = pendente)
+    const awaitingApprovalRequests = pendingRequests
+        .slice()
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const totalAwaitingApproval = awaitingApprovalRequests.length;
+
+    // Solicitações aprovadas que ainda precisam virar vagas (status = aprovado, job_created = false)
+    const pendingJobs = approvedRequests
+        .slice()
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const totalApprovedAwaitingCreation = pendingJobs.length;
 
     // Filtrar vagas aprovadas/publicadas (usar allJobs - vagas já criadas)
     const approvedJobs = allJobs.filter(job =>
@@ -435,10 +443,10 @@ const JobRequestsManagement = () => {
     ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Paginação para solicitações aprovadas aguardando criação
-    const totalPendingJobs = pendingJobs.length;
-    const totalPendingPages = Math.max(1, Math.ceil(totalPendingJobs / pendingPageSize));
+    const totalPendingJobs = totalAwaitingApproval + totalApprovedAwaitingCreation;
+    const totalPendingPages = Math.max(1, Math.ceil(totalApprovedAwaitingCreation / pendingPageSize));
     const pendingStartIndex = pendingPage * pendingPageSize;
-    const pendingEndIndex = Math.min(totalPendingJobs, pendingStartIndex + pendingPageSize);
+    const pendingEndIndex = Math.min(totalApprovedAwaitingCreation, pendingStartIndex + pendingPageSize);
     const paginatedPendingJobs = pendingJobs.slice(pendingStartIndex, pendingEndIndex);
 
     // Paginação para vagas aprovadas
@@ -560,6 +568,87 @@ const JobRequestsManagement = () => {
             {/* Conteúdo */}
             {activeView === 'pending' ? (
                 <div className="space-y-6">
+                    {/* SOLICITAÇÕES AGUARDANDO APROVAÇÃO DA GERÊNCIA */}
+                    {awaitingApprovalRequests.length > 0 && (
+                        <Card className="bg-indigo-50 border-indigo-200">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-indigo-900">
+                                    <Clock className="w-6 h-6" />
+                                    Solicitações aguardando aprovação da Gerência
+                                    <Badge className="bg-indigo-600 ml-auto">
+                                        {totalAwaitingApproval} pendente{totalAwaitingApproval !== 1 ? 's' : ''}
+                                    </Badge>
+                                </CardTitle>
+                                <p className="text-sm text-indigo-800 mt-2">
+                                    Essas solicitações foram criadas pelos solicitadores e ainda não passaram pela aprovação da gerência.
+                                    Os administradores podem acompanhar o andamento e visualizar os detalhes completos.
+                                </p>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {awaitingApprovalRequests.map((request) => (
+                                    <div
+                                        key={request.id}
+                                        className="p-6 border-2 border-indigo-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                            <div className="flex-grow">
+                                                <div className="flex items-start gap-3 mb-2">
+                                                    <h3 className="font-bold text-xl text-gray-900">{request.title}</h3>
+                                                    <Badge className="bg-amber-500 text-white flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" />
+                                                        Gerência pendente
+                                                    </Badge>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-600">
+                                                    <div className="flex items-center gap-2">
+                                                        <FileText className="w-4 h-4 text-indigo-500" />
+                                                        <span>{request.department}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <MapPin className="w-4 h-4 text-indigo-500" />
+                                                        <span>{request.city}, {request.state}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Users className="w-4 h-4 text-indigo-500" />
+                                                        <span>{request.quantity || 1} vaga{(request.quantity || 1) > 1 ? 's' : ''}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar className="w-4 h-4 text-indigo-500" />
+                                                        <span className="text-xs">Criado {getSafeDateLabel(request.created_at)}</span>
+                                                    </div>
+                                                </div>
+                                                {request.description && (
+                                                    <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                                                        {request.description}
+                                                    </p>
+                                                )}
+                                                {request.justification && (
+                                                    <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-md text-xs text-indigo-900">
+                                                        <strong>Justificativa do solicitante:</strong> {request.justification}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedJob(request as any);
+                                                        setDetailModalOpen(true);
+                                                    }}
+                                                    className="flex items-center gap-1"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    Ver Detalhes
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* VAGAS EDITADAS AGUARDANDO APROVAÇÃO */}
                     {pendingEditedJobs.length > 0 && (
                         <Card className="bg-blue-50 border-blue-200">
@@ -701,7 +790,7 @@ const JobRequestsManagement = () => {
                             <CardTitle className="flex items-center gap-2 text-amber-900">
                                 <Clock className="w-6 h-6" />
                                 Solicitações Aprovadas para Criação
-                                <Badge className="bg-amber-600 ml-auto">{totalPendingJobs} pendente{totalPendingJobs !== 1 ? 's' : ''}</Badge>
+                                <Badge className="bg-amber-600 ml-auto">{totalApprovedAwaitingCreation} pendente{totalApprovedAwaitingCreation !== 1 ? 's' : ''}</Badge>
                             </CardTitle>
                             <p className="text-sm text-amber-800 mt-2">
                                 Revise, edite ou publique as vagas aprovadas pelos gerentes
@@ -837,7 +926,7 @@ const JobRequestsManagement = () => {
                                 {totalPendingPages > 1 && (
                                     <div className="flex items-center justify-between mt-6 pt-4 border-t border-amber-200">
                                         <div className="text-sm text-gray-600">
-                                            Mostrando {pendingStartIndex + 1} a {pendingEndIndex} de {totalPendingJobs} solicitações
+                                            Mostrando {pendingStartIndex + 1} a {pendingEndIndex} de {totalApprovedAwaitingCreation} solicitações
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Button
