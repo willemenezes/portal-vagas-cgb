@@ -1594,7 +1594,11 @@ const JobRequestsManagement = () => {
                                 <Label htmlFor="edit-requirements">Requisitos (um por linha)</Label>
                                 <Textarea
                                     id="edit-requirements"
-                                    value={editFormData.requirements || ''}
+                                    value={
+                                        Array.isArray(editFormData.requirements) 
+                                            ? editFormData.requirements.join('\n') 
+                                            : (editFormData.requirements || '')
+                                    }
                                     onChange={(e) => setEditFormData({ ...editFormData, requirements: e.target.value })}
                                     rows={4}
                                     placeholder="Ensino médio completo&#10;Experiência com vendas&#10;CNH categoria B"
@@ -1604,7 +1608,11 @@ const JobRequestsManagement = () => {
                                 <Label htmlFor="edit-benefits">Benefícios (um por linha)</Label>
                                 <Textarea
                                     id="edit-benefits"
-                                    value={editFormData.benefits || ''}
+                                    value={
+                                        Array.isArray(editFormData.benefits) 
+                                            ? editFormData.benefits.join('\n') 
+                                            : (editFormData.benefits || '')
+                                    }
                                     onChange={(e) => setEditFormData({ ...editFormData, benefits: e.target.value })}
                                     rows={4}
                                     placeholder="Vale transporte&#10;Vale refeição&#10;Plano de saúde"
