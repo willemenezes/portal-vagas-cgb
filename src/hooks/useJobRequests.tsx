@@ -148,18 +148,16 @@ export const useJobRequests = () => {
                 assigned_cities: rhProfile?.assigned_cities
             });
 
+            const assignedDepartmentsNormalized = rhProfile?.assigned_departments
+                ?.map(dep => dep?.trim().toLowerCase())
+                .filter(Boolean) || [];
+
             // BUG FIX: Verificar tanto role === 'admin' quanto is_admin === true
             // Admins e recrutadores devem ver TODAS as solicitações sem filtros
             const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
             const isRecruiter = rhProfile?.role === 'recruiter';
             
             if (!isAdmin && !isRecruiter) {
-                // Filtro por DEPARTAMENTO (apenas para gerentes)
-                if (rhProfile?.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
-                    console.log('🔍 [useJobRequests] Gerente - Filtrando por departamentos:', rhProfile.assigned_departments);
-                    query = query.in('department', rhProfile.assigned_departments);
-                }
-
                 // Filtro por ESTADO (apenas para gerentes)
                 if (rhProfile?.role === 'manager' && rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
                     console.log('🔍 [useJobRequests] Gerente - Filtrando por estados:', rhProfile.assigned_states);
@@ -193,7 +191,23 @@ export const useJobRequests = () => {
                 throw error;
             }
 
-            return data as JobRequest[];
+            let result = data as JobRequest[];
+
+            if (!isAdmin && !isRecruiter && rhProfile?.role === 'manager' && assignedDepartmentsNormalized.length > 0) {
+                result = result.filter(request => {
+                    const requestDepartment = (request.department || '').trim().toLowerCase();
+                    const hasDepartment = assignedDepartmentsNormalized.includes(requestDepartment);
+                    if (!hasDepartment) {
+                        console.log('⚠️ [useJobRequests] Departamento fora do escopo do gerente - ocultando', {
+                            requestDepartment: request.department,
+                            assignedDepartmentsNormalized
+                        });
+                    }
+                    return hasDepartment;
+                });
+            }
+
+            return result;
         },
         enabled: !!user && !!rhProfile,
     });
