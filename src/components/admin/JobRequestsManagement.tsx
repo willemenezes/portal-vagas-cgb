@@ -1459,7 +1459,8 @@ const JobRequestsManagement = () => {
             </Dialog>
 
             {/* Modal de Edição */}
-            <Dialog open={isEditModalOpen && !!editFormData} onOpenChange={(open) => {
+            {editFormData && (
+            <Dialog open={isEditModalOpen} onOpenChange={(open) => {
                 setIsEditModalOpen(open);
                 if (!open) {
                     setEditFormData(null);
@@ -1467,12 +1468,12 @@ const JobRequestsManagement = () => {
             }}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Editar Solicitação: {editFormData?.title || 'Carregando...'}</DialogTitle>
+                        <DialogTitle>Editar Solicitação: {editFormData.title}</DialogTitle>
                         <DialogDescription>
                             Edite os campos da solicitação antes de publicar a vaga
                         </DialogDescription>
                     </DialogHeader>
-                    {editFormData && (
+                    <div className="space-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -1632,7 +1633,6 @@ const JobRequestsManagement = () => {
                                 />
                             </div>
                         </div>
-                    )}
                     <DialogFooter>
                         <Button
                             variant="outline"
@@ -1644,10 +1644,9 @@ const JobRequestsManagement = () => {
                         >
                             Cancelar
                         </Button>
-                        {editFormData && (
-                            <Button
-                                onClick={async () => {
-                                    if (!editFormData) return;
+                        <Button
+                            onClick={async () => {
+                                if (!editFormData) return;
                                     
                                     try {
                                         await updateJobRequest.mutateAsync({
@@ -1689,14 +1688,14 @@ const JobRequestsManagement = () => {
                                 ) : (
                                     <>
                                         <Check className="w-4 h-4 mr-2" />
-                                        Salvar Alterações
-                                    </>
-                                )}
-                            </Button>
-                        )}
+                                    Salvar Alterações
+                                </>
+                            )}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            )}
         </div>
     );
 };
