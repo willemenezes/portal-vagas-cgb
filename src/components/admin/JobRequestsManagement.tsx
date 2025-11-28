@@ -997,9 +997,18 @@ const JobRequestsManagement = () => {
                                                         size="sm"
                                                         className="bg-green-500 hover:bg-green-600 text-white"
                                                         onClick={() => handleApproval(job.id)}
-                                                        disabled={updateJob.isPending}
+                                                        disabled={createJobFromRequest.isPending}
                                                     >
-                                                        <Check className="w-4 h-4 mr-1" /> Publicar Vaga
+                                                        {createJobFromRequest.isPending ? (
+                                                            <>
+                                                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                                                Publicando...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Check className="w-4 h-4 mr-1" /> Publicar Vaga
+                                                            </>
+                                                        )}
                                                     </Button>
                                                 </div>
                                             </div>
