@@ -954,13 +954,18 @@ const JobRequestsManagement = () => {
                                                         className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                                         onClick={() => {
                                                             // Garantir que todos os valores sejam tipos primitivos válidos
+                                                            // Valores válidos para tipo de contrato
+                                                            const validContractTypes = ['CLT', 'Estágio', 'Aprendiz', 'Terceirizado', 'Temporário', 'PJ', 'Freelancer'];
+                                                            const jobType = typeof job.type === 'string' ? job.type : 'CLT';
+                                                            const validatedType = validContractTypes.includes(jobType) ? jobType : 'CLT';
+                                                            
                                                             const formData = {
                                                                 id: String(job.id || ''),
                                                                 title: typeof job.title === 'string' ? job.title : String(job.title || ''),
                                                                 department: typeof job.department === 'string' ? job.department : String(job.department || ''),
                                                                 city: typeof job.city === 'string' ? job.city : String(job.city || ''),
                                                                 state: typeof job.state === 'string' ? job.state : String(job.state || ''),
-                                                                type: typeof job.type === 'string' ? job.type : String(job.type || 'CLT'),
+                                                                type: validatedType,
                                                                 description: typeof job.description === 'string' ? job.description : String(job.description || ''),
                                                                 requirements: Array.isArray(job.requirements) ? job.requirements.join('\n') : (typeof job.requirements === 'string' ? job.requirements : ''),
                                                                 benefits: Array.isArray(job.benefits) ? job.benefits.join('\n') : (typeof job.benefits === 'string' ? job.benefits : ''),
