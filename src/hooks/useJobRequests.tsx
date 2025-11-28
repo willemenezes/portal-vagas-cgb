@@ -421,7 +421,7 @@ export const useJobRequests = () => {
             // Verificar o status da solicitação antes de tentar criar a vaga
             const { data: requestData, error: fetchError } = await supabase
                 .from('job_requests')
-                .select('id, status, job_created, title')
+                .select('id, status, job_created, title, type')
                 .eq('id', requestId)
                 .single();
 
@@ -438,7 +438,8 @@ export const useJobRequests = () => {
                 id: requestData.id,
                 title: requestData.title,
                 status: requestData.status,
-                job_created: requestData.job_created
+                job_created: requestData.job_created,
+                type: requestData.type
             });
 
             if (requestData.status !== 'aprovado') {
@@ -447,6 +448,27 @@ export const useJobRequests = () => {
 
             if (requestData.job_created) {
                 throw new Error('Esta solicitação já foi convertida em vaga.');
+            }
+
+            // Validar e corrigir o tipo de contrato se necessário
+            const validContractTypes = ['CLT', 'Estágio', 'Aprendiz', 'Terceirizado', 'Temporário', 'PJ', 'Freelancer'];
+            const currentType = requestData.type || 'CLT';
+            
+            if (!validContractTypes.includes(currentType)) {
+                console.warn('⚠️ [createJobFromRequest] Tipo de contrato inválido detectado:', currentType, '- Corrigindo para CLT');
+                
+                // Corrigir o type na solicitação antes de criar a vaga
+                const { error: updateError } = await supabase
+                    .from('job_requests')
+                    .update({ type: 'CLT' })
+                    .eq('id', requestId);
+                
+                if (updateError) {
+                    console.error('Erro ao corrigir tipo de contrato:', updateError);
+                    // Continuar mesmo assim, a função SQL também tem validação
+                } else {
+                    console.log('✅ [createJobFromRequest] Tipo de contrato corrigido para CLT');
+                }
             }
 
             console.log('🔄 [createJobFromRequest] Chamando RPC create_job_from_request com requestId:', requestId);
