@@ -1938,13 +1938,17 @@ const JobRequestsManagement = () => {
                                 </div>
                                 {editFormData.tipo_solicitacao === 'substituicao' && (
                                     <div className="space-y-2">
-                                        <Label htmlFor="edit-nome-substituido">Nome do Substituído</Label>
-                                        <Input
+                                        <Label htmlFor="edit-nome-substituido">Nome(s) do Substituído</Label>
+                                        <Textarea
                                             id="edit-nome-substituido"
                                             value={String(editFormData.nome_substituido || '')}
                                             onChange={(e) => setEditFormData({ ...editFormData, nome_substituido: e.target.value })}
-                                            placeholder="Digite 1 nome por linha"
+                                            rows={3}
+                                            placeholder="Digite um nome por linha..."
                                         />
+                                        <p className="text-xs text-gray-500">
+                                            Você pode informar vários nomes (um por linha). Ex: João Silva&#10;Maria Souza&#10;Carlos Pereira
+                                        </p>
                                     </div>
                                 )}
                             </div>
