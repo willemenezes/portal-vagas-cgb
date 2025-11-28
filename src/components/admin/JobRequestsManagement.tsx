@@ -1633,6 +1633,7 @@ const JobRequestsManagement = () => {
                                 />
                             </div>
                         </div>
+                    </div>
                     <DialogFooter>
                         <Button
                             variant="outline"
