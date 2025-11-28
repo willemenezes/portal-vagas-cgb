@@ -85,8 +85,8 @@ export const AdminSidebar = ({ activeTab, setActiveTab, userRole, onLogout, isLo
             { id: "reports", icon: FileText, text: "Relatórios", action: () => setActiveTab("reports") },
         ];
 
-        // Adiciona Solicitações de Vagas apenas para Admin
-        if (userRole === 'admin') {
+        // Adiciona Solicitações de Vagas para Admin e Recrutador
+        if (userRole === 'admin' || userRole === 'recruiter') {
             menuItems.splice(1, 0, { id: "job-requests", icon: Send, text: "Solicitações de Vagas", action: () => setActiveTab("job-requests") });
         }
 

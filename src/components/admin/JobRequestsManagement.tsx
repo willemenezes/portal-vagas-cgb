@@ -769,6 +769,17 @@ const JobRequestsManagement = () => {
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
+                                                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                                        onClick={() => {
+                                                            // Navegar para página de edição na Gestão de Vagas
+                                                            window.location.href = `/admin?tab=jobs&edit=${job.id}`;
+                                                        }}
+                                                    >
+                                                        <Edit className="w-4 h-4 mr-1" /> Editar
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
                                                         className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
                                                         onClick={() => {
                                                             setSelectedJob(job);

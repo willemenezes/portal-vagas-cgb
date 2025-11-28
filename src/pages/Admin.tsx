@@ -105,7 +105,7 @@ const Admin = () => {
       case "legal-validation":
         return <LegalValidation />;
       case "job-requests":
-        return rhProfile?.role === 'admin' ? <JobRequestsManagement /> : null;
+        return (rhProfile?.role === 'admin' || rhProfile?.is_admin || rhProfile?.role === 'recruiter') ? <JobRequestsManagement /> : null;
       case "jobs":
         return rhProfile?.role === 'solicitador' ? <JobRequestManagement /> : <JobManagement />;
       case "contract-deadlines":
