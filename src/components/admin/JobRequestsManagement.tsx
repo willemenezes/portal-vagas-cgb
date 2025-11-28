@@ -1456,15 +1456,21 @@ const JobRequestsManagement = () => {
             </Dialog>
 
             {/* Modal de Edição */}
-            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Editar Solicitação: {editFormData?.title || 'Carregando...'}</DialogTitle>
-                        <DialogDescription>
-                            Edite os campos da solicitação antes de publicar a vaga
-                        </DialogDescription>
-                    </DialogHeader>
-                    {editFormData && (
+            {editFormData && (
+                <Dialog open={isEditModalOpen} onOpenChange={(open) => {
+                    setIsEditModalOpen(open);
+                    if (!open) {
+                        setEditFormData(null);
+                    }
+                }}>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Editar Solicitação: {editFormData?.title || 'Carregando...'}</DialogTitle>
+                            <DialogDescription>
+                                Edite os campos da solicitação antes de publicar a vaga
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">{/* Conteúdo do formulário */}
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -1479,7 +1485,7 @@ const JobRequestsManagement = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-department">Departamento *</Label>
                                     <Select
-                                        value={editFormData.department}
+                                        value={editFormData.department || ''}
                                         onValueChange={(value) => setEditFormData({ ...editFormData, department: value })}
                                     >
                                         <SelectTrigger>
@@ -1506,7 +1512,7 @@ const JobRequestsManagement = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-state">Estado *</Label>
                                     <Select
-                                        value={editFormData.state}
+                                        value={editFormData.state || ''}
                                         onValueChange={(value) => setEditFormData({ ...editFormData, state: value })}
                                     >
                                         <SelectTrigger>
@@ -1522,7 +1528,7 @@ const JobRequestsManagement = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-type">Tipo de Contrato *</Label>
                                     <Select
-                                        value={editFormData.type}
+                                        value={editFormData.type || 'CLT'}
                                         onValueChange={(value) => setEditFormData({ ...editFormData, type: value })}
                                     >
                                         <SelectTrigger>
@@ -1540,7 +1546,7 @@ const JobRequestsManagement = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-workload">Carga Horária *</Label>
                                     <Select
-                                        value={editFormData.workload}
+                                        value={editFormData.workload || '40h/semana'}
                                         onValueChange={(value) => setEditFormData({ ...editFormData, workload: value })}
                                     >
                                         <SelectTrigger>
@@ -1616,7 +1622,6 @@ const JobRequestsManagement = () => {
                                 />
                             </div>
                         </div>
-                    )}
                     <DialogFooter>
                         <Button
                             variant="outline"
