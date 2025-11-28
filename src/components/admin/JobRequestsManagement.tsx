@@ -1557,8 +1557,8 @@ const JobRequestsManagement = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {WORKLOAD_OPTIONS.map((option) => (
-                                                <SelectItem key={option} value={option}>
-                                                    {option}
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
