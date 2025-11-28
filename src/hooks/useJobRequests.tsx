@@ -140,34 +140,39 @@ export const useJobRequests = () => {
                 .from('job_requests')
                 .select('*');
 
-            // CORREÇÃO: Aplicar filtros APENAS para gerentes e recrutadores, NÃO para admins
+            // CORREÇÃO: Aplicar filtros APENAS para gerentes, NÃO para admins ou recrutadores
             console.log('🔍 [useJobRequests] Perfil:', rhProfile?.role, {
+                is_admin: rhProfile?.is_admin,
                 assigned_departments: rhProfile?.assigned_departments,
                 assigned_states: rhProfile?.assigned_states,
                 assigned_cities: rhProfile?.assigned_cities
             });
 
-            // BUG FIX: Admins devem ver TODAS as solicitações sem filtros
-            if (rhProfile?.role !== 'admin') {
-                // Filtro por DEPARTAMENTO (para gerentes)
+            // BUG FIX: Verificar tanto role === 'admin' quanto is_admin === true
+            // Admins e recrutadores devem ver TODAS as solicitações sem filtros
+            const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
+            const isRecruiter = rhProfile?.role === 'recruiter';
+            
+            if (!isAdmin && !isRecruiter) {
+                // Filtro por DEPARTAMENTO (apenas para gerentes)
                 if (rhProfile?.role === 'manager' && rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0) {
-                    console.log('🔍 [useJobRequests] Filtrando por departamentos:', rhProfile.assigned_departments);
+                    console.log('🔍 [useJobRequests] Gerente - Filtrando por departamentos:', rhProfile.assigned_departments);
                     query = query.in('department', rhProfile.assigned_departments);
                 }
 
-                // Filtro por ESTADO (para gerentes e recrutadores)
-                if (rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
-                    console.log('🔍 [useJobRequests] Filtrando por estados:', rhProfile.assigned_states);
+                // Filtro por ESTADO (apenas para gerentes)
+                if (rhProfile?.role === 'manager' && rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
+                    console.log('🔍 [useJobRequests] Gerente - Filtrando por estados:', rhProfile.assigned_states);
                     query = query.in('state', rhProfile.assigned_states);
                 }
 
-                // Filtro por CIDADE (para gerentes e recrutadores)
-                if (rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) {
-                    console.log('🔍 [useJobRequests] Filtrando por cidades:', rhProfile.assigned_cities);
+                // Filtro por CIDADE (apenas para gerentes)
+                if (rhProfile?.role === 'manager' && rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) {
+                    console.log('🔍 [useJobRequests] Gerente - Filtrando por cidades:', rhProfile.assigned_cities);
                     query = query.in('city', rhProfile.assigned_cities);
                 }
             } else {
-                console.log('🔍 [useJobRequests] Admin detectado - SEM filtros aplicados');
+                console.log('🔍 [useJobRequests] Admin/Recrutador detectado - SEM filtros aplicados', { isAdmin, isRecruiter });
             }
 
             // DEBUG: Buscar TODAS as solicitações antes dos filtros para comparar

@@ -13,10 +13,16 @@ export default function UnifiedApprovals() {
     const { user } = useAuth();
     const { data: rhProfile } = useRHProfile(user?.id);
     const { stats: jobRequestStats } = useJobRequests();
-    // Admin vê primeiro as aprovações de publicação (vagas editadas)
+    
+    // Verificar se é admin ou recrutador (podem ver solicitações aprovadas)
+    const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
+    const isRecruiter = rhProfile?.role === 'recruiter';
+    const canSeeApprovedRequests = isAdmin || isRecruiter;
+    
+    // Admin/Recrutador vê primeiro as aprovações de publicação (vagas editadas)
     // Gerente vê primeiro as solicitações de criação
     const [activeTab, setActiveTab] = useState(
-        (rhProfile?.role === 'admin' || rhProfile?.is_admin) ? "job-approvals" : "job-requests"
+        canSeeApprovedRequests ? "job-approvals" : "job-requests"
     );
 
     // Se for solicitador, só mostra solicitações de vagas
@@ -34,7 +40,7 @@ export default function UnifiedApprovals() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className={`grid w-full ${(rhProfile?.role === 'admin' || rhProfile?.is_admin) ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <TabsList className={`grid w-full ${canSeeApprovedRequests ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <TabsTrigger value="job-requests" className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         Solicitações de Criação
@@ -44,7 +50,7 @@ export default function UnifiedApprovals() {
                             </Badge>
                         )}
                     </TabsTrigger>
-                    {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && (
+                    {canSeeApprovedRequests && (
                         <TabsTrigger value="approved-requests" className="flex items-center gap-2">
                             <Briefcase className="w-4 h-4" />
                             Aprovadas para Criar
@@ -65,7 +71,7 @@ export default function UnifiedApprovals() {
                     <JobRequestApproval />
                 </TabsContent>
 
-                {(rhProfile?.role === 'admin' || rhProfile?.is_admin) && (
+                {canSeeApprovedRequests && (
                     <TabsContent value="approved-requests" className="space-y-4">
                         <ApprovedJobRequests rhProfile={rhProfile} />
                     </TabsContent>

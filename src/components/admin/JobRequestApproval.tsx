@@ -848,7 +848,7 @@ export default function JobRequestApproval() {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    {request.status === 'aprovado' && !request.job_created && (rhProfile?.role === 'admin' || rhProfile?.is_admin) && (
+                                                    {request.status === 'aprovado' && !request.job_created && (rhProfile?.role === 'admin' || rhProfile?.is_admin || rhProfile?.role === 'recruiter') && (
                                                         <Button
                                                             size="sm"
                                                             className="bg-cgb-primary hover:bg-cgb-primary-dark"

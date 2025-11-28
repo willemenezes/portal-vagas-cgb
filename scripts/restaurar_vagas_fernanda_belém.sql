@@ -133,3 +133,4 @@ WHERE
 -- 2. Usar o script restaurar_vaga_especifica_por_id.sql com os IDs encontrados
 
 
+
