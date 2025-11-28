@@ -77,9 +77,9 @@ const JobRequestsManagement = () => {
             if (userIds.size === 0) return;
 
             // Buscar nomes dos usuários
-            const { data: users, error } = await supabase
+            const { data: users, error} = await supabase
                 .from('rh_users')
-                .select('user_id, name')
+                .select('user_id, full_name')
                 .in('user_id', Array.from(userIds));
 
             if (error) {
@@ -90,7 +90,7 @@ const JobRequestsManagement = () => {
             // Criar mapa de IDs para nomes
             const nameMap: Record<string, string> = {};
             users?.forEach(user => {
-                nameMap[user.user_id] = user.name;
+                nameMap[user.user_id] = user.full_name || 'Usuário';
             });
 
             setUserNames(nameMap);
