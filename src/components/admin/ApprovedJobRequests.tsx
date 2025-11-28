@@ -36,23 +36,31 @@ const ApprovedJobRequests: React.FC<ApprovedJobRequestsProps> = ({ rhProfile }) 
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
+    // DEBUG: Log para verificar o que está chegando
+    console.log('🔍 [ApprovedJobRequests] ===== DEBUG =====');
+    console.log('🔍 [ApprovedJobRequests] Total de jobRequests:', jobRequests?.length || 0);
+    console.log('🔍 [ApprovedJobRequests] jobRequests:', jobRequests);
+    console.log('🔍 [ApprovedJobRequests] rhProfile:', rhProfile);
+    console.log('🔍 [ApprovedJobRequests] isLoading:', isLoading);
+    
     // Filtrar job requests aprovadas que ainda não foram convertidas em vagas (pendentes)
     const approvedRequestsPending = jobRequests?.filter(request => {
         // Deve estar aprovada e não ter vaga criada
-        if (request.status !== 'aprovado' || request.job_created) {
-            return false;
-        }
-        return true;
+        const isApproved = request.status === 'aprovado';
+        const notCreated = !request.job_created;
+        console.log(`🔍 [ApprovedJobRequests] ${request.title}: aprovado=${isApproved}, job_created=${request.job_created}, incluir=${isApproved && notCreated}`);
+        return isApproved && notCreated;
     }) || [];
 
     // Filtrar job requests aprovadas que já foram convertidas em vagas (histórico)
     const approvedRequestsCreated = jobRequests?.filter(request => {
         // Deve estar aprovada e já ter vaga criada
-        if (request.status !== 'aprovado' || !request.job_created) {
-            return false;
-        }
-        return true;
+        return request.status === 'aprovado' && request.job_created;
     }) || [];
+    
+    console.log('🔍 [ApprovedJobRequests] Aprovadas PENDENTES:', approvedRequestsPending.length);
+    console.log('🔍 [ApprovedJobRequests] Aprovadas JÁ CRIADAS:', approvedRequestsCreated.length);
+    console.log('🔍 [ApprovedJobRequests] ===== FIM DEBUG =====');
 
     const handleCreateJob = async (requestId: string) => {
         try {
