@@ -1456,21 +1456,21 @@ const JobRequestsManagement = () => {
             </Dialog>
 
             {/* Modal de Edição */}
-            {editFormData && (
-                <Dialog open={isEditModalOpen} onOpenChange={(open) => {
-                    setIsEditModalOpen(open);
-                    if (!open) {
-                        setEditFormData(null);
-                    }
-                }}>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Editar Solicitação: {editFormData?.title || 'Carregando...'}</DialogTitle>
-                            <DialogDescription>
-                                Edite os campos da solicitação antes de publicar a vaga
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">{/* Conteúdo do formulário */}
+            <Dialog open={isEditModalOpen && !!editFormData} onOpenChange={(open) => {
+                setIsEditModalOpen(open);
+                if (!open) {
+                    setEditFormData(null);
+                }
+            }}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Editar Solicitação: {editFormData?.title || 'Carregando...'}</DialogTitle>
+                        <DialogDescription>
+                            Edite os campos da solicitação antes de publicar a vaga
+                        </DialogDescription>
+                    </DialogHeader>
+                    {editFormData && (
+                        <div className="space-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -1622,6 +1622,8 @@ const JobRequestsManagement = () => {
                                 />
                             </div>
                         </div>
+                    )}
+                    {editFormData && (
                     <DialogFooter>
                         <Button
                             variant="outline"
@@ -1682,6 +1684,7 @@ const JobRequestsManagement = () => {
                             )}
                         </Button>
                     </DialogFooter>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
