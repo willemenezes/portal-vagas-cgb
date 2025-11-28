@@ -1623,7 +1623,6 @@ const JobRequestsManagement = () => {
                             </div>
                         </div>
                     )}
-                    {editFormData && (
                     <DialogFooter>
                         <Button
                             variant="outline"
@@ -1635,56 +1634,57 @@ const JobRequestsManagement = () => {
                         >
                             Cancelar
                         </Button>
-                        <Button
-                            onClick={async () => {
-                                if (!editFormData) return;
-                                
-                                try {
-                                    await updateJobRequest.mutateAsync({
-                                        id: editFormData.id,
-                                        data: {
-                                            title: editFormData.title,
-                                            department: editFormData.department,
-                                            city: editFormData.city,
-                                            state: editFormData.state,
-                                            type: editFormData.type,
-                                            description: editFormData.description,
-                                            requirements: editFormData.requirements.split('\n').filter(r => r.trim() !== ''),
-                                            benefits: editFormData.benefits.split('\n').filter(b => b.trim() !== ''),
-                                            workload: editFormData.workload,
-                                            justification: editFormData.justification,
-                                            quantity: editFormData.quantity,
-                                            company_contract: editFormData.company_contract,
-                                            solicitante_nome: editFormData.solicitante_nome,
-                                            solicitante_funcao: editFormData.solicitante_funcao,
-                                            observacoes_internas: editFormData.observacoes_internas,
-                                            tipo_solicitacao: editFormData.tipo_solicitacao,
-                                            nome_substituido: editFormData.nome_substituido
-                                        }
-                                    });
-                                    setIsEditModalOpen(false);
-                                    setEditFormData(null);
-                                } catch (error) {
-                                    console.error('Erro ao editar solicitação:', error);
-                                }
-                            }}
-                            disabled={isUpdating}
-                            className="bg-blue-600 hover:bg-blue-700"
-                        >
-                            {isUpdating ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Salvando...
-                                </>
-                            ) : (
-                                <>
-                                    <Check className="w-4 h-4 mr-2" />
-                                    Salvar Alterações
-                                </>
-                            )}
-                        </Button>
+                        {editFormData && (
+                            <Button
+                                onClick={async () => {
+                                    if (!editFormData) return;
+                                    
+                                    try {
+                                        await updateJobRequest.mutateAsync({
+                                            id: editFormData.id,
+                                            data: {
+                                                title: editFormData.title,
+                                                department: editFormData.department,
+                                                city: editFormData.city,
+                                                state: editFormData.state,
+                                                type: editFormData.type,
+                                                description: editFormData.description,
+                                                requirements: editFormData.requirements.split('\n').filter(r => r.trim() !== ''),
+                                                benefits: editFormData.benefits.split('\n').filter(b => b.trim() !== ''),
+                                                workload: editFormData.workload,
+                                                justification: editFormData.justification,
+                                                quantity: editFormData.quantity,
+                                                company_contract: editFormData.company_contract,
+                                                solicitante_nome: editFormData.solicitante_nome,
+                                                solicitante_funcao: editFormData.solicitante_funcao,
+                                                observacoes_internas: editFormData.observacoes_internas,
+                                                tipo_solicitacao: editFormData.tipo_solicitacao,
+                                                nome_substituido: editFormData.nome_substituido
+                                            }
+                                        });
+                                        setIsEditModalOpen(false);
+                                        setEditFormData(null);
+                                    } catch (error) {
+                                        console.error('Erro ao editar solicitação:', error);
+                                    }
+                                }}
+                                disabled={isUpdating}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                {isUpdating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Salvando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Salvar Alterações
+                                    </>
+                                )}
+                            </Button>
+                        )}
                     </DialogFooter>
-                    )}
                 </DialogContent>
             </Dialog>
         </div>
