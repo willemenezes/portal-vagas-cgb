@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
@@ -33,7 +34,8 @@ import {
     Loader2,
     Check,
     ChevronsUpDown,
-    Trash2
+    Trash2,
+    FileText
 } from "lucide-react";
 
 // Interfaces para API do IBGE
@@ -64,6 +66,8 @@ export default function JobRequestManagement() {
     const [isCreating, setIsCreating] = useState(false);
     const [cityComboOpen, setCityComboOpen] = useState(false);
     const [requestToDelete, setRequestToDelete] = useState<any>(null);
+    const [selectedRequest, setSelectedRequest] = useState<any>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [newRequest, setNewRequest] = useState({
         title: "",
         department: "",
@@ -783,6 +787,10 @@ export default function JobRequestManagement() {
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            onClick={() => {
+                                                setSelectedRequest(request);
+                                                setIsDetailModalOpen(true);
+                                            }}
                                         >
                                             <Eye className="w-4 h-4 mr-1" />
                                             Ver Detalhes
@@ -855,6 +863,178 @@ export default function JobRequestManagement() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Modal de Detalhes */}
+            <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl">{selectedRequest?.title}</DialogTitle>
+                        <DialogDescription>
+                            Detalhes completos da solicitação de vaga
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedRequest && (
+                        <div className="space-y-6 py-4">
+                            {/* Status */}
+                            <div className="flex items-center gap-2">
+                                {selectedRequest.status === 'aprovado' && (
+                                    <Badge className="bg-green-500 text-white">
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Aprovado
+                                    </Badge>
+                                )}
+                                {selectedRequest.status === 'pendente' && (
+                                    <Badge className="bg-yellow-500 text-white">
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        Pendente
+                                    </Badge>
+                                )}
+                                {selectedRequest.status === 'rejeitado' && (
+                                    <Badge className="bg-red-500 text-white">
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                        Rejeitado
+                                    </Badge>
+                                )}
+                            </div>
+
+                            {/* Informações Gerais */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Departamento</label>
+                                    <p className="text-base font-semibold text-gray-900">{selectedRequest.department}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Localização</label>
+                                    <p className="text-base font-semibold text-gray-900">{selectedRequest.city}, {selectedRequest.state}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Tipo de Contrato</label>
+                                    <p className="text-base font-semibold text-gray-900">{selectedRequest.type}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Carga Horária</label>
+                                    <p className="text-base font-semibold text-gray-900">{selectedRequest.workload}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Quantidade de Vagas</label>
+                                    <p className="text-base font-semibold text-gray-900">{selectedRequest.quantity || 1}</p>
+                                </div>
+                                {selectedRequest.company_contract && (
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500">CT (Contrato)</label>
+                                        <p className="text-base font-semibold text-gray-900">{selectedRequest.company_contract}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Descrição */}
+                            {selectedRequest.description && (
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 block mb-2">Descrição da Vaga</label>
+                                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <p className="text-gray-800 whitespace-pre-wrap">{selectedRequest.description}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Requisitos */}
+                            {selectedRequest.requirements && (
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 block mb-2">Requisitos</label>
+                                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        {Array.isArray(selectedRequest.requirements) ? (
+                                            <ul className="list-disc list-inside space-y-1 text-gray-800">
+                                                {selectedRequest.requirements.map((req: string, index: number) => (
+                                                    <li key={index}>{req}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-gray-800 whitespace-pre-wrap">{selectedRequest.requirements}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Benefícios */}
+                            {selectedRequest.benefits && (
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 block mb-2">Benefícios</label>
+                                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        {Array.isArray(selectedRequest.benefits) ? (
+                                            <ul className="list-disc list-inside space-y-1 text-gray-800">
+                                                {selectedRequest.benefits.map((benefit: string, index: number) => (
+                                                    <li key={index}>{benefit}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-gray-800 whitespace-pre-wrap">{selectedRequest.benefits}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Justificativa */}
+                            {selectedRequest.justification && (
+                                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <FileText className="w-5 h-5 text-blue-600" />
+                                        <span className="font-semibold text-blue-900">Justificativa da Criação</span>
+                                    </div>
+                                    <div className="mt-2 p-3 bg-white rounded border border-blue-200">
+                                        <p className="text-blue-900 whitespace-pre-wrap">{selectedRequest.justification}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Informações Adicionais */}
+                            {(selectedRequest.solicitante_nome || selectedRequest.solicitante_funcao || selectedRequest.observacoes_internas) && (
+                                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-3">Informações Adicionais</h4>
+                                    <div className="space-y-2 text-sm">
+                                        {selectedRequest.solicitante_nome && (
+                                            <div>
+                                                <span className="text-gray-700 font-medium">Solicitante: </span>
+                                                <span className="text-gray-900">{selectedRequest.solicitante_nome}</span>
+                                            </div>
+                                        )}
+                                        {selectedRequest.solicitante_funcao && (
+                                            <div>
+                                                <span className="text-gray-700 font-medium">Função: </span>
+                                                <span className="text-gray-900">{selectedRequest.solicitante_funcao}</span>
+                                            </div>
+                                        )}
+                                        {selectedRequest.observacoes_internas && (
+                                            <div>
+                                                <span className="text-gray-700 font-medium">Observações Internas: </span>
+                                                <p className="text-gray-900 whitespace-pre-wrap">{selectedRequest.observacoes_internas}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Data de Criação */}
+                            {selectedRequest.created_at && (
+                                <div className="text-sm text-gray-500">
+                                    <span className="font-medium">Criado em: </span>
+                                    {new Date(selectedRequest.created_at).toLocaleDateString('pt-BR', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>
+                            Fechar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 } 
