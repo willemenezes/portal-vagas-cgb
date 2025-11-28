@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, X, Loader2, FileText, Calendar, MapPin, Users, ChevronLeft, ChevronRight, CheckCircle, Clock, Eye, Edit, Trash2, Download, User, UserCheck, XCircle, Building, AlertCircle } from 'lucide-react';
 import { Job, useUpdateJob, useAllJobs, useDeleteJob, usePendingJobs } from '@/hooks/useJobs';
 import { useJobRequests } from '@/hooks/useJobRequests';
@@ -14,6 +17,9 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { departments } from '@/data/departments';
+import { contracts } from '@/data/contracts';
+import { WORKLOAD_OPTIONS } from '@/data/workload-options';
 
 const JobRequestsManagement = () => {
     const { toast } = useToast();
@@ -24,7 +30,7 @@ const JobRequestsManagement = () => {
     const deleteJob = useDeleteJob();
     
     // BUG FIX: Usar o hook correto para solicitações de vagas
-    const { jobRequests, isLoading: isLoadingRequests } = useJobRequests();
+    const { jobRequests, isLoading: isLoadingRequests, updateJobRequest, isUpdating } = useJobRequests();
     
     // CORREÇÃO: Buscar vagas editadas aguardando aprovação
     const { data: pendingEditedJobs = [], isLoading: isLoadingEditedJobs, refetch: refetchPendingJobs } = usePendingJobs(rhProfile);
@@ -49,6 +55,8 @@ const JobRequestsManagement = () => {
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [isRejectModalOpen, setRejectModalOpen] = useState(false);
     const [isDetailModalOpen, setDetailModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editFormData, setEditFormData] = useState<any>(null);
     const [userNames, setUserNames] = useState<Record<string, string>>({});
 
     // Paginação para vagas pendentes
@@ -771,8 +779,27 @@ const JobRequestsManagement = () => {
                                                         size="sm"
                                                         className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                                         onClick={() => {
-                                                            // Navegar para página de edição na Gestão de Vagas
-                                                            window.location.href = `/admin?tab=jobs&edit=${job.id}`;
+                                                            setEditFormData({
+                                                                id: job.id,
+                                                                title: job.title,
+                                                                department: job.department,
+                                                                city: job.city,
+                                                                state: job.state,
+                                                                type: job.type,
+                                                                description: job.description,
+                                                                requirements: Array.isArray(job.requirements) ? job.requirements.join('\n') : '',
+                                                                benefits: Array.isArray(job.benefits) ? job.benefits.join('\n') : '',
+                                                                workload: job.workload,
+                                                                justification: job.justification || '',
+                                                                quantity: job.quantity || 1,
+                                                                company_contract: job.company_contract || '',
+                                                                solicitante_nome: job.solicitante_nome || '',
+                                                                solicitante_funcao: job.solicitante_funcao || '',
+                                                                observacoes_internas: job.observacoes_internas || '',
+                                                                tipo_solicitacao: job.tipo_solicitacao || 'aumento_quadro',
+                                                                nome_substituido: job.nome_substituido || ''
+                                                            });
+                                                            setIsEditModalOpen(true);
                                                         }}
                                                     >
                                                         <Edit className="w-4 h-4 mr-1" /> Editar
@@ -1423,6 +1450,228 @@ const JobRequestsManagement = () => {
                                 Fechar
                             </Button>
                         </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de Edição */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Editar Solicitação: {editFormData?.title}</DialogTitle>
+                    </DialogHeader>
+                    {editFormData && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-title">Título da Vaga *</Label>
+                                    <Input
+                                        id="edit-title"
+                                        value={editFormData.title}
+                                        onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                                        placeholder="Ex: Analista de Sistemas"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-department">Departamento *</Label>
+                                    <Select
+                                        value={editFormData.department}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, department: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione o departamento" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {departments.map((dept) => (
+                                                <SelectItem key={dept} value={dept}>
+                                                    {dept}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-city">Cidade *</Label>
+                                    <Input
+                                        id="edit-city"
+                                        value={editFormData.city}
+                                        onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                                        placeholder="Ex: Belém"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-state">Estado *</Label>
+                                    <Select
+                                        value={editFormData.state}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, state: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione o estado" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="PA">Pará</SelectItem>
+                                            <SelectItem value="MA">Maranhão</SelectItem>
+                                            <SelectItem value="TO">Tocantins</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-type">Tipo de Contrato *</Label>
+                                    <Select
+                                        value={editFormData.type}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, type: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {contracts.map((contract) => (
+                                                <SelectItem key={contract} value={contract}>
+                                                    {contract}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-workload">Carga Horária *</Label>
+                                    <Select
+                                        value={editFormData.workload}
+                                        onValueChange={(value) => setEditFormData({ ...editFormData, workload: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {WORKLOAD_OPTIONS.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-quantity">Quantidade de Vagas *</Label>
+                                    <Input
+                                        id="edit-quantity"
+                                        type="number"
+                                        min="1"
+                                        value={editFormData.quantity}
+                                        onChange={(e) => setEditFormData({ ...editFormData, quantity: parseInt(e.target.value) || 1 })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-company-contract">CT (Contrato) *</Label>
+                                    <Input
+                                        id="edit-company-contract"
+                                        value={editFormData.company_contract}
+                                        onChange={(e) => setEditFormData({ ...editFormData, company_contract: e.target.value })}
+                                        placeholder="Ex: CT-001"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-description">Descrição *</Label>
+                                <Textarea
+                                    id="edit-description"
+                                    value={editFormData.description}
+                                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                                    rows={5}
+                                    placeholder="Descreva as responsabilidades e atividades da vaga..."
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-requirements">Requisitos (um por linha)</Label>
+                                <Textarea
+                                    id="edit-requirements"
+                                    value={editFormData.requirements}
+                                    onChange={(e) => setEditFormData({ ...editFormData, requirements: e.target.value })}
+                                    rows={4}
+                                    placeholder="Ensino médio completo&#10;Experiência com vendas&#10;CNH categoria B"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-benefits">Benefícios (um por linha)</Label>
+                                <Textarea
+                                    id="edit-benefits"
+                                    value={editFormData.benefits}
+                                    onChange={(e) => setEditFormData({ ...editFormData, benefits: e.target.value })}
+                                    rows={4}
+                                    placeholder="Vale transporte&#10;Vale refeição&#10;Plano de saúde"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-justification">Justificativa *</Label>
+                                <Textarea
+                                    id="edit-justification"
+                                    value={editFormData.justification}
+                                    onChange={(e) => setEditFormData({ ...editFormData, justification: e.target.value })}
+                                    rows={3}
+                                    placeholder="Justifique a necessidade desta vaga..."
+                                />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsEditModalOpen(false);
+                                setEditFormData(null);
+                            }}
+                            disabled={isUpdating}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={async () => {
+                                if (!editFormData) return;
+                                
+                                try {
+                                    await updateJobRequest.mutateAsync({
+                                        id: editFormData.id,
+                                        data: {
+                                            title: editFormData.title,
+                                            department: editFormData.department,
+                                            city: editFormData.city,
+                                            state: editFormData.state,
+                                            type: editFormData.type,
+                                            description: editFormData.description,
+                                            requirements: editFormData.requirements.split('\n').filter(r => r.trim() !== ''),
+                                            benefits: editFormData.benefits.split('\n').filter(b => b.trim() !== ''),
+                                            workload: editFormData.workload,
+                                            justification: editFormData.justification,
+                                            quantity: editFormData.quantity,
+                                            company_contract: editFormData.company_contract,
+                                            solicitante_nome: editFormData.solicitante_nome,
+                                            solicitante_funcao: editFormData.solicitante_funcao,
+                                            observacoes_internas: editFormData.observacoes_internas,
+                                            tipo_solicitacao: editFormData.tipo_solicitacao,
+                                            nome_substituido: editFormData.nome_substituido
+                                        }
+                                    });
+                                    setIsEditModalOpen(false);
+                                    setEditFormData(null);
+                                } catch (error) {
+                                    console.error('Erro ao editar solicitação:', error);
+                                }
+                            }}
+                            disabled={isUpdating}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
+                            {isUpdating ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Salvando...
+                                </>
+                            ) : (
+                                <>
+                                    <Check className="w-4 h-4 mr-2" />
+                                    Salvar Alterações
+                                </>
+                            )}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
