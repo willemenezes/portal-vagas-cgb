@@ -12,12 +12,23 @@ import { useRHProfile } from "@/hooks/useRH";
 export default function UnifiedApprovals() {
     const { user } = useAuth();
     const { data: rhProfile } = useRHProfile(user?.id);
-    const { stats: jobRequestStats } = useJobRequests();
+    const { stats: jobRequestStats, jobRequests } = useJobRequests();
     
     // Verificar se é admin ou recrutador (podem ver solicitações aprovadas)
     const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
     const isRecruiter = rhProfile?.role === 'recruiter';
     const canSeeApprovedRequests = isAdmin || isRecruiter;
+    
+    // DEBUG
+    console.log('🔍 [UnifiedApprovals] ===== DEBUG =====');
+    console.log('🔍 [UnifiedApprovals] rhProfile:', rhProfile);
+    console.log('🔍 [UnifiedApprovals] isAdmin:', isAdmin);
+    console.log('🔍 [UnifiedApprovals] isRecruiter:', isRecruiter);
+    console.log('🔍 [UnifiedApprovals] canSeeApprovedRequests:', canSeeApprovedRequests);
+    console.log('🔍 [UnifiedApprovals] jobRequestStats:', jobRequestStats);
+    console.log('🔍 [UnifiedApprovals] Total jobRequests:', jobRequests?.length || 0);
+    console.log('🔍 [UnifiedApprovals] Aprovadas:', jobRequests?.filter(r => r.status === 'aprovado').length || 0);
+    console.log('🔍 [UnifiedApprovals] ===== FIM DEBUG =====');
     
     // Admin/Recrutador vê primeiro as aprovações de publicação (vagas editadas)
     // Gerente vê primeiro as solicitações de criação
