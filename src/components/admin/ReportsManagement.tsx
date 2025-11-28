@@ -13,6 +13,7 @@ import { generatePDFReport, generateDashboardPDF } from "@/utils/pdf-reports";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile } from "@/hooks/useRH";
 import { calculateTotalProcessTime } from '@/utils/stageTimeCalculator';
+import { calculateBusinessDaysUntil } from '@/utils/business-days';
 
 const ReportsManagement = () => {
     const { user } = useAuth();
@@ -27,10 +28,8 @@ const ReportsManagement = () => {
 
     // Função helper para calcular dias até expiração - MESMA LÓGICA DO DASHBOARD
     const getDaysUntilExpiry = (expiryDate: string): number => {
-        const now = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry.getTime() - now.getTime();
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const days = calculateBusinessDaysUntil(expiryDate);
+        return days ?? 0;
     };
 
     // Determina o status exibido no portal para a vaga exportada

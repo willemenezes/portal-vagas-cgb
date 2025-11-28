@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CheckCircle, AlertTriangle, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { calculateBusinessDaysUntil, formatBusinessDaysLabel } from '@/utils/business-days';
 
 interface JobExpiryDetailsProps {
     job: {
@@ -28,21 +29,12 @@ export const JobExpiryDetails: React.FC<JobExpiryDetailsProps> = ({
     const updatedDate = job.updated_at ? new Date(job.updated_at) : null;
     const expiryDate = job.expires_at ? new Date(job.expires_at) : null;
 
-    // Calcular dias até expiração
-    const getDaysUntilExpiry = () => {
-        if (!expiryDate) return null;
-        const now = new Date();
-        const diffTime = expiryDate.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
-    const daysUntilExpiry = getDaysUntilExpiry();
+    const daysUntilExpiry = job.expires_at ? calculateBusinessDaysUntil(job.expires_at) : null;
     const remainingPositions = (job.quantity || 1) - (job.quantity_filled || 0);
 
     // Status de expiração
     const getExpiryStatus = () => {
-        if (!daysUntilExpiry) return 'unknown';
+        if (daysUntilExpiry === null) return 'unknown';
         if (daysUntilExpiry < 0) return 'expired';
         if (daysUntilExpiry <= 3) return 'expiring_soon';
         return 'active';
@@ -141,14 +133,7 @@ export const JobExpiryDetails: React.FC<JobExpiryDetailsProps> = ({
                                     expiryStatus === 'active' && "bg-green-100 text-green-700 border-green-200"
                                 )}
                             >
-                                {daysUntilExpiry! < 0
-                                    ? `Expirada há ${Math.abs(daysUntilExpiry!)} dias`
-                                    : daysUntilExpiry === 0
-                                        ? "Expira hoje"
-                                        : daysUntilExpiry === 1
-                                            ? "Expira amanhã"
-                                            : `${daysUntilExpiry} dias restantes`
-                                }
+                                {daysUntilExpiry !== null && formatBusinessDaysLabel(daysUntilExpiry)}
                             </Badge>
                         </div>
                     </div>
@@ -182,7 +167,7 @@ export const JobExpiryDetails: React.FC<JobExpiryDetailsProps> = ({
                 {/* Resumo de ações */}
                 <div className="pt-2 border-t">
                     <div className="text-xs text-gray-500 space-y-1">
-                        <p>• <strong>Prazo de contratação:</strong> 20 dias corridos após aprovação</p>
+                        <p>• <strong>Prazo de contratação:</strong> 20 dias úteis após aprovação</p>
                         <p>• <strong>Data de expiração:</strong> Calculada automaticamente</p>
                         <p>• <strong>Renovação:</strong> Necessária após expiração</p>
                     </div>

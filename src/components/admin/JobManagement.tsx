@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import JobQuantityBadge from "./JobQuantityBadge";
 import JobFlowStatusBadge from "./JobFlowStatusBadge";
 import { JobTitleSelect } from "./JobTitleSelect";
+import { calculateBusinessDaysUntil } from "@/utils/business-days";
 
 // Mapeamento de status para aparência do Badge (chaves em inglês, texto em português)
 const approvalStatusConfig = {
@@ -154,10 +155,8 @@ const JobManagement = () => {
   // Função helper para calcular dias até expiração (reutilizada para consistência)
   // IMPORTANTE: Definir ANTES de usar em filteredJobs e stats
   const getDaysUntilExpiry = React.useCallback((expiryDate: string) => {
-    const now = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - now.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const days = calculateBusinessDaysUntil(expiryDate);
+    return days ?? 0;
   }, []);
 
   // Deduplicar "Banco de Talentos": manter apenas 1 (preferir ativo; senão, o mais recente)

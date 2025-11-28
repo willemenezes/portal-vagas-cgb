@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { calculateBusinessDaysUntil, formatBusinessDaysLabel } from '@/utils/business-days';
 
 interface JobQuantityBadgeProps {
     quantity?: number;
@@ -36,16 +37,7 @@ export const JobQuantityBadge: React.FC<JobQuantityBadgeProps> = ({
     // Se a vaga está concluída ou congelada, não mostrar contagem regressiva
     const isInactive = normalizedFlow === 'concluida' || normalizedFlow === 'congelada';
 
-    // Calcular dias até expiração
-    const getDaysUntilExpiry = (expiryDate: string) => {
-        const now = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
-    const daysUntilExpiry = expiresAt ? getDaysUntilExpiry(expiresAt) : null;
+    const daysUntilExpiry = expiresAt ? calculateBusinessDaysUntil(expiresAt) : null;
     const remainingPositions = quantity - quantityFilled;
     const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
     const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
@@ -83,15 +75,7 @@ export const JobQuantityBadge: React.FC<JobQuantityBadgeProps> = ({
                         <Clock className="w-3 h-3" />
                     )}
 
-                    {isExpired ? (
-                        `Expirou há ${Math.abs(daysUntilExpiry!)} dias`
-                    ) : daysUntilExpiry === 0 ? (
-                        "Expira hoje"
-                    ) : daysUntilExpiry === 1 ? (
-                        "Expira amanhã"
-                    ) : (
-                        `${daysUntilExpiry} dias restantes`
-                    )}
+                    {daysUntilExpiry !== null && formatBusinessDaysLabel(daysUntilExpiry)}
                 </Badge>
             )}
 

@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRHProfile } from '@/hooks/useRH';
+import { calculateBusinessDaysUntil, formatBusinessDaysLabel } from '@/utils/business-days';
 
 export const ContractDeadlineManagement: React.FC = () => {
     const { user } = useAuth();
@@ -108,13 +109,11 @@ export const ContractDeadlineManagement: React.FC = () => {
         });
     }, [jobsDeduped, rhProfile]);
 
-    // Função para calcular dias até expiração (reutilizada para consistência)
-    const getDaysUntilExpiry = (expiryDate: string) => {
-        const now = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry.getTime() - now.getTime();
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
+    // Função para calcular dias úteis até a expiração (reutilizada para consistência)
+    const getDaysUntilExpiry = React.useCallback((expiryDate: string) => {
+        const days = calculateBusinessDaysUntil(expiryDate);
+        return days ?? 0;
+    }, []);
 
     // Filtrar vagas por busca e status
     const filteredJobs = jobsFilteredByRegion.filter(job => {
@@ -214,11 +213,13 @@ export const ContractDeadlineManagement: React.FC = () => {
         }
 
         const days = getDaysUntilExpiry(expiryDate);
-        if (days < 0) return { status: 'expired', color: 'red', text: `Expirada há ${Math.abs(days)} dias` };
-        if (days === 0) return { status: 'expiring_today', color: 'orange', text: 'Expira hoje' };
-        if (days === 1) return { status: 'expiring_tomorrow', color: 'orange', text: 'Expira amanhã' };
-        if (days <= 3) return { status: 'expiring_soon', color: 'yellow', text: `${days} dias restantes` };
-        return { status: 'active', color: 'green', text: `${days} dias restantes` };
+        const label = formatBusinessDaysLabel(days);
+
+        if (days < 0) return { status: 'expired', color: 'red', text: label };
+        if (days === 0) return { status: 'expiring_today', color: 'orange', text: label };
+        if (days === 1) return { status: 'expiring_tomorrow', color: 'orange', text: label };
+        if (days <= 3) return { status: 'expiring_soon', color: 'yellow', text: label };
+        return { status: 'active', color: 'green', text: label };
     };
 
     // Função para abrir modal de edição
