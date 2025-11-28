@@ -11,7 +11,7 @@ import { useJobRequests } from '@/hooks/useJobRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { useRHProfile } from '@/hooks/useRH';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -779,25 +779,26 @@ const JobRequestsManagement = () => {
                                                         size="sm"
                                                         className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                                         onClick={() => {
+                                                            // Garantir que todos os valores sejam strings válidas
                                                             setEditFormData({
-                                                                id: job.id,
-                                                                title: job.title,
-                                                                department: job.department,
-                                                                city: job.city,
-                                                                state: job.state,
-                                                                type: job.type,
-                                                                description: job.description,
-                                                                requirements: Array.isArray(job.requirements) ? job.requirements.join('\n') : '',
-                                                                benefits: Array.isArray(job.benefits) ? job.benefits.join('\n') : '',
-                                                                workload: job.workload,
-                                                                justification: job.justification || '',
-                                                                quantity: job.quantity || 1,
-                                                                company_contract: job.company_contract || '',
-                                                                solicitante_nome: job.solicitante_nome || '',
-                                                                solicitante_funcao: job.solicitante_funcao || '',
-                                                                observacoes_internas: job.observacoes_internas || '',
-                                                                tipo_solicitacao: job.tipo_solicitacao || 'aumento_quadro',
-                                                                nome_substituido: job.nome_substituido || ''
+                                                                id: String(job.id || ''),
+                                                                title: String(job.title || ''),
+                                                                department: String(job.department || ''),
+                                                                city: String(job.city || ''),
+                                                                state: String(job.state || ''),
+                                                                type: String(job.type || 'CLT'),
+                                                                description: String(job.description || ''),
+                                                                requirements: Array.isArray(job.requirements) ? job.requirements.join('\n') : String(job.requirements || ''),
+                                                                benefits: Array.isArray(job.benefits) ? job.benefits.join('\n') : String(job.benefits || ''),
+                                                                workload: String(job.workload || '40h/semana'),
+                                                                justification: String(job.justification || ''),
+                                                                quantity: Number(job.quantity) || 1,
+                                                                company_contract: String(job.company_contract || ''),
+                                                                solicitante_nome: String(job.solicitante_nome || ''),
+                                                                solicitante_funcao: String(job.solicitante_funcao || ''),
+                                                                observacoes_internas: String(job.observacoes_internas || ''),
+                                                                tipo_solicitacao: String(job.tipo_solicitacao || 'aumento_quadro'),
+                                                                nome_substituido: String(job.nome_substituido || '')
                                                             });
                                                             setIsEditModalOpen(true);
                                                         }}
@@ -1458,7 +1459,10 @@ const JobRequestsManagement = () => {
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Editar Solicitação: {editFormData?.title}</DialogTitle>
+                        <DialogTitle>Editar Solicitação: {editFormData?.title || 'Carregando...'}</DialogTitle>
+                        <DialogDescription>
+                            Edite os campos da solicitação antes de publicar a vaga
+                        </DialogDescription>
                     </DialogHeader>
                     {editFormData && (
                         <div className="space-y-4">
@@ -1467,7 +1471,7 @@ const JobRequestsManagement = () => {
                                     <Label htmlFor="edit-title">Título da Vaga *</Label>
                                     <Input
                                         id="edit-title"
-                                        value={editFormData.title}
+                                        value={editFormData.title || ''}
                                         onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
                                         placeholder="Ex: Analista de Sistemas"
                                     />
@@ -1494,7 +1498,7 @@ const JobRequestsManagement = () => {
                                     <Label htmlFor="edit-city">Cidade *</Label>
                                     <Input
                                         id="edit-city"
-                                        value={editFormData.city}
+                                        value={editFormData.city || ''}
                                         onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
                                         placeholder="Ex: Belém"
                                     />
@@ -1557,7 +1561,7 @@ const JobRequestsManagement = () => {
                                         id="edit-quantity"
                                         type="number"
                                         min="1"
-                                        value={editFormData.quantity}
+                                        value={editFormData.quantity || 1}
                                         onChange={(e) => setEditFormData({ ...editFormData, quantity: parseInt(e.target.value) || 1 })}
                                     />
                                 </div>
@@ -1565,7 +1569,7 @@ const JobRequestsManagement = () => {
                                     <Label htmlFor="edit-company-contract">CT (Contrato) *</Label>
                                     <Input
                                         id="edit-company-contract"
-                                        value={editFormData.company_contract}
+                                        value={editFormData.company_contract || ''}
                                         onChange={(e) => setEditFormData({ ...editFormData, company_contract: e.target.value })}
                                         placeholder="Ex: CT-001"
                                     />
@@ -1575,7 +1579,7 @@ const JobRequestsManagement = () => {
                                 <Label htmlFor="edit-description">Descrição *</Label>
                                 <Textarea
                                     id="edit-description"
-                                    value={editFormData.description}
+                                    value={editFormData.description || ''}
                                     onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
                                     rows={5}
                                     placeholder="Descreva as responsabilidades e atividades da vaga..."
@@ -1585,7 +1589,7 @@ const JobRequestsManagement = () => {
                                 <Label htmlFor="edit-requirements">Requisitos (um por linha)</Label>
                                 <Textarea
                                     id="edit-requirements"
-                                    value={editFormData.requirements}
+                                    value={editFormData.requirements || ''}
                                     onChange={(e) => setEditFormData({ ...editFormData, requirements: e.target.value })}
                                     rows={4}
                                     placeholder="Ensino médio completo&#10;Experiência com vendas&#10;CNH categoria B"
@@ -1595,7 +1599,7 @@ const JobRequestsManagement = () => {
                                 <Label htmlFor="edit-benefits">Benefícios (um por linha)</Label>
                                 <Textarea
                                     id="edit-benefits"
-                                    value={editFormData.benefits}
+                                    value={editFormData.benefits || ''}
                                     onChange={(e) => setEditFormData({ ...editFormData, benefits: e.target.value })}
                                     rows={4}
                                     placeholder="Vale transporte&#10;Vale refeição&#10;Plano de saúde"
@@ -1605,7 +1609,7 @@ const JobRequestsManagement = () => {
                                 <Label htmlFor="edit-justification">Justificativa *</Label>
                                 <Textarea
                                     id="edit-justification"
-                                    value={editFormData.justification}
+                                    value={editFormData.justification || ''}
                                     onChange={(e) => setEditFormData({ ...editFormData, justification: e.target.value })}
                                     rows={3}
                                     placeholder="Justifique a necessidade desta vaga..."
