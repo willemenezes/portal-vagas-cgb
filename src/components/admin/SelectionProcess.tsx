@@ -148,15 +148,89 @@ const SelectionProcess = () => {
     const [pendingApproval, setPendingApproval] = useState<{ candidate: Candidate; job: Job } | null>(null);
     const [isJobSelectOpen, setIsJobSelectOpen] = useState(false);
 
+    // Estado para armazenar IDs de vagas concluídas com candidatos ativos
+    const [completedJobsWithCandidates, setCompletedJobsWithCandidates] = useState<Set<string>>(new Set());
+
+    // Verificar quais vagas concluídas têm candidatos em processo seletivo
+    useEffect(() => {
+        const checkCompletedJobsWithCandidates = async () => {
+            // Buscar todas as vagas concluídas
+            const completedJobs = allJobs.filter(job => job.flow_status === 'concluida');
+            
+            if (completedJobs.length === 0) {
+                setCompletedJobsWithCandidates(new Set());
+                return;
+            }
+
+            // Buscar candidatos ativos (não contratados, não reprovados) para essas vagas
+            // Buscar todos os candidatos dessas vagas e filtrar localmente
+            const { data: allCandidates, error } = await supabase
+                .from('candidates')
+                .select('job_id, status')
+                .in('job_id', completedJobs.map(j => j.id));
+
+            if (error) {
+                console.error('❌ [SelectionProcess] Erro ao verificar candidatos ativos:', error);
+                return;
+            }
+
+            // Filtrar candidatos que não estão contratados nem reprovados
+            const activeCandidates = allCandidates?.filter(
+                c => c.status !== 'Contratado' && c.status !== 'Reprovado'
+            ) || [];
+
+            if (error) {
+                console.error('❌ [SelectionProcess] Erro ao verificar candidatos ativos:', error);
+                return;
+            }
+
+            // Criar Set com IDs de vagas que têm candidatos ativos
+            const jobIdsWithActiveCandidates = new Set(
+                activeCandidates?.map(c => c.job_id) || []
+            );
+
+            setCompletedJobsWithCandidates(jobIdsWithActiveCandidates);
+            console.log(`✅ [SelectionProcess] ${jobIdsWithActiveCandidates.size} vagas concluídas com candidatos ativos`);
+        };
+
+        checkCompletedJobsWithCandidates();
+    }, [allJobs]);
+
     const jobsForSelection = useMemo(() => {
         if (isRhProfileLoading) {
             console.log(`⏳ [SelectionProcess] Carregando perfil RH...`);
             return [];
         }
 
-        // Filtrar apenas vagas ativas (flow_status = 'ativa')
-        let activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
-        console.log(`📊 [SelectionProcess] Vagas ativas (antes de filtros): ${activeJobs.length}`);
+        // Filtrar vagas ativas E vagas concluídas que têm candidatos em processo seletivo
+        let activeJobs = allJobs.filter(job => {
+            // Incluir vagas ativas
+            if (job.flow_status === 'ativa' || !job.flow_status) {
+                return true;
+            }
+            // Incluir vagas concluídas apenas se tiverem candidatos ativos
+            if (job.flow_status === 'concluida' && completedJobsWithCandidates.has(job.id)) {
+                return true;
+            }
+            return false;
+        });
+        
+        console.log(`📊 [SelectionProcess] Vagas disponíveis (antes de filtros e deduplicação): ${activeJobs.length}`);
+        
+        // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
+        // Manter a vaga mais recente (maior created_at)
+        const jobKeyMap = new Map<string, Job>();
+        activeJobs.forEach(job => {
+            const key = `${job.title}|${job.city}|${job.department || ''}`.toLowerCase().trim();
+            const existing = jobKeyMap.get(key);
+            
+            if (!existing || new Date(job.created_at) > new Date(existing.created_at)) {
+                jobKeyMap.set(key, job);
+            }
+        });
+        
+        activeJobs = Array.from(jobKeyMap.values());
+        console.log(`📊 [SelectionProcess] Vagas após remoção de duplicatas: ${activeJobs.length}`);
         
         // NOTA: O filtro de busca agora é feito pelo Command component internamente
 
@@ -266,7 +340,7 @@ const SelectionProcess = () => {
         }
 
         return activeJobs;
-    }, [allJobs, rhProfile, isRhProfileLoading]);
+    }, [allJobs, rhProfile, isRhProfileLoading, completedJobsWithCandidates]);
 
     useEffect(() => {
         console.log(`🔍 [SelectionProcess] useEffect - selectedJobId: ${selectedJobId}, jobsForSelection.length: ${jobsForSelection.length}`);
