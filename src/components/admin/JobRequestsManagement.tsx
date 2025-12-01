@@ -55,7 +55,7 @@ const JobRequestsManagement = () => {
     const deleteJob = useDeleteJob();
     
     // BUG FIX: Usar o hook correto para solicitações de vagas
-    const { jobRequests, isLoading: isLoadingRequests, updateJobRequest, createJobFromRequest, isUpdating } = useJobRequests();
+    const { jobRequests, isLoading: isLoadingRequests, updateJobRequest, updateJobRequestStatus, createJobFromRequest, isUpdating } = useJobRequests();
     
     // CORREÇÃO: Buscar vagas editadas aguardando aprovação
     const { data: pendingEditedJobs = [], isLoading: isLoadingEditedJobs, refetch: refetchPendingJobs } = usePendingJobs(rhProfile);
@@ -247,68 +247,89 @@ const JobRequestsManagement = () => {
             return;
         }
         try {
-            // CORREÇÃO CRÍTICA: Verificar se é uma vaga editada (já existia antes)
-            // Se for uma vaga editada, ao rejeitar a edição, devemos restaurar o estado anterior (ativa)
-            // ao invés de marcar como rejeitada (que faria ela sumir do site)
-            const isEditedJob = pendingEditedJobs.some(job => job.id === selectedJob.id);
+            // CORREÇÃO CRÍTICA: Verificar se é uma solicitação aprovada (ainda não convertida em vaga)
+            // Se for uma solicitação, precisa atualizar job_requests, não jobs
+            const isApprovedRequest = approvedRequests.some(req => req.id === selectedJob.id);
             
-            if (isEditedJob) {
-                // Vaga editada: restaurar estado anterior (ativa) ao invés de marcar como rejeitada
-                // Isso cancela apenas a edição, mantendo a vaga ativa no site
-                console.log('🔄 [JobRequestsManagement] Rejeitando edição de vaga existente - restaurando estado anterior');
+            if (isApprovedRequest) {
+                // Solicitação aprovada: atualizar na tabela job_requests
+                console.log('🔄 [JobRequestsManagement] Rejeitando solicitação aprovada - atualizando job_requests');
                 
-                // Buscar informações da vaga no banco para verificar se tinha estado anterior
-                // Se a vaga tem created_at diferente de updated_at recente, significa que foi editada
-                const { data: jobFromDb, error: fetchError } = await supabase
-                    .from('jobs')
-                    .select('created_at, updated_at, flow_status')
-                    .eq('id', selectedJob.id)
-                    .single();
-                
-                if (fetchError) {
-                    console.error('❌ [JobRequestsManagement] Erro ao buscar vaga:', fetchError);
-                }
-                
-                // Usar flow_status atual como base (geralmente mantém o estado anterior)
-                // Se não tiver, assumir 'ativa' (caso mais comum)
-                const restoredFlowStatus = jobFromDb?.flow_status || selectedJob.flow_status || 'ativa';
-                
-                await updateJob.mutateAsync({
+                await updateJobRequestStatus.mutateAsync({
                     id: selectedJob.id,
-                    approval_status: 'active', // Restaurar para ativa
-                    status: 'active', // Restaurar para ativa
-                    flow_status: restoredFlowStatus, // Manter o flow_status (ou restaurar para ativa)
-                    rejection_reason: null // Limpar motivo de rejeição já que não é rejeição completa
+                    status: 'rejeitado',
+                    notes: rejectionReason
                 });
                 
                 toast({
-                    title: '✅ Edição Cancelada',
-                    description: 'A edição foi rejeitada e a vaga voltou ao estado anterior (ativa no site).'
+                    title: '🔴 Solicitação Rejeitada',
+                    description: 'A solicitação foi rejeitada e devolvida para o solicitante com suas observações.'
                 });
             } else {
-                // Nova vaga ou solicitação: marcar como rejeitada normalmente
-                console.log('🔄 [JobRequestsManagement] Rejeitando nova vaga/solicitação');
+                // CORREÇÃO CRÍTICA: Verificar se é uma vaga editada (já existia antes)
+                // Se for uma vaga editada, ao rejeitar a edição, devemos restaurar o estado anterior (ativa)
+                // ao invés de marcar como rejeitada (que faria ela sumir do site)
+                const isEditedJob = pendingEditedJobs.some(job => job.id === selectedJob.id);
                 
-                await updateJob.mutateAsync({
-                    id: selectedJob.id,
-                    approval_status: 'rejected',
-                    status: 'draft',
-                    rejection_reason: rejectionReason
-                });
-                
-                toast({
-                    title: '🔴 Vaga Rejeitada',
-                    description: 'A vaga foi devolvida para o solicitante com suas observações.'
-                });
+                if (isEditedJob) {
+                    // Vaga editada: restaurar estado anterior (ativa) ao invés de marcar como rejeitada
+                    // Isso cancela apenas a edição, mantendo a vaga ativa no site
+                    console.log('🔄 [JobRequestsManagement] Rejeitando edição de vaga existente - restaurando estado anterior');
+                    
+                    // Buscar informações da vaga no banco para verificar se tinha estado anterior
+                    // Se a vaga tem created_at diferente de updated_at recente, significa que foi editada
+                    const { data: jobFromDb, error: fetchError } = await supabase
+                        .from('jobs')
+                        .select('created_at, updated_at, flow_status')
+                        .eq('id', selectedJob.id)
+                        .single();
+                    
+                    if (fetchError) {
+                        console.error('❌ [JobRequestsManagement] Erro ao buscar vaga:', fetchError);
+                    }
+                    
+                    // Usar flow_status atual como base (geralmente mantém o estado anterior)
+                    // Se não tiver, assumir 'ativa' (caso mais comum)
+                    const restoredFlowStatus = jobFromDb?.flow_status || selectedJob.flow_status || 'ativa';
+                    
+                    await updateJob.mutateAsync({
+                        id: selectedJob.id,
+                        approval_status: 'active', // Restaurar para ativa
+                        status: 'active', // Restaurar para ativa
+                        flow_status: restoredFlowStatus, // Manter o flow_status (ou restaurar para ativa)
+                        rejection_reason: null // Limpar motivo de rejeição já que não é rejeição completa
+                    });
+                    
+                    toast({
+                        title: '✅ Edição Cancelada',
+                        description: 'A edição foi rejeitada e a vaga voltou ao estado anterior (ativa no site).'
+                    });
+                } else {
+                    // Nova vaga: marcar como rejeitada normalmente
+                    console.log('🔄 [JobRequestsManagement] Rejeitando nova vaga');
+                    
+                    await updateJob.mutateAsync({
+                        id: selectedJob.id,
+                        approval_status: 'rejected',
+                        status: 'draft',
+                        rejection_reason: rejectionReason
+                    });
+                    
+                    toast({
+                        title: '🔴 Vaga Rejeitada',
+                        description: 'A vaga foi devolvida para o solicitante com suas observações.'
+                    });
+                }
             }
             
             setRejectModalOpen(false);
             setRejectionReason('');
             setSelectedJob(null);
-        } catch (error) {
+        } catch (error: any) {
+            console.error('❌ [JobRequestsManagement] Erro ao rejeitar:', error);
             toast({
                 title: '❌ Erro',
-                description: 'Não foi possível rejeitar a vaga.',
+                description: `Não foi possível rejeitar: ${error?.message || 'Erro desconhecido'}`,
                 variant: 'destructive'
             });
         }
