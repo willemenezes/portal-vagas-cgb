@@ -81,6 +81,12 @@ function isHoliday(date: Date): boolean {
 /**
  * Calcula a diferença em dias úteis entre uma data alvo e uma data de referência,
  * excluindo fins de semana E feriados nacionais brasileiros.
+ * 
+ * IMPORTANTE: A contagem começa do DIA SEGUINTE à data de referência.
+ * Exemplo: Se hoje é segunda (01/12) e expira quinta (04/12):
+ * - Conta: terça (02/12), quarta (03/12), quinta (04/12) = 3 dias úteis restantes
+ * - Se expira hoje (01/12), retorna 0 = "Expira hoje (último dia)"
+ * 
  * Retorna valores negativos quando a data alvo já passou.
  */
 export function calculateBusinessDaysUntil(
@@ -102,7 +108,7 @@ export function calculateBusinessDaysUntil(
     targetDate.setHours(0, 0, 0, 0);
     reference.setHours(0, 0, 0, 0);
 
-    // Se for a mesma data, retornar 0
+    // Se for a mesma data, retornar 0 (expira hoje)
     if (targetDate.getTime() === reference.getTime()) {
         return 0;
     }
@@ -113,16 +119,19 @@ export function calculateBusinessDaysUntil(
     const end = isFuture ? new Date(targetDate) : new Date(reference);
 
     // Contar dias úteis (excluindo fins de semana e feriados)
+    // IMPORTANTE: Começa a contar do DIA SEGUINTE à data de referência
+    // Isso significa que se hoje é segunda e expira quinta, conta terça+quarta+quinta = 3 dias
     let count = 0;
     const current = new Date(start);
     
-    // Avançar para o próximo dia se necessário
+    // Avançar para o próximo dia (não incluir o dia atual na contagem)
     if (isFuture) {
         current.setDate(current.getDate() + 1);
     } else {
         current.setDate(current.getDate() - 1);
     }
 
+    // Contar todos os dias úteis entre o dia seguinte e a data alvo (inclusive)
     while (isFuture ? current <= end : current >= end) {
         if (isBusinessDay(current) && !isHoliday(current)) {
             count++;
@@ -141,6 +150,7 @@ export function calculateBusinessDaysUntil(
 
 /**
  * Retorna o texto padronizado para exibição de prazos em dias úteis.
+ * Torna mais claro e explicativo para o usuário entender o prazo.
  */
 export function formatBusinessDaysLabel(daysDiff: number): string {
     if (daysDiff < 0) {
@@ -151,11 +161,11 @@ export function formatBusinessDaysLabel(daysDiff: number): string {
     }
 
     if (daysDiff === 0) {
-        return 'Expira hoje';
+        return 'Expira hoje (último dia)';
     }
 
     if (daysDiff === 1) {
-        return 'Expira no próximo dia útil';
+        return '1 dia útil restante';
     }
 
     return `${daysDiff} dias úteis restantes`;
