@@ -233,33 +233,46 @@ const SelectionProcess = () => {
         console.log(`📊 [SelectionProcess] Verificação de candidatos ativos: ${isCheckingCompletedJobs ? 'EM ANDAMENTO' : 'CONCLUÍDA'}`);
         console.log(`📊 [SelectionProcess] Vagas concluídas com candidatos ativos: ${completedJobsWithCandidates.size}`);
 
-        // Filtrar vagas ativas E vagas concluídas que têm candidatos em processo seletivo
-        // CORREÇÃO: Esta filtragem deve ser aplicada para TODOS os perfis (admin, recrutador, gerente, solicitador)
-        // IMPORTANTE: Se ainda estamos verificando candidatos ativos, excluir TODAS as vagas concluídas temporariamente
-        let activeJobs = allJobs.filter(job => {
-            // Incluir vagas ativas
-            if (job.flow_status === 'ativa' || !job.flow_status) {
-                return true;
-            }
-            // Incluir vagas concluídas apenas se tiverem candidatos ativos E a verificação já foi concluída
-            if (job.flow_status === 'concluida') {
-                // Se ainda estamos verificando, excluir todas as vagas concluídas
-                if (isCheckingCompletedJobs) {
-                    console.log(`⏳ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) excluída temporariamente - verificação em andamento`);
-                    return false;
+        let activeJobs: Job[] = [];
+
+        if (role === 'recruiter') {
+            // REGRA ESPECÍFICA PARA RECRUTADOR:
+            // Recrutador só deve ver vagas ATIVAS no Processo Seletivo.
+            // Vagas com flow_status = 'concluida' NÃO aparecem mais aqui,
+            // independentemente de ainda terem candidatos ativos.
+            activeJobs = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
+
+            console.log(`📊 [SelectionProcess] [recruiter] Vagas ativas encontradas: ${activeJobs.length}`);
+        } else {
+            // DEMAIS PERFIS (admin, gerente, solicitador):
+            // Filtrar vagas ativas E vagas concluídas que têm candidatos em processo seletivo.
+            // Enquanto a verificação de candidatos ativos estiver em andamento,
+            // vagas concluídas ficam temporariamente ocultas.
+            activeJobs = allJobs.filter(job => {
+                // Incluir vagas ativas
+                if (job.flow_status === 'ativa' || !job.flow_status) {
+                    return true;
                 }
-                
-                const hasActiveCandidates = completedJobsWithCandidates.has(job.id);
-                if (!hasActiveCandidates) {
-                    console.log(`❌ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) excluída para perfil ${role} (sem candidatos ativos)`);
-                } else {
-                    console.log(`✅ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) incluída para perfil ${role} (tem candidatos ativos)`);
+                // Incluir vagas concluídas apenas se tiverem candidatos ativos E a verificação já foi concluída
+                if (job.flow_status === 'concluida') {
+                    // Se ainda estamos verificando, excluir todas as vagas concluídas
+                    if (isCheckingCompletedJobs) {
+                        console.log(`⏳ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) excluída temporariamente - verificação em andamento`);
+                        return false;
+                    }
+                    
+                    const hasActiveCandidates = completedJobsWithCandidates.has(job.id);
+                    if (!hasActiveCandidates) {
+                        console.log(`❌ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) excluída para perfil ${role} (sem candidatos ativos)`);
+                    } else {
+                        console.log(`✅ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) incluída para perfil ${role} (tem candidatos ativos)`);
+                    }
+                    return hasActiveCandidates;
                 }
-                return hasActiveCandidates;
-            }
-            // Excluir todas as outras vagas (congeladas, etc.)
-            return false;
-        });
+                // Excluir todas as outras vagas (congeladas, etc.)
+                return false;
+            });
+        }
         
         const completedJobsCount = activeJobs.filter(j => j.flow_status === 'concluida').length;
         const activeJobsCount = activeJobs.filter(j => j.flow_status === 'ativa' || !j.flow_status).length;
