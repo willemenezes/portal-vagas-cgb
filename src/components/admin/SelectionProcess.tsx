@@ -200,40 +200,34 @@ const SelectionProcess = () => {
 
         console.log(`📊 [SelectionProcess] [${role}] Vagas ATIVAS após filtro rigoroso: ${activeJobs.length}`);
         
-        // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
-        // Priorizar: 1) Vagas com candidatos, 2) Se ambas têm ou não têm, manter a mais recente
-        const jobKeyMap = new Map<string, Job>();
-        activeJobs.forEach(job => {
-            const key = `${job.title}|${job.city}|${job.department || ''}`.toLowerCase().trim();
-            const existing = jobKeyMap.get(key);
+        // CORREÇÃO CRÍTICA: Aplicar o mesmo filtro da Gestão de Vagas
+        // Excluir vagas que estão em draft ou pending_approval (essas não aparecem na Gestão de Vagas)
+        activeJobs = activeJobs.filter(job => {
+            const approval = String(job.approval_status || '').toLowerCase();
+            const status = String(job.status || '').toLowerCase();
             
-            if (!existing) {
-                jobKeyMap.set(key, job);
-            } else {
-                // Comparar: priorizar vaga com mais candidatos
-                const currentApplicants = job.applicants || 0;
-                const existingApplicants = existing.applicants || 0;
-                
-                if (currentApplicants > existingApplicants) {
-                    // Nova vaga tem mais candidatos - substituir
-                    console.log(`🔄 [SelectionProcess] Substituindo vaga duplicada: "${job.title}" (${currentApplicants} candidatos) substitui versão com ${existingApplicants} candidatos`);
-                    jobKeyMap.set(key, job);
-                } else if (currentApplicants === existingApplicants) {
-                    // Mesmo número de candidatos - manter a mais recente
-                    if (new Date(job.created_at) > new Date(existing.created_at)) {
-                        jobKeyMap.set(key, job);
-                    }
-                }
-                // Se existing tem mais candidatos, manter existing (não fazer nada)
+            // Excluir rascunhos
+            const isDraft = status === 'draft' || status === 'rascunho';
+            // Excluir pendentes de aprovação
+            const isPending = ['pending_approval', 'aprovacao_pendente'].includes(approval);
+            
+            if (isDraft || isPending) {
+                console.log(`❌ [SelectionProcess] [${role}] Vaga "${job.title} - ${job.city}" excluída (não aparece na Gestão de Vagas)`, {
+                    approval_status: job.approval_status,
+                    status: job.status,
+                    flow_status: job.flow_status
+                });
+                return false;
             }
+            
+            return true;
         });
         
-        activeJobs = Array.from(jobKeyMap.values());
-        console.log(`📊 [SelectionProcess] Vagas após remoção de duplicatas: ${activeJobs.length}`);
+        console.log(`📊 [SelectionProcess] [${role}] Vagas após filtro de Gestão de Vagas: ${activeJobs.length}`);
         
         // Log detalhado das vagas finais
         activeJobs.forEach(job => {
-            console.log(`✅ [SelectionProcess] Vaga final: "${job.title} - ${job.city}" (ID: ${job.id}, Candidatos: ${job.applicants || 0}, Status: ${job.flow_status})`);
+            console.log(`✅ [SelectionProcess] Vaga final: "${job.title} - ${job.city}" (ID: ${job.id}, Candidatos: ${job.applicants || 0}, Status: ${job.flow_status}, Approval: ${job.approval_status})`);
         });
         
         // NOTA: O filtro de busca agora é feito pelo Command component internamente
