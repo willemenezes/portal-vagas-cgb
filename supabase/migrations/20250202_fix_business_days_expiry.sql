@@ -126,29 +126,29 @@ COMMENT ON FUNCTION add_business_days(TIMESTAMP WITH TIME ZONE, INT) IS 'Adicion
 COMMENT ON FUNCTION calculate_expiry_date() IS 'Calcula a data de expiração da vaga (NOW + 20 dias ÚTEIS, excluindo fins de semana e feriados)';
 
 -- 5. Atualizar vagas ATIVAS existentes que têm expires_at incorreto
--- IMPORTANTE: Só atualizar vagas que ainda não expiraram e estão ativas
+-- IMPORTANTE: Atualizar TODAS as vagas ativas, mesmo as que já expiraram
 -- Isso recalcula a data de expiração baseado na data de criação + 20 dias úteis
 UPDATE public.jobs
 SET expires_at = add_business_days(created_at, 20)
 WHERE 
     flow_status = 'ativa' 
-    AND expires_at IS NOT NULL
-    AND expires_at > NOW()
     AND created_at IS NOT NULL;
 
 -- 6. Log de vagas atualizadas
 DO $$
 DECLARE
     updated_count INT;
+    total_active INT;
 BEGIN
-    SELECT COUNT(*) INTO updated_count
-    FROM public.jobs
-    WHERE 
-        flow_status = 'ativa' 
-        AND expires_at IS NOT NULL
-        AND expires_at > NOW()
-        AND created_at IS NOT NULL;
+    -- Contar quantas vagas foram atualizadas
+    GET DIAGNOSTICS updated_count = ROW_COUNT;
     
-    RAISE NOTICE 'Vagas ativas atualizadas com nova data de expiração: %', updated_count;
+    -- Contar total de vagas ativas
+    SELECT COUNT(*) INTO total_active
+    FROM public.jobs
+    WHERE flow_status = 'ativa' AND created_at IS NOT NULL;
+    
+    RAISE NOTICE 'Total de vagas ativas: %', total_active;
+    RAISE NOTICE 'Vagas atualizadas com nova data de expiração: %', updated_count;
 END $$;
 
