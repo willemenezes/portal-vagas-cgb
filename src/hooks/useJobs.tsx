@@ -133,13 +133,44 @@ export const useAllJobs = () => {
         const endTime = performance.now();
         console.log(`✅ [useAllJobs] ${jobs.length} vagas carregadas em ${Math.round(endTime - startTime)}ms`);
 
-        // OTIMIZAÇÃO: Retornar vagas sem contagem inicial para carregamento rápido
-        // A contagem de candidatos será feita sob demanda quando necessário
-        // Isso evita sobrecarregar o servidor com muitas requisições simultâneas
+        // Buscar contagens de candidatos para todas as vagas de uma vez
+        const jobIds = jobs.map(j => j.id);
+        console.log(`🔍 [useAllJobs] Buscando contagens de candidatos para ${jobIds.length} vagas...`);
+        
+        // Buscar total de candidatos por vaga
+        const { data: candidatesData, error: candidatesError } = await supabase
+          .from('candidates')
+          .select('job_id, status')
+          .in('job_id', jobIds);
+
+        if (candidatesError) {
+          console.warn('⚠️ [useAllJobs] Erro ao buscar candidatos (continuando sem contagem):', candidatesError);
+        }
+
+        // Agregar contagens por job_id
+        const applicantsCount: Record<string, number> = {};
+        const hiredCount: Record<string, number> = {};
+        
+        if (candidatesData) {
+          candidatesData.forEach(candidate => {
+            const jobId = candidate.job_id;
+            if (!applicantsCount[jobId]) {
+              applicantsCount[jobId] = 0;
+              hiredCount[jobId] = 0;
+            }
+            applicantsCount[jobId]++;
+            if (candidate.status === 'Aprovado' || candidate.status === 'Contratado') {
+              hiredCount[jobId]++;
+            }
+          });
+        }
+
+        console.log(`✅ [useAllJobs] Contagens calculadas para ${Object.keys(applicantsCount).length} vagas`);
+
         const jobsWithApplicants: Job[] = jobs.map((job) => ({
           ...job,
-          applicants: 0, // Inicializar com 0, será atualizado sob demanda
-          hired_count: 0, // Inicializar com 0, será atualizado sob demanda
+          applicants: applicantsCount[job.id] || 0,
+          hired_count: hiredCount[job.id] || 0,
           posted: new Date(job.created_at).toLocaleDateString('pt-BR')
         }));
 
