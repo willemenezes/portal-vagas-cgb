@@ -266,59 +266,59 @@ const JobRequestsManagement = () => {
                     description: 'A solicitação foi rejeitada e devolvida para o solicitante com suas observações.'
                 });
             } else {
-                // CORREÇÃO CRÍTICA: Verificar se é uma vaga editada (já existia antes)
-                // Se for uma vaga editada, ao rejeitar a edição, devemos restaurar o estado anterior (ativa)
-                // ao invés de marcar como rejeitada (que faria ela sumir do site)
-                const isEditedJob = pendingEditedJobs.some(job => job.id === selectedJob.id);
+            // CORREÇÃO CRÍTICA: Verificar se é uma vaga editada (já existia antes)
+            // Se for uma vaga editada, ao rejeitar a edição, devemos restaurar o estado anterior (ativa)
+            // ao invés de marcar como rejeitada (que faria ela sumir do site)
+            const isEditedJob = pendingEditedJobs.some(job => job.id === selectedJob.id);
+            
+            if (isEditedJob) {
+                // Vaga editada: restaurar estado anterior (ativa) ao invés de marcar como rejeitada
+                // Isso cancela apenas a edição, mantendo a vaga ativa no site
+                console.log('🔄 [JobRequestsManagement] Rejeitando edição de vaga existente - restaurando estado anterior');
                 
-                if (isEditedJob) {
-                    // Vaga editada: restaurar estado anterior (ativa) ao invés de marcar como rejeitada
-                    // Isso cancela apenas a edição, mantendo a vaga ativa no site
-                    console.log('🔄 [JobRequestsManagement] Rejeitando edição de vaga existente - restaurando estado anterior');
-                    
-                    // Buscar informações da vaga no banco para verificar se tinha estado anterior
-                    // Se a vaga tem created_at diferente de updated_at recente, significa que foi editada
-                    const { data: jobFromDb, error: fetchError } = await supabase
-                        .from('jobs')
-                        .select('created_at, updated_at, flow_status')
-                        .eq('id', selectedJob.id)
-                        .single();
-                    
-                    if (fetchError) {
-                        console.error('❌ [JobRequestsManagement] Erro ao buscar vaga:', fetchError);
-                    }
-                    
-                    // Usar flow_status atual como base (geralmente mantém o estado anterior)
-                    // Se não tiver, assumir 'ativa' (caso mais comum)
-                    const restoredFlowStatus = jobFromDb?.flow_status || selectedJob.flow_status || 'ativa';
-                    
-                    await updateJob.mutateAsync({
-                        id: selectedJob.id,
-                        approval_status: 'active', // Restaurar para ativa
-                        status: 'active', // Restaurar para ativa
-                        flow_status: restoredFlowStatus, // Manter o flow_status (ou restaurar para ativa)
-                        rejection_reason: null // Limpar motivo de rejeição já que não é rejeição completa
-                    });
-                    
-                    toast({
-                        title: '✅ Edição Cancelada',
-                        description: 'A edição foi rejeitada e a vaga voltou ao estado anterior (ativa no site).'
-                    });
-                } else {
+                // Buscar informações da vaga no banco para verificar se tinha estado anterior
+                // Se a vaga tem created_at diferente de updated_at recente, significa que foi editada
+                const { data: jobFromDb, error: fetchError } = await supabase
+                    .from('jobs')
+                    .select('created_at, updated_at, flow_status')
+                    .eq('id', selectedJob.id)
+                    .single();
+                
+                if (fetchError) {
+                    console.error('❌ [JobRequestsManagement] Erro ao buscar vaga:', fetchError);
+                }
+                
+                // Usar flow_status atual como base (geralmente mantém o estado anterior)
+                // Se não tiver, assumir 'ativa' (caso mais comum)
+                const restoredFlowStatus = jobFromDb?.flow_status || selectedJob.flow_status || 'ativa';
+                
+                await updateJob.mutateAsync({
+                    id: selectedJob.id,
+                    approval_status: 'active', // Restaurar para ativa
+                    status: 'active', // Restaurar para ativa
+                    flow_status: restoredFlowStatus, // Manter o flow_status (ou restaurar para ativa)
+                    rejection_reason: null // Limpar motivo de rejeição já que não é rejeição completa
+                });
+                
+                toast({
+                    title: '✅ Edição Cancelada',
+                    description: 'A edição foi rejeitada e a vaga voltou ao estado anterior (ativa no site).'
+                });
+            } else {
                     // Nova vaga: marcar como rejeitada normalmente
                     console.log('🔄 [JobRequestsManagement] Rejeitando nova vaga');
-                    
-                    await updateJob.mutateAsync({
-                        id: selectedJob.id,
-                        approval_status: 'rejected',
-                        status: 'draft',
-                        rejection_reason: rejectionReason
-                    });
-                    
-                    toast({
-                        title: '🔴 Vaga Rejeitada',
-                        description: 'A vaga foi devolvida para o solicitante com suas observações.'
-                    });
+                
+                await updateJob.mutateAsync({
+                    id: selectedJob.id,
+                    approval_status: 'rejected',
+                    status: 'draft',
+                    rejection_reason: rejectionReason
+                });
+                
+                toast({
+                    title: '🔴 Vaga Rejeitada',
+                    description: 'A vaga foi devolvida para o solicitante com suas observações.'
+                });
                 }
             }
             
@@ -1032,7 +1032,7 @@ const JobRequestsManagement = () => {
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <Check className="w-4 h-4 mr-1" /> Publicar Vaga
+                                                        <Check className="w-4 h-4 mr-1" /> Publicar Vaga
                                                             </>
                                                         )}
                                                     </Button>
