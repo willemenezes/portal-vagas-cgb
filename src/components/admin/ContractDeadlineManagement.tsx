@@ -121,17 +121,31 @@ export const ContractDeadlineManagement: React.FC = () => {
             job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.city.toLowerCase().includes(searchTerm.toLowerCase());
 
-        // Helper para verificar se vaga está ativa (não concluída nem congelada)
-        const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+        // Filtro por status
+        let matchesStatus = false;
         
-        const matchesStatus = statusFilter === 'all' ||
-            (statusFilter === 'expired' && isActive && job.expires_at && (() => {
+        if (statusFilter === 'all') {
+            matchesStatus = true;
+        } else if (statusFilter === 'expired') {
+            // Vagas expiradas: devem ter expires_at e estar expiradas (days < 0)
+            // Incluir vagas ativas, concluídas ou congeladas que expiraram
+            if (job.expires_at) {
                 const days = getDaysUntilExpiry(job.expires_at);
-                return days < 0; // Apenas se já passou (não inclui "expira hoje")
-            })()) ||
-            (statusFilter === 'active' && job.flow_status === 'ativa') ||
-            (statusFilter === 'completed' && job.flow_status === 'concluida') ||
-            (statusFilter === 'congelada' && job.flow_status === 'congelada');
+                // Verificar se está expirada: days < 0 OU se a data já passou
+                const isExpired = days !== null && days < 0;
+                // Fallback: se a função retornar null, verificar diretamente pela data
+                const dateExpired = new Date(job.expires_at) < new Date();
+                matchesStatus = isExpired || (days === null && dateExpired);
+            } else {
+                matchesStatus = false;
+            }
+        } else if (statusFilter === 'active') {
+            matchesStatus = job.flow_status === 'ativa';
+        } else if (statusFilter === 'completed') {
+            matchesStatus = job.flow_status === 'concluida';
+        } else if (statusFilter === 'congelada') {
+            matchesStatus = job.flow_status === 'congelada';
+        }
 
         return matchesSearch && matchesStatus;
     });
