@@ -162,11 +162,25 @@ const SelectionProcess = () => {
         // Somente vagas ATIVAS devem aparecer no Processo Seletivo.
         // Vagas com flow_status = 'concluida', 'congelada' ou qualquer outro status
         // NÃO devem aparecer aqui. Isso vale para admin, recrutador, gerente e solicitador.
-        let activeJobs: Job[] = allJobs.filter(job => job.flow_status === 'ativa' || !job.flow_status);
+        
+        console.log(`🔍 [SelectionProcess] [${role}] Vagas antes do filtro:`, allJobs.map(j => ({ 
+            title: j.title, 
+            city: j.city, 
+            flow_status: j.flow_status,
+            id: j.id 
+        })));
+        
+        // CORREÇÃO CRÍTICA: Apenas vagas com flow_status === 'ativa' devem aparecer
+        // Vagas sem flow_status definido (null/undefined) NÃO devem aparecer
+        let activeJobs: Job[] = allJobs.filter(job => {
+            const isActive = job.flow_status === 'ativa';
+            if (!isActive) {
+                console.log(`❌ [SelectionProcess] [${role}] Vaga "${job.title} - ${job.city}" excluída (flow_status: ${job.flow_status || 'undefined'})`);
+            }
+            return isActive;
+        });
 
-        const completedJobsCount = activeJobs.filter(j => j.flow_status === 'concluida').length;
-        const activeJobsCount = activeJobs.filter(j => j.flow_status === 'ativa' || !j.flow_status).length;
-        console.log(`📊 [SelectionProcess] [${role}] Vagas disponíveis (antes de filtros e deduplicação): ${activeJobs.length} (${activeJobsCount} ativas, ${completedJobsCount} concluídas com candidatos ativos)`);
+        console.log(`📊 [SelectionProcess] [${role}] Vagas ATIVAS após filtro: ${activeJobs.length}`);
         
         // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
         // Manter a vaga mais recente (maior created_at)
@@ -285,15 +299,13 @@ const SelectionProcess = () => {
             console.log(`ℹ️ [SelectionProcess] Sem perfil RH ou perfil não tem role`);
         }
 
-        const finalCompletedCount = activeJobs.filter(j => j.flow_status === 'concluida').length;
-        const finalActiveCount = activeJobs.filter(j => j.flow_status === 'ativa' || !j.flow_status).length;
-        
-        console.log(`✅ [SelectionProcess] [${role}] Vagas disponíveis para seleção: ${activeJobs.length} (${finalActiveCount} ativas, ${finalCompletedCount} concluídas com candidatos ativos)`);
+        console.log(`✅ [SelectionProcess] [${role}] Vagas finais disponíveis para seleção: ${activeJobs.length}`);
         if (activeJobs.length > 0) {
-            console.log(`📋 [SelectionProcess] [${role}] Primeiras 3 vagas:`, activeJobs.slice(0, 3).map(j => `${j.title} - ${j.city}, ${j.state} [${j.flow_status}]`));
+            console.log(`📋 [SelectionProcess] [${role}] Vagas disponíveis:`, activeJobs.map(j => `${j.title} - ${j.city} [${j.flow_status}]`));
+        } else {
+            console.log(`⚠️ [SelectionProcess] [${role}] Nenhuma vaga ativa encontrada para o processo seletivo`);
         }
-        
-        // Log de debug: mostrar vagas concluídas que foram incluídas
+
         return activeJobs;
     }, [allJobs, rhProfile, isRhProfileLoading]);
 
