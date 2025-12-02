@@ -61,13 +61,37 @@ const TalentBankManagement = () => {
     }, [allJobs]);
 
     // Filtrar apenas vagas ativas (flow_status='ativa' e quantity>0) excluindo Banco de Talentos
+    // Aplicar mesmo filtro da Gestão de Vagas: excluir draft e pending_approval
     const availableJobs = useMemo(() => {
-        return allJobs.filter(job =>
-            job.title !== "Banco de Talentos" &&
-            job.flow_status === 'ativa' &&
-            (job.quantity ?? 0) > 0 &&
-            !job.deleted_at
-        );
+        const filtered = allJobs.filter(job => {
+            // Excluir Banco de Talentos
+            if (job.title === "Banco de Talentos") return false;
+            
+            // Excluir deletadas
+            if (job.deleted_at) return false;
+            
+            // Aplicar mesmo filtro da Gestão de Vagas: excluir draft e pending_approval
+            const approval = String(job.approval_status || '').toLowerCase();
+            const status = String(job.status || '').toLowerCase();
+            
+            const isDraft = status === 'draft' || status === 'rascunho';
+            const isPending = ['pending_approval', 'aprovacao_pendente'].includes(approval);
+            
+            if (isDraft || isPending) return false;
+            
+            // Apenas vagas ativas com quantity > 0
+            const isActive = job.flow_status === 'ativa';
+            const hasQuantity = (job.quantity ?? 0) > 0;
+            
+            return isActive && hasQuantity;
+        });
+        
+        console.log(`🔍 [TalentBankManagement] Vagas disponíveis para convite: ${filtered.length} de ${allJobs.length} total`);
+        if (filtered.length > 0) {
+            console.log(`📋 [TalentBankManagement] Primeiras 3 vagas:`, filtered.slice(0, 3).map(j => `${j.title} - ${j.city} (quantity: ${j.quantity})`));
+        }
+        
+        return filtered;
     }, [allJobs]);
 
     // Identificar emails que já foram convidados para vagas
@@ -493,22 +517,14 @@ const TalentBankManagement = () => {
                                         <CommandList>
                                             <CommandEmpty>Nenhuma vaga encontrada.</CommandEmpty>
                                             <CommandGroup>
-                                                {availableJobs
-                                                    .filter(job => {
-                                                        if (!jobSearchTerm) return true;
-                                                        const searchLower = jobSearchTerm.toLowerCase();
-                                                        return (
-                                                            (job.title || '').toLowerCase().includes(searchLower) ||
-                                                            (job.city || '').toLowerCase().includes(searchLower) ||
-                                                            (job.department || '').toLowerCase().includes(searchLower)
-                                                        );
-                                                    })
-                                                    .map(job => {
+                                                {availableJobs.map(job => {
                                                         const isCompatible = resumeToInvite ? getCompatibleJobs(resumeToInvite).some(j => j.id === job.id) : false;
+                                                        // O Command component faz busca pelo value, então incluir título, cidade e departamento
+                                                        const searchValue = `${job.title} ${job.city} ${job.department || ''}`.toLowerCase();
                                                         return (
                                                             <CommandItem
                                                                 key={job.id}
-                                                                value={job.id}
+                                                                value={searchValue}
                                                                 onSelect={() => {
                                                                     setSelectedJobId(job.id);
                                                                     setJobSearchOpen(false);
