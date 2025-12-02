@@ -149,7 +149,7 @@ const CandidateManagement = () => {
     }
 
     // 3. Filtro de busca por texto - APENAS NOME para recrutador e admin
-    if (searchTerm.trim() && rhProfile && (rhProfile.role === 'recruiter' || rhProfile.role === 'admin' || rhProfile.is_admin)) {
+    if (searchTerm.trim()) {
       result = result.filter(c => {
         if (!c) return false;
         const searchLower = searchTerm.toLowerCase();

@@ -494,12 +494,15 @@ const TalentBankManagement = () => {
                                             <CommandEmpty>Nenhuma vaga encontrada.</CommandEmpty>
                                             <CommandGroup>
                                                 {availableJobs
-                                                    .filter(job =>
-                                                        jobSearchTerm === '' ||
-                                                        job.title.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
-                                                        job.city.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
-                                                        job.department.toLowerCase().includes(jobSearchTerm.toLowerCase())
-                                                    )
+                                                    .filter(job => {
+                                                        if (!jobSearchTerm) return true;
+                                                        const searchLower = jobSearchTerm.toLowerCase();
+                                                        return (
+                                                            (job.title || '').toLowerCase().includes(searchLower) ||
+                                                            (job.city || '').toLowerCase().includes(searchLower) ||
+                                                            (job.department || '').toLowerCase().includes(searchLower)
+                                                        );
+                                                    })
                                                     .map(job => {
                                                         const isCompatible = resumeToInvite ? getCompatibleJobs(resumeToInvite).some(j => j.id === job.id) : false;
                                                         return (
