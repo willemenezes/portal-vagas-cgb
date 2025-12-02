@@ -112,7 +112,9 @@ export const ContractDeadlineManagement: React.FC = () => {
     // Função para calcular dias úteis até a expiração (reutilizada para consistência)
     const getDaysUntilExpiry = React.useCallback((expiryDate: string) => {
         const days = calculateBusinessDaysUntil(expiryDate);
-        return days ?? 0;
+        // IMPORTANTE: Não converter null para 0, pois null indica erro no cálculo
+        // Retornar o valor como está (pode ser número positivo, negativo ou null)
+        return days;
     }, []);
 
     // Filtrar vagas por busca e status
@@ -141,7 +143,20 @@ export const ContractDeadlineManagement: React.FC = () => {
                 matchesStatus = false;
             }
         } else if (statusFilter === 'active') {
-            matchesStatus = job.flow_status === 'ativa';
+            // Vagas ativas: flow_status = 'ativa' E não expiradas
+            if (job.flow_status === 'ativa' && job.expires_at) {
+                const expiryDate = new Date(job.expires_at);
+                const now = new Date();
+                expiryDate.setHours(0, 0, 0, 0);
+                now.setHours(0, 0, 0, 0);
+                // Ativa se ainda não expirou (>=)
+                matchesStatus = expiryDate >= now;
+            } else if (job.flow_status === 'ativa' && !job.expires_at) {
+                // Se não tem data de expiração, considerar ativa
+                matchesStatus = true;
+            } else {
+                matchesStatus = false;
+            }
         } else if (statusFilter === 'completed') {
             matchesStatus = job.flow_status === 'concluida';
         } else if (statusFilter === 'congelada') {
@@ -162,19 +177,36 @@ export const ContractDeadlineManagement: React.FC = () => {
         expired: jobsFilteredByRegion.reduce((sum, job) => {
             // Só contar como expirada se:
             // 1. Tem data de expiração
-            // 2. A data já passou (days < 0, não days <= 0)
+            // 2. A data já passou (< hoje, não <=)
             // 3. A vaga está ATIVA (não concluída nem congelada)
             const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
             if (!isActive || !job.expires_at) return sum;
-            const days = getDaysUntilExpiry(job.expires_at);
-            if (days < 0) { // Apenas se já passou (não inclui "expira hoje")
+            
+            const expiryDate = new Date(job.expires_at);
+            const now = new Date();
+            expiryDate.setHours(0, 0, 0, 0);
+            now.setHours(0, 0, 0, 0);
+            
+            // Apenas se já passou (não inclui "expira hoje")
+            if (expiryDate < now) {
                 return sum + getQuantity(job);
             }
             return sum;
         }, 0),
         active: jobsFilteredByRegion.reduce((sum, job) => {
+            // Ativas: flow_status = 'ativa' E (não expiradas OU sem data de expiração)
             if (job.flow_status === 'ativa') {
-                return sum + getQuantity(job);
+                if (!job.expires_at) return sum + getQuantity(job);
+                
+                const expiryDate = new Date(job.expires_at);
+                const now = new Date();
+                expiryDate.setHours(0, 0, 0, 0);
+                now.setHours(0, 0, 0, 0);
+                
+                // Incluir se ainda não expirou (>= hoje)
+                if (expiryDate >= now) {
+                    return sum + getQuantity(job);
+                }
             }
             return sum;
         }, 0),
@@ -233,6 +265,23 @@ export const ContractDeadlineManagement: React.FC = () => {
         }
 
         const days = getDaysUntilExpiry(expiryDate);
+        
+        // Se a função retornar null, usar comparação direta de data
+        if (days === null) {
+            const expiryDateObj = new Date(expiryDate);
+            const now = new Date();
+            expiryDateObj.setHours(0, 0, 0, 0);
+            now.setHours(0, 0, 0, 0);
+            
+            if (expiryDateObj < now) {
+                return { status: 'expired', color: 'red', text: 'Expirada' };
+            } else if (expiryDateObj.getTime() === now.getTime()) {
+                return { status: 'expiring_today', color: 'orange', text: 'Expira hoje (último dia)' };
+            } else {
+                return { status: 'active', color: 'green', text: 'Ativa' };
+            }
+        }
+        
         const label = formatBusinessDaysLabel(days);
 
         if (days < 0) return { status: 'expired', color: 'red', text: label };
