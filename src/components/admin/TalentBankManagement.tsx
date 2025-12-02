@@ -60,8 +60,8 @@ const TalentBankManagement = () => {
         return talentJob ? talentJob.id : null;
     }, [allJobs]);
 
-    // Filtrar apenas vagas ativas (flow_status='ativa' e quantity>0) excluindo Banco de Talentos
-    // Aplicar mesmo filtro da Gestão de Vagas: excluir draft e pending_approval
+    // Filtrar vagas disponíveis para convites
+    // Usar mesma lógica da Gestão de Vagas: incluir vagas aprovadas OU com flow_status='ativa'
     const availableJobs = useMemo(() => {
         const filtered = allJobs.filter(job => {
             // Excluir Banco de Talentos
@@ -70,25 +70,35 @@ const TalentBankManagement = () => {
             // Excluir deletadas
             if (job.deleted_at) return false;
             
-            // Aplicar mesmo filtro da Gestão de Vagas: excluir draft e pending_approval
             const approval = String(job.approval_status || '').toLowerCase();
             const status = String(job.status || '').toLowerCase();
+            const flowStatus = String(job.flow_status || '').toLowerCase();
             
-            const isDraft = status === 'draft' || status === 'rascunho';
+            // Excluir rascunhos e pendentes
+            const isDraft = ['draft', 'rascunho'].includes(status) || ['draft', 'rascunho'].includes(approval);
             const isPending = ['pending_approval', 'aprovacao_pendente'].includes(approval);
+            const isRejected = ['rejected', 'rejeitado'].includes(approval);
             
-            if (isDraft || isPending) return false;
+            if (isDraft || isPending || isRejected) return false;
             
-            // Apenas vagas ativas com quantity > 0
-            const isActive = job.flow_status === 'ativa';
-            const hasQuantity = (job.quantity ?? 0) > 0;
+            // Incluir vagas que foram aprovadas OU têm flow_status='ativa'
+            const isApproved = ['active', 'ativo'].includes(approval);
+            const isFlowActive = flowStatus === 'ativa';
             
-            return isActive && hasQuantity;
+            // Se está aprovada OU tem flow_status='ativa', incluir (independente de quantity)
+            // Isso garante que todas as vagas ativas apareçam, mesmo que quantity não esteja definido ou seja 0
+            return isApproved || isFlowActive;
         });
         
         console.log(`🔍 [TalentBankManagement] Vagas disponíveis para convite: ${filtered.length} de ${allJobs.length} total`);
         if (filtered.length > 0) {
-            console.log(`📋 [TalentBankManagement] Primeiras 3 vagas:`, filtered.slice(0, 3).map(j => `${j.title} - ${j.city} (quantity: ${j.quantity})`));
+            console.log(`📋 [TalentBankManagement] Primeiras 5 vagas:`, filtered.slice(0, 5).map(j => ({
+                title: j.title,
+                city: j.city,
+                flow_status: j.flow_status,
+                approval_status: j.approval_status,
+                quantity: j.quantity
+            })));
         }
         
         return filtered;
