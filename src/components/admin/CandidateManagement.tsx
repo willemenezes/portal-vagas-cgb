@@ -209,13 +209,30 @@ const CandidateManagement = () => {
   }, [candidates, searchTerm, filters, talentBankJobId, rhProfile]);
 
   // Filtrar apenas vagas ativas (flow_status='ativa' e quantity>0) para convites
+  // Aplicar mesmo filtro da Gestão de Vagas: excluir draft e pending_approval
   const jobsForFilter = useMemo(() => {
-    return jobs.filter(job =>
-      job.id !== talentBankJobId &&
-      job.flow_status === 'ativa' &&
-      (job.quantity ?? 0) > 0 &&
-      !job.deleted_at
-    );
+    return jobs.filter(job => {
+      // Excluir Banco de Talentos
+      if (job.id === talentBankJobId) return false;
+      
+      // Excluir deletadas
+      if (job.deleted_at) return false;
+      
+      // Aplicar mesmo filtro da Gestão de Vagas: excluir draft e pending_approval
+      const approval = String(job.approval_status || '').toLowerCase();
+      const status = String(job.status || '').toLowerCase();
+      
+      const isDraft = status === 'draft' || status === 'rascunho';
+      const isPending = ['pending_approval', 'aprovacao_pendente'].includes(approval);
+      
+      if (isDraft || isPending) return false;
+      
+      // Apenas vagas ativas com quantity > 0
+      const isActive = job.flow_status === 'ativa';
+      const hasQuantity = (job.quantity ?? 0) > 0;
+      
+      return isActive && hasQuantity;
+    });
   }, [jobs, talentBankJobId]);
 
   const summary = useMemo(() => {
@@ -521,17 +538,13 @@ const CandidateManagement = () => {
                     <CommandList>
                       <CommandEmpty>Nenhuma vaga encontrada.</CommandEmpty>
                       <CommandGroup>
-                        {jobsForFilter
-                          .filter(job =>
-                            jobSearchTerm === '' ||
-                            job.title.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
-                            job.city.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
-                            job.department.toLowerCase().includes(jobSearchTerm.toLowerCase())
-                          )
-                          .map(job => (
+                        {jobsForFilter.map(job => {
+                          // O Command component faz busca pelo value, então incluir título, cidade e departamento
+                          const searchValue = `${job.title} ${job.city || ''} ${job.department || ''}`.toLowerCase();
+                          return (
                             <CommandItem
                               key={job.id}
-                              value={job.id}
+                              value={searchValue}
                               onSelect={() => {
                                 setSelectedJobId(job.id);
                                 setJobSearchOpen(false);
@@ -545,7 +558,8 @@ const CandidateManagement = () => {
                                 </span>
                               </div>
                             </CommandItem>
-                          ))}
+                          );
+                        })}
                       </CommandGroup>
                     </CommandList>
                   </Command>
