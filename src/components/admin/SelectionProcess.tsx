@@ -159,28 +159,46 @@ const SelectionProcess = () => {
         console.log(`📊 [SelectionProcess] Total de vagas no sistema: ${allJobs.length}`);
 
         // REGRA GLOBAL (TODOS OS PERFIS):
-        // Somente vagas ATIVAS devem aparecer no Processo Seletivo.
-        // Vagas com flow_status = 'concluida', 'congelada' ou qualquer outro status
-        // NÃO devem aparecer aqui. Isso vale para admin, recrutador, gerente e solicitador.
-        
+        // Somente vagas REALMENTE ATIVAS devem aparecer no Processo Seletivo.
+        // Isso significa:
+        // - flow_status deve ser 'ativa'
+        // - NÃO pode estar encerrada, inativa, rejeitada, concluída ou congelada em nenhum outro campo.
         console.log(`🔍 [SelectionProcess] [${role}] Vagas antes do filtro:`, allJobs.map(j => ({ 
             title: j.title, 
             city: j.city, 
             flow_status: j.flow_status,
+            status: j.status,
+            approval_status: j.approval_status,
             id: j.id 
         })));
         
-        // CORREÇÃO CRÍTICA: Apenas vagas com flow_status === 'ativa' devem aparecer
-        // Vagas sem flow_status definido (null/undefined) NÃO devem aparecer
         let activeJobs: Job[] = allJobs.filter(job => {
-            const isActive = job.flow_status === 'ativa';
-            if (!isActive) {
-                console.log(`❌ [SelectionProcess] [${role}] Vaga "${job.title} - ${job.city}" excluída (flow_status: ${job.flow_status || 'undefined'})`);
+            const flow = String(job.flow_status || '').toLowerCase();
+            const status = String(job.status || '').toLowerCase();
+            const approval = String(job.approval_status || '').toLowerCase();
+
+            const isClosed = ['closed', 'fechado'].includes(status) || ['closed', 'fechado'].includes(approval);
+            const isRejected = ['rejected', 'rejeitado'].includes(approval);
+            const isInactive = ['inactive', 'inativa'].includes(status);
+            const isConcluded = flow === 'concluida';
+            const isFrozen = flow === 'congelada';
+
+            const isFlowActive = flow === 'ativa';
+
+            const isReallyActive = isFlowActive && !isClosed && !isRejected && !isInactive && !isConcluded && !isFrozen;
+
+            if (!isReallyActive) {
+                console.log(`❌ [SelectionProcess] [${role}] Vaga "${job.title} - ${job.city}" excluída do Processo Seletivo`, {
+                    flow_status: job.flow_status,
+                    status: job.status,
+                    approval_status: job.approval_status
+                });
             }
-            return isActive;
+
+            return isReallyActive;
         });
 
-        console.log(`📊 [SelectionProcess] [${role}] Vagas ATIVAS após filtro: ${activeJobs.length}`);
+        console.log(`📊 [SelectionProcess] [${role}] Vagas ATIVAS após filtro rigoroso: ${activeJobs.length}`);
         
         // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
         // Manter a vaga mais recente (maior created_at)
