@@ -121,39 +121,22 @@ export function calculateBusinessDaysUntil(
         return 0;
     }
 
-    // Determinar direção (futuro ou passado) usando as datas normalizadas
-    const isFuture = targetDateNormalized > referenceNormalized;
-    const start = isFuture ? new Date(referenceNormalized) : new Date(targetDateNormalized);
-    const end = isFuture ? new Date(targetDateNormalized) : new Date(referenceNormalized);
+    const direction = targetDateNormalized > referenceNormalized ? 1 : -1;
+    const start = direction === 1 ? new Date(referenceNormalized) : new Date(targetDateNormalized);
+    const end = direction === 1 ? new Date(targetDateNormalized) : new Date(referenceNormalized);
 
-    // Contar dias úteis (excluindo fins de semana e feriados)
-    // IMPORTANTE: Começa a contar do DIA SEGUINTE à data de referência
-    // Isso significa que se hoje é segunda e expira quinta, conta terça+quarta+quinta = 3 dias
     let count = 0;
     const current = new Date(start);
-    
-    // Avançar para o próximo dia (não incluir o dia atual na contagem)
-    if (isFuture) {
-        current.setDate(current.getDate() + 1);
-    } else {
-        current.setDate(current.getDate() - 1);
-    }
 
-    // Contar todos os dias úteis entre o dia seguinte e a data alvo (inclusive)
-    while (isFuture ? current <= end : current >= end) {
+    while (current < end) {
+        current.setDate(current.getDate() + 1);
+
         if (isBusinessDay(current) && !isHoliday(current)) {
             count++;
         }
-        
-        if (isFuture) {
-            current.setDate(current.getDate() + 1);
-        } else {
-            current.setDate(current.getDate() - 1);
-        }
     }
 
-    // Retornar negativo se a data já passou
-    return isFuture ? count : -count;
+    return direction === 1 ? count : -count;
 }
 
 /**

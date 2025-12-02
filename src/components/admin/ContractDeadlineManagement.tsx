@@ -119,6 +119,7 @@ export const ContractDeadlineManagement: React.FC = () => {
 
     // Filtrar vagas por busca e status
     const filteredJobs = jobsFilteredByRegion.filter(job => {
+        const flowStatus = String(job.flow_status || '').toLowerCase();
         const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
             job.city.toLowerCase().includes(searchTerm.toLowerCase());
@@ -129,9 +130,9 @@ export const ContractDeadlineManagement: React.FC = () => {
         if (statusFilter === 'all') {
             matchesStatus = true;
         } else if (statusFilter === 'expired') {
-            // Vagas expiradas: devem ter expires_at e estar expiradas
-            // Verificar diretamente pela data (mais confiável que calcular dias úteis)
-            if (job.expires_at) {
+            if (flowStatus !== 'ativa' || !job.expires_at) {
+                matchesStatus = false;
+            } else {
                 const expiryDate = new Date(job.expires_at);
                 const now = new Date();
                 // Normalizar para comparar apenas datas (ignorar horas)
@@ -139,28 +140,25 @@ export const ContractDeadlineManagement: React.FC = () => {
                 now.setHours(0, 0, 0, 0);
                 // Se a data de expiração é anterior a hoje, está expirada
                 matchesStatus = expiryDate < now;
-            } else {
-                matchesStatus = false;
             }
         } else if (statusFilter === 'active') {
-            // Vagas ativas: flow_status = 'ativa' E não expiradas
-            if (job.flow_status === 'ativa' && job.expires_at) {
+            if (flowStatus === 'ativa' && job.expires_at) {
                 const expiryDate = new Date(job.expires_at);
                 const now = new Date();
                 expiryDate.setHours(0, 0, 0, 0);
                 now.setHours(0, 0, 0, 0);
                 // Ativa se ainda não expirou (>=)
                 matchesStatus = expiryDate >= now;
-            } else if (job.flow_status === 'ativa' && !job.expires_at) {
+            } else if (flowStatus === 'ativa' && !job.expires_at) {
                 // Se não tem data de expiração, considerar ativa
                 matchesStatus = true;
             } else {
                 matchesStatus = false;
             }
         } else if (statusFilter === 'completed') {
-            matchesStatus = job.flow_status === 'concluida';
+            matchesStatus = flowStatus === 'concluida';
         } else if (statusFilter === 'congelada') {
-            matchesStatus = job.flow_status === 'congelada';
+            matchesStatus = flowStatus === 'congelada';
         }
 
         return matchesSearch && matchesStatus;
@@ -175,11 +173,8 @@ export const ContractDeadlineManagement: React.FC = () => {
     const stats = {
         total: jobsFilteredByRegion.reduce((sum, job) => sum + getQuantity(job), 0),
         expired: jobsFilteredByRegion.reduce((sum, job) => {
-            // Só contar como expirada se:
-            // 1. Tem data de expiração
-            // 2. A data já passou (< hoje, não <=)
-            // 3. A vaga está ATIVA (não concluída nem congelada)
-            const isActive = job.flow_status !== 'concluida' && job.flow_status !== 'congelada';
+            const flowStatus = String(job.flow_status || '').toLowerCase();
+            const isActive = flowStatus === 'ativa';
             if (!isActive || !job.expires_at) return sum;
             
             const expiryDate = new Date(job.expires_at);
@@ -187,15 +182,14 @@ export const ContractDeadlineManagement: React.FC = () => {
             expiryDate.setHours(0, 0, 0, 0);
             now.setHours(0, 0, 0, 0);
             
-            // Apenas se já passou (não inclui "expira hoje")
             if (expiryDate < now) {
                 return sum + getQuantity(job);
             }
             return sum;
         }, 0),
         active: jobsFilteredByRegion.reduce((sum, job) => {
-            // Ativas: flow_status = 'ativa' E (não expiradas OU sem data de expiração)
-            if (job.flow_status === 'ativa') {
+            const flowStatus = String(job.flow_status || '').toLowerCase();
+            if (flowStatus === 'ativa') {
                 if (!job.expires_at) return sum + getQuantity(job);
                 
                 const expiryDate = new Date(job.expires_at);
@@ -203,7 +197,6 @@ export const ContractDeadlineManagement: React.FC = () => {
                 expiryDate.setHours(0, 0, 0, 0);
                 now.setHours(0, 0, 0, 0);
                 
-                // Incluir se ainda não expirou (>= hoje)
                 if (expiryDate >= now) {
                     return sum + getQuantity(job);
                 }
@@ -211,13 +204,15 @@ export const ContractDeadlineManagement: React.FC = () => {
             return sum;
         }, 0),
         completed: jobsFilteredByRegion.reduce((sum, job) => {
-            if (job.flow_status === 'concluida') {
+            const flowStatus = String(job.flow_status || '').toLowerCase();
+            if (flowStatus === 'concluida') {
                 return sum + getQuantity(job);
             }
             return sum;
         }, 0),
         congelada: jobsFilteredByRegion.reduce((sum, job) => {
-            if (job.flow_status === 'congelada') {
+            const flowStatus = String(job.flow_status || '').toLowerCase();
+            if (flowStatus === 'congelada') {
                 return sum + getQuantity(job);
             }
             return sum;
