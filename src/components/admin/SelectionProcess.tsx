@@ -159,8 +159,11 @@ const SelectionProcess = () => {
             
             if (completedJobs.length === 0) {
                 setCompletedJobsWithCandidates(new Set());
+                console.log(`✅ [SelectionProcess] Nenhuma vaga concluída encontrada`);
                 return;
             }
+
+            console.log(`🔍 [SelectionProcess] Verificando ${completedJobs.length} vagas concluídas para candidatos ativos`);
 
             // Buscar candidatos ativos (não contratados, não reprovados) para essas vagas
             // Buscar todos os candidatos dessas vagas e filtrar localmente
@@ -171,29 +174,32 @@ const SelectionProcess = () => {
 
             if (error) {
                 console.error('❌ [SelectionProcess] Erro ao verificar candidatos ativos:', error);
+                setCompletedJobsWithCandidates(new Set());
                 return;
             }
 
-            // Filtrar candidatos que não estão contratados nem reprovados
-            const activeCandidates = allCandidates?.filter(
+            // Filtrar candidatos que estão em etapas ativas do processo seletivo
+            // Excluir apenas "Contratado" e "Reprovado"
+            const activeCandidates = (allCandidates || []).filter(
                 c => c.status !== 'Contratado' && c.status !== 'Reprovado'
-            ) || [];
+            );
 
-            if (error) {
-                console.error('❌ [SelectionProcess] Erro ao verificar candidatos ativos:', error);
-                return;
-            }
+            console.log(`📊 [SelectionProcess] Encontrados ${activeCandidates.length} candidatos ativos em vagas concluídas`);
 
             // Criar Set com IDs de vagas que têm candidatos ativos
             const jobIdsWithActiveCandidates = new Set(
-                activeCandidates?.map(c => c.job_id) || []
+                activeCandidates.map(c => c.job_id)
             );
 
             setCompletedJobsWithCandidates(jobIdsWithActiveCandidates);
-            console.log(`✅ [SelectionProcess] ${jobIdsWithActiveCandidates.size} vagas concluídas com candidatos ativos`);
+            console.log(`✅ [SelectionProcess] ${jobIdsWithActiveCandidates.size} vagas concluídas com candidatos ativos:`, Array.from(jobIdsWithActiveCandidates));
         };
 
-        checkCompletedJobsWithCandidates();
+        if (allJobs.length > 0) {
+            checkCompletedJobsWithCandidates();
+        } else {
+            setCompletedJobsWithCandidates(new Set());
+        }
     }, [allJobs]);
 
     const jobsForSelection = useMemo(() => {
@@ -209,13 +215,20 @@ const SelectionProcess = () => {
                 return true;
             }
             // Incluir vagas concluídas apenas se tiverem candidatos ativos
-            if (job.flow_status === 'concluida' && completedJobsWithCandidates.has(job.id)) {
-                return true;
+            if (job.flow_status === 'concluida') {
+                const hasActiveCandidates = completedJobsWithCandidates.has(job.id);
+                if (!hasActiveCandidates) {
+                    console.log(`❌ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" excluída (sem candidatos ativos)`);
+                }
+                return hasActiveCandidates;
             }
+            // Excluir todas as outras vagas (congeladas, etc.)
             return false;
         });
         
-        console.log(`📊 [SelectionProcess] Vagas disponíveis (antes de filtros e deduplicação): ${activeJobs.length}`);
+        const completedJobsCount = activeJobs.filter(j => j.flow_status === 'concluida').length;
+        const activeJobsCount = activeJobs.filter(j => j.flow_status === 'ativa' || !j.flow_status).length;
+        console.log(`📊 [SelectionProcess] Vagas disponíveis (antes de filtros e deduplicação): ${activeJobs.length} (${activeJobsCount} ativas, ${completedJobsCount} concluídas com candidatos ativos)`);
         
         // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
         // Manter a vaga mais recente (maior created_at)
