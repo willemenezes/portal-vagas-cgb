@@ -127,15 +127,16 @@ export const ContractDeadlineManagement: React.FC = () => {
         if (statusFilter === 'all') {
             matchesStatus = true;
         } else if (statusFilter === 'expired') {
-            // Vagas expiradas: devem ter expires_at e estar expiradas (days < 0)
-            // Incluir vagas ativas, concluídas ou congeladas que expiraram
+            // Vagas expiradas: devem ter expires_at e estar expiradas
+            // Verificar diretamente pela data (mais confiável que calcular dias úteis)
             if (job.expires_at) {
-                const days = getDaysUntilExpiry(job.expires_at);
-                // Verificar se está expirada: days < 0 OU se a data já passou
-                const isExpired = days !== null && days < 0;
-                // Fallback: se a função retornar null, verificar diretamente pela data
-                const dateExpired = new Date(job.expires_at) < new Date();
-                matchesStatus = isExpired || (days === null && dateExpired);
+                const expiryDate = new Date(job.expires_at);
+                const now = new Date();
+                // Normalizar para comparar apenas datas (ignorar horas)
+                expiryDate.setHours(0, 0, 0, 0);
+                now.setHours(0, 0, 0, 0);
+                // Se a data de expiração é anterior a hoje, está expirada
+                matchesStatus = expiryDate < now;
             } else {
                 matchesStatus = false;
             }
