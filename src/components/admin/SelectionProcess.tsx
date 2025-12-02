@@ -152,25 +152,30 @@ const SelectionProcess = () => {
     const [completedJobsWithCandidates, setCompletedJobsWithCandidates] = useState<Set<string>>(new Set());
 
     // Verificar quais vagas concluídas têm candidatos em processo seletivo
+    // CORREÇÃO: Este useEffect deve ser executado para TODOS os perfis (admin, recrutador, gerente, solicitador)
     useEffect(() => {
         const checkCompletedJobsWithCandidates = async () => {
-            // Buscar todas as vagas concluídas
+            // Buscar todas as vagas concluídas (independente do perfil)
             const completedJobs = allJobs.filter(job => job.flow_status === 'concluida');
+            
+            console.log(`🔍 [SelectionProcess] Verificando vagas concluídas - Total de vagas: ${allJobs.length}, Vagas concluídas: ${completedJobs.length}`);
             
             if (completedJobs.length === 0) {
                 setCompletedJobsWithCandidates(new Set());
-                console.log(`✅ [SelectionProcess] Nenhuma vaga concluída encontrada`);
+                console.log(`✅ [SelectionProcess] Nenhuma vaga concluída encontrada - Set vazio criado`);
                 return;
             }
 
             console.log(`🔍 [SelectionProcess] Verificando ${completedJobs.length} vagas concluídas para candidatos ativos`);
+            console.log(`📋 [SelectionProcess] IDs das vagas concluídas:`, completedJobs.map(j => j.id));
 
             // Buscar candidatos ativos (não contratados, não reprovados) para essas vagas
             // Buscar todos os candidatos dessas vagas e filtrar localmente
+            const jobIds = completedJobs.map(j => j.id);
             const { data: allCandidates, error } = await supabase
                 .from('candidates')
                 .select('job_id, status')
-                .in('job_id', completedJobs.map(j => j.id));
+                .in('job_id', jobIds);
 
             if (error) {
                 console.error('❌ [SelectionProcess] Erro ao verificar candidatos ativos:', error);
@@ -178,13 +183,18 @@ const SelectionProcess = () => {
                 return;
             }
 
+            console.log(`📊 [SelectionProcess] Total de candidatos encontrados para vagas concluídas: ${allCandidates?.length || 0}`);
+
             // Filtrar candidatos que estão em etapas ativas do processo seletivo
             // Excluir apenas "Contratado" e "Reprovado"
             const activeCandidates = (allCandidates || []).filter(
                 c => c.status !== 'Contratado' && c.status !== 'Reprovado'
             );
 
-            console.log(`📊 [SelectionProcess] Encontrados ${activeCandidates.length} candidatos ativos em vagas concluídas`);
+            console.log(`📊 [SelectionProcess] Candidatos ativos (não contratados/reprovados): ${activeCandidates.length}`);
+            if (activeCandidates.length > 0) {
+                console.log(`📋 [SelectionProcess] Status dos candidatos ativos:`, activeCandidates.map(c => ({ job_id: c.job_id, status: c.status })));
+            }
 
             // Criar Set com IDs de vagas que têm candidatos ativos
             const jobIdsWithActiveCandidates = new Set(
@@ -199,6 +209,7 @@ const SelectionProcess = () => {
             checkCompletedJobsWithCandidates();
         } else {
             setCompletedJobsWithCandidates(new Set());
+            console.log(`⚠️ [SelectionProcess] allJobs está vazio - Set vazio criado`);
         }
     }, [allJobs]);
 
@@ -208,7 +219,13 @@ const SelectionProcess = () => {
             return [];
         }
 
+        const role = rhProfile?.role || 'unknown';
+        console.log(`🔍 [SelectionProcess] Iniciando filtragem para perfil: ${role}`);
+        console.log(`📊 [SelectionProcess] Total de vagas no sistema: ${allJobs.length}`);
+        console.log(`📊 [SelectionProcess] Vagas concluídas com candidatos ativos: ${completedJobsWithCandidates.size}`);
+
         // Filtrar vagas ativas E vagas concluídas que têm candidatos em processo seletivo
+        // CORREÇÃO: Esta filtragem deve ser aplicada para TODOS os perfis (admin, recrutador, gerente, solicitador)
         let activeJobs = allJobs.filter(job => {
             // Incluir vagas ativas
             if (job.flow_status === 'ativa' || !job.flow_status) {
@@ -218,7 +235,9 @@ const SelectionProcess = () => {
             if (job.flow_status === 'concluida') {
                 const hasActiveCandidates = completedJobsWithCandidates.has(job.id);
                 if (!hasActiveCandidates) {
-                    console.log(`❌ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" excluída (sem candidatos ativos)`);
+                    console.log(`❌ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) excluída para perfil ${role} (sem candidatos ativos)`);
+                } else {
+                    console.log(`✅ [SelectionProcess] Vaga concluída "${job.title} - ${job.city}" (ID: ${job.id}) incluída para perfil ${role} (tem candidatos ativos)`);
                 }
                 return hasActiveCandidates;
             }
@@ -228,7 +247,7 @@ const SelectionProcess = () => {
         
         const completedJobsCount = activeJobs.filter(j => j.flow_status === 'concluida').length;
         const activeJobsCount = activeJobs.filter(j => j.flow_status === 'ativa' || !j.flow_status).length;
-        console.log(`📊 [SelectionProcess] Vagas disponíveis (antes de filtros e deduplicação): ${activeJobs.length} (${activeJobsCount} ativas, ${completedJobsCount} concluídas com candidatos ativos)`);
+        console.log(`📊 [SelectionProcess] [${role}] Vagas disponíveis (antes de filtros e deduplicação): ${activeJobs.length} (${activeJobsCount} ativas, ${completedJobsCount} concluídas com candidatos ativos)`);
         
         // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
         // Manter a vaga mais recente (maior created_at)
@@ -347,9 +366,18 @@ const SelectionProcess = () => {
             console.log(`ℹ️ [SelectionProcess] Sem perfil RH ou perfil não tem role`);
         }
 
-        console.log(`✅ [SelectionProcess] Vagas disponíveis para seleção: ${activeJobs.length}`);
+        const finalCompletedCount = activeJobs.filter(j => j.flow_status === 'concluida').length;
+        const finalActiveCount = activeJobs.filter(j => j.flow_status === 'ativa' || !j.flow_status).length;
+        
+        console.log(`✅ [SelectionProcess] [${role}] Vagas disponíveis para seleção: ${activeJobs.length} (${finalActiveCount} ativas, ${finalCompletedCount} concluídas com candidatos ativos)`);
         if (activeJobs.length > 0) {
-            console.log(`📋 [SelectionProcess] Primeiras 3 vagas:`, activeJobs.slice(0, 3).map(j => `${j.title} - ${j.city}, ${j.state}`));
+            console.log(`📋 [SelectionProcess] [${role}] Primeiras 3 vagas:`, activeJobs.slice(0, 3).map(j => `${j.title} - ${j.city}, ${j.state} [${j.flow_status}]`));
+        }
+        
+        // Log de debug: mostrar vagas concluídas que foram incluídas
+        const includedCompletedJobs = activeJobs.filter(j => j.flow_status === 'concluida');
+        if (includedCompletedJobs.length > 0) {
+            console.log(`📋 [SelectionProcess] [${role}] Vagas concluídas incluídas (${includedCompletedJobs.length}):`, includedCompletedJobs.map(j => `${j.title} - ${j.city} (ID: ${j.id})`));
         }
 
         return activeJobs;
