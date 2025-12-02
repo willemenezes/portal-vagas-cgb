@@ -185,7 +185,12 @@ export const ContractDeadlineManagement: React.FC = () => {
     const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
     // Função para obter status de expiração
-    const getExpiryStatus = (expiryDate: string, flowStatus?: string) => {
+    const getExpiryStatus = (expiryDate: string, flowStatus?: string, jobTitle?: string) => {
+        // Banco de Talentos não precisa de prazo de expiração
+        if (jobTitle && normalizedTitle(jobTitle) === 'banco de talentos') {
+            return null; // Retorna null para mostrar "Sem prazo"
+        }
+
         // Se a vaga está concluída ou congelada, não mostrar contagem regressiva
         const normalize = (value?: string | null) => {
             if (!value) return '';
@@ -345,7 +350,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                         </TableHeader>
                         <TableBody>
                             {paginatedJobs.map((job) => {
-                                const expiryInfo = job.expires_at ? getExpiryStatus(job.expires_at, job.flow_status) : null;
+                                const expiryInfo = job.expires_at ? getExpiryStatus(job.expires_at, job.flow_status, job.title) : null;
                                 const remainingPositions = (job.quantity || 1) - (job.quantity_filled || 0);
 
                                 return (
@@ -495,7 +500,7 @@ export const ContractDeadlineManagement: React.FC = () => {
                                 <div>
                                     <label className="text-sm font-medium text-gray-500">Status</label>
                                     <p className="text-sm">
-                                        {selectedJob.expires_at ? getExpiryStatus(selectedJob.expires_at).text : 'Sem prazo'}
+                                        {selectedJob.expires_at ? (getExpiryStatus(selectedJob.expires_at, selectedJob.flow_status, selectedJob.title)?.text || 'Sem prazo') : 'Sem prazo'}
                                     </p>
                                 </div>
                             </div>
