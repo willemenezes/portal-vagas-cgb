@@ -201,19 +201,40 @@ const SelectionProcess = () => {
         console.log(`📊 [SelectionProcess] [${role}] Vagas ATIVAS após filtro rigoroso: ${activeJobs.length}`);
         
         // CORREÇÃO: Remover duplicatas baseado em título + cidade + departamento
-        // Manter a vaga mais recente (maior created_at)
+        // Priorizar: 1) Vagas com candidatos, 2) Se ambas têm ou não têm, manter a mais recente
         const jobKeyMap = new Map<string, Job>();
         activeJobs.forEach(job => {
             const key = `${job.title}|${job.city}|${job.department || ''}`.toLowerCase().trim();
             const existing = jobKeyMap.get(key);
             
-            if (!existing || new Date(job.created_at) > new Date(existing.created_at)) {
+            if (!existing) {
                 jobKeyMap.set(key, job);
+            } else {
+                // Comparar: priorizar vaga com mais candidatos
+                const currentApplicants = job.applicants || 0;
+                const existingApplicants = existing.applicants || 0;
+                
+                if (currentApplicants > existingApplicants) {
+                    // Nova vaga tem mais candidatos - substituir
+                    console.log(`🔄 [SelectionProcess] Substituindo vaga duplicada: "${job.title}" (${currentApplicants} candidatos) substitui versão com ${existingApplicants} candidatos`);
+                    jobKeyMap.set(key, job);
+                } else if (currentApplicants === existingApplicants) {
+                    // Mesmo número de candidatos - manter a mais recente
+                    if (new Date(job.created_at) > new Date(existing.created_at)) {
+                        jobKeyMap.set(key, job);
+                    }
+                }
+                // Se existing tem mais candidatos, manter existing (não fazer nada)
             }
         });
         
         activeJobs = Array.from(jobKeyMap.values());
         console.log(`📊 [SelectionProcess] Vagas após remoção de duplicatas: ${activeJobs.length}`);
+        
+        // Log detalhado das vagas finais
+        activeJobs.forEach(job => {
+            console.log(`✅ [SelectionProcess] Vaga final: "${job.title} - ${job.city}" (ID: ${job.id}, Candidatos: ${job.applicants || 0}, Status: ${job.flow_status})`);
+        });
         
         // NOTA: O filtro de busca agora é feito pelo Command component internamente
 
