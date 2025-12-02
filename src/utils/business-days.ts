@@ -104,19 +104,27 @@ export function calculateBusinessDaysUntil(
 
     const reference = new Date(referenceDate);
 
-    // Normalizar para o início do dia para evitar variações devido às horas
-    targetDate.setHours(0, 0, 0, 0);
-    reference.setHours(0, 0, 0, 0);
+    // Normalizar para o início do dia (meia-noite) no timezone local
+    // Extrair apenas ano, mês e dia para comparar apenas as datas
+    const targetYear = targetDate.getFullYear();
+    const targetMonth = targetDate.getMonth();
+    const targetDay = targetDate.getDate();
+    const targetDateNormalized = new Date(targetYear, targetMonth, targetDay, 0, 0, 0, 0);
+    
+    const refYear = reference.getFullYear();
+    const refMonth = reference.getMonth();
+    const refDay = reference.getDate();
+    const referenceNormalized = new Date(refYear, refMonth, refDay, 0, 0, 0, 0);
 
     // Se for a mesma data, retornar 0 (expira hoje)
-    if (targetDate.getTime() === reference.getTime()) {
+    if (targetDateNormalized.getTime() === referenceNormalized.getTime()) {
         return 0;
     }
 
-    // Determinar direção (futuro ou passado)
-    const isFuture = targetDate > reference;
-    const start = isFuture ? new Date(reference) : new Date(targetDate);
-    const end = isFuture ? new Date(targetDate) : new Date(reference);
+    // Determinar direção (futuro ou passado) usando as datas normalizadas
+    const isFuture = targetDateNormalized > referenceNormalized;
+    const start = isFuture ? new Date(referenceNormalized) : new Date(targetDateNormalized);
+    const end = isFuture ? new Date(targetDateNormalized) : new Date(referenceNormalized);
 
     // Contar dias úteis (excluindo fins de semana e feriados)
     // IMPORTANTE: Começa a contar do DIA SEGUINTE à data de referência
