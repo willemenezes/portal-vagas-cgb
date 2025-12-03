@@ -22,6 +22,11 @@ interface LegalDataFormProps {
     candidateData?: {
         city: string;
         state: string;
+        name?: string;
+        desiredJob?: string;
+        cnh?: string;
+        workedAtCGB?: string;
+        pcd?: string;
     };
 }
 
@@ -60,17 +65,27 @@ export const LegalDataForm = ({
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Preencher formulário quando o modal é aberto ou quando os dados mudam
     useEffect(() => {
+        if (!isOpen) return; // Só preencher quando o modal estiver aberto
+
         if (initialData) {
+            // Se houver dados jurídicos existentes, usar eles
             setFormData(initialData);
         } else if (candidateData) {
-            // Preencher automaticamente somente a cidade (o sistema coleta apenas cidade na inscrição)
+            // Se não houver dados jurídicos, preencher com dados disponíveis do candidato
             setFormData(prev => ({
                 ...prev,
-                birth_city: candidateData.city
+                full_name: candidateData.name || prev.full_name || '',
+                birth_city: candidateData.city || prev.birth_city || '',
+                birth_state: candidateData.state || prev.birth_state || '',
+                desired_position: candidateData.desiredJob || prev.desired_position || '',
+                cnh: candidateData.cnh || prev.cnh || '',
+                is_former_employee: candidateData.workedAtCGB === 'Sim' || prev.is_former_employee,
+                is_pcd: candidateData.pcd === 'Sim' || prev.is_pcd,
             }));
         }
-    }, [initialData, candidateData]);
+    }, [isOpen, initialData, candidateData]);
 
     useEffect(() => {
         if (selectedState) {

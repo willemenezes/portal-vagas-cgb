@@ -822,10 +822,15 @@ const DetailsView = ({ candidate, shouldAutoOpenLegalForm = false }: { candidate
                     isOpen={showLegalForm}
                     onClose={() => setShowLegalForm(false)}
                     onSubmit={handleSaveLegalData}
-                    initialData={legalData}
+                    initialData={legalData || undefined}
                     candidateData={{
                         city: candidate.city,
-                        state: candidate.state
+                        state: candidate.state,
+                        name: candidate.name,
+                        desiredJob: candidate.desiredJob,
+                        cnh: candidate.cnh || undefined,
+                        workedAtCGB: candidate.workedAtCGB || undefined,
+                        pcd: candidate.pcd || undefined
                     }}
                 />
             )}
