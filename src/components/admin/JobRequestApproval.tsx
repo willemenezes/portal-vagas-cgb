@@ -1055,6 +1055,174 @@ export default function JobRequestApproval() {
                 </Card>
             )}
 
+            {/* Modal de Detalhes Compartilhado (para solicitações processadas) */}
+            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{selectedRequest?.title}</DialogTitle>
+                        <DialogDescription>
+                            {selectedRequest?.requested_by_name ?
+                                `Solicitação de ${selectedRequest.requested_by_name}` :
+                                'Detalhes da solicitação'
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedRequest && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">Departamento</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.department}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Localização</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.city}, {selectedRequest.state}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Tipo</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.type}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Carga Horária</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.workload}</p>
+                                </div>
+                                {selectedRequest.company_contract && (
+                                    <div>
+                                        <Label className="text-sm font-medium">CT (Contrato)</Label>
+                                        <p className="text-sm text-gray-700">{selectedRequest.company_contract}</p>
+                                    </div>
+                                )}
+                                {selectedRequest.quantity && (
+                                    <div>
+                                        <Label className="text-sm font-medium">Quantidade de Vagas</Label>
+                                        <p className="text-sm text-gray-700">{selectedRequest.quantity}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <Label className="text-sm font-medium">Descrição</Label>
+                                <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{selectedRequest.description}</p>
+                            </div>
+
+                            {selectedRequest.justification && (
+                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <Label className="text-sm font-medium text-blue-800">Justificativa da Criação</Label>
+                                    <p className="text-sm text-blue-700 mt-1">{selectedRequest.justification}</p>
+                                </div>
+                            )}
+
+                            {/* Campos de Controle Interno */}
+                            {(selectedRequest.solicitante_nome || selectedRequest.solicitante_funcao || selectedRequest.tipo_solicitacao || selectedRequest.nome_substituido || selectedRequest.observacoes_internas) && (
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
+                                        📋 Controle Interno
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {selectedRequest.solicitante_nome && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Nome do Solicitante</Label>
+                                                <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_nome}</p>
+                                            </div>
+                                        )}
+                                        {selectedRequest.solicitante_funcao && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Gerente Responsável</Label>
+                                                <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_funcao}</p>
+                                            </div>
+                                        )}
+                                        {selectedRequest.tipo_solicitacao && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
+                                                <p className="text-sm text-gray-800 mt-1">
+                                                    {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 
+                                                     selectedRequest.tipo_solicitacao === 'substituicao' ? 'Substituição' :
+                                                     selectedRequest.tipo_solicitacao === 'substituição' ? 'Substituição' :
+                                                     selectedRequest.tipo_solicitacao || 'Não informado'}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {selectedRequest.nome_substituido && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Nome da Pessoa que Saiu</Label>
+                                                <p className="text-sm text-gray-800 mt-1">{selectedRequest.nome_substituido}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {selectedRequest.observacoes_internas && (
+                                        <div className="mt-4">
+                                            <Label className="text-sm font-medium text-gray-600">Observações Internas</Label>
+                                            <p className="text-sm text-gray-800 mt-1">{selectedRequest.observacoes_internas}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {selectedRequest.requirements && selectedRequest.requirements.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium">Requisitos</Label>
+                                    <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+                                        {selectedRequest.requirements.map((req: string, index: number) => (
+                                            <li key={index}>{req}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {selectedRequest.benefits && selectedRequest.benefits.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium">Benefícios</Label>
+                                    <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+                                        {selectedRequest.benefits.map((benefit: string, index: number) => (
+                                            <li key={index}>{benefit}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Informações de Aprovação/Rejeição */}
+                            {(selectedRequest.approved_by_name || selectedRequest.approved_at || selectedRequest.notes) && (
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <h4 className="text-sm font-medium text-gray-800 mb-3">Informações de Processamento</h4>
+                                    <div className="space-y-2">
+                                        {selectedRequest.approved_by_name && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Processado por</Label>
+                                                <p className="text-sm text-gray-800 mt-1">{selectedRequest.approved_by_name}</p>
+                                            </div>
+                                        )}
+                                        {selectedRequest.approved_at && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Data de Processamento</Label>
+                                                <p className="text-sm text-gray-800 mt-1">
+                                                    {new Date(selectedRequest.approved_at).toLocaleString('pt-BR')}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {selectedRequest.notes && (
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-600">Notas da Gerência</Label>
+                                                <p className="text-sm text-gray-800 mt-1">{selectedRequest.notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsDetailsOpen(false)}
+                                >
+                                    Fechar
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             {/* Modal de Confirmação de Exclusão */}
             <AlertDialog open={!!requestToDelete} onOpenChange={() => setRequestToDelete(null)}>
                 <AlertDialogContent>
