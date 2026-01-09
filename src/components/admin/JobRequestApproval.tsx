@@ -500,184 +500,18 @@ export default function JobRequestApproval() {
                                     </div>
 
                                     <div className="flex items-center gap-2 ml-4">
-                                        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedRequest(request);
-                                                        setNotes("");
-                                                    }}
-                                                >
-                                                    <Eye className="w-4 h-4 mr-1" />
-                                                    Analisar
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                                <DialogHeader>
-                                                    <DialogTitle>{selectedRequest?.title}</DialogTitle>
-                                                    <DialogDescription>
-                                                        {selectedRequest?.requested_by_name ?
-                                                            `Solicitação de ${selectedRequest.requested_by_name}` :
-                                                            'Detalhes da solicitação'
-                                                        }
-                                                    </DialogDescription>
-                                                </DialogHeader>
-
-                                                {selectedRequest && (
-                                                    <div className="space-y-4">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <Label className="text-sm font-medium">Departamento</Label>
-                                                                <p className="text-sm text-gray-700">{selectedRequest.department}</p>
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-sm font-medium">Localização</Label>
-                                                                <p className="text-sm text-gray-700">{selectedRequest.city}, {selectedRequest.state}</p>
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-sm font-medium">Tipo</Label>
-                                                                <p className="text-sm text-gray-700">{selectedRequest.type}</p>
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-sm font-medium">Carga Horária</Label>
-                                                                <p className="text-sm text-gray-700">{selectedRequest.workload}</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div>
-                                                            <Label className="text-sm font-medium">Descrição</Label>
-                                                            <p className="text-sm text-gray-700 mt-1">{selectedRequest.description}</p>
-                                                        </div>
-
-                                                        {selectedRequest.justification && (
-                                                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                                                                <Label className="text-sm font-medium text-blue-800">Justificativa da Criação</Label>
-                                                                <p className="text-sm text-blue-700 mt-1">{selectedRequest.justification}</p>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Campos de Controle Interno */}
-                                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                                            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-                                                                📋 Controle Interno
-                                                            </h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                {selectedRequest.solicitante_nome && (
-                                                                    <div>
-                                                                        <Label className="text-sm font-medium text-gray-600">Nome do Solicitante</Label>
-                                                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_nome}</p>
-                                                                    </div>
-                                                                )}
-                                                                {selectedRequest.solicitante_funcao && (
-                                                                    <div>
-                                                                        <Label className="text-sm font-medium text-gray-600">Gerente Responsável</Label>
-                                                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_funcao}</p>
-                                                                    </div>
-                                                                )}
-                                                                {selectedRequest.tipo_solicitacao && (
-                                                                    <div>
-                                                                        <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
-                                                                        <p className="text-sm text-gray-800 mt-1">
-                                                                            {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 
-                                             selectedRequest.tipo_solicitacao === 'substituicao' ? 'Substituição' :
-                                             selectedRequest.tipo_solicitacao === 'substituição' ? 'Substituição' :
-                                             selectedRequest.tipo_solicitacao || 'Não informado'}
-                                                                        </p>
-                                                                    </div>
-                                                                )}
-                                                                {selectedRequest.nome_substituido && (
-                                                                    <div>
-                                                                        <Label className="text-sm font-medium text-gray-600">Nome da Pessoa que Saiu</Label>
-                                                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.nome_substituido}</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {selectedRequest.observacoes_internas && (
-                                                                <div className="mt-4">
-                                                                    <Label className="text-sm font-medium text-gray-600">Observações Internas</Label>
-                                                                    <p className="text-sm text-gray-800 mt-1">{selectedRequest.observacoes_internas}</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {selectedRequest.requirements.length > 0 && (
-                                                            <div>
-                                                                <Label className="text-sm font-medium">Requisitos</Label>
-                                                                <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
-                                                                    {selectedRequest.requirements.map((req, index) => (
-                                                                        <li key={index}>{req}</li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        )}
-
-                                                        {selectedRequest.benefits.length > 0 && (
-                                                            <div>
-                                                                <Label className="text-sm font-medium">Benefícios</Label>
-                                                                <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
-                                                                    {selectedRequest.benefits.map((benefit, index) => (
-                                                                        <li key={index}>{benefit}</li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        )}
-
-                                                        <div>
-                                                            <Label htmlFor="notes">Observações (opcional para aprovação, obrigatório para rejeição)</Label>
-                                                            <Textarea
-                                                                id="notes"
-                                                                value={notes}
-                                                                onChange={(e) => setNotes(e.target.value)}
-                                                                placeholder="Adicione observações sobre a decisão..."
-                                                                rows={3}
-                                                                className="mt-1"
-                                                            />
-                                                        </div>
-
-                                                        <div className="flex justify-end gap-2 pt-4">
-                                                            <Button
-                                                                variant="outline"
-                                                                onClick={() => setIsDetailsOpen(false)}
-                                                            >
-                                                                Cancelar
-                                                            </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                onClick={() => {
-                                                                    handleReject(selectedRequest.id);
-                                                                    setIsDetailsOpen(false);
-                                                                }}
-                                                                disabled={isUpdating}
-                                                            >
-                                                                {isUpdating ? (
-                                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                                ) : (
-                                                                    <XCircle className="w-4 h-4 mr-2" />
-                                                                )}
-                                                                Rejeitar
-                                                            </Button>
-                                                            <Button
-                                                                className="bg-green-600 hover:bg-green-700"
-                                                                onClick={() => {
-                                                                    handleApprove(selectedRequest.id);
-                                                                    setIsDetailsOpen(false);
-                                                                }}
-                                                                disabled={isUpdating}
-                                                            >
-                                                                {isUpdating ? (
-                                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                                ) : (
-                                                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                                                )}
-                                                                Aprovar
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </DialogContent>
-                                        </Dialog>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedRequest(request);
+                                                setNotes("");
+                                                setIsDetailsOpen(true);
+                                            }}
+                                        >
+                                            <Eye className="w-4 h-4 mr-1" />
+                                            Analisar
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -1254,6 +1088,173 @@ export default function JobRequestApproval() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 🔥 DIALOG COMPARTILHADO PARA APROVAÇÃO - Movido para fora dos loops */}
+            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{selectedRequest?.title}</DialogTitle>
+                        <DialogDescription>
+                            {selectedRequest?.requested_by_name ?
+                                `Solicitação de ${selectedRequest.requested_by_name}` :
+                                'Detalhes da solicitação'
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedRequest && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">Departamento</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.department}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Localização</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.city}, {selectedRequest.state}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Tipo</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.type}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Carga Horária</Label>
+                                    <p className="text-sm text-gray-700">{selectedRequest.workload}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="text-sm font-medium">Descrição</Label>
+                                <p className="text-sm text-gray-700 mt-1">{selectedRequest.description}</p>
+                            </div>
+
+                            {selectedRequest.justification && (
+                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <Label className="text-sm font-medium text-blue-800">Justificativa da Criação</Label>
+                                    <p className="text-sm text-blue-700 mt-1">{selectedRequest.justification}</p>
+                                </div>
+                            )}
+
+                            {/* Campos de Controle Interno */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
+                                    📋 Controle Interno
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {selectedRequest.solicitante_nome && (
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Nome do Solicitante</Label>
+                                            <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_nome}</p>
+                                        </div>
+                                    )}
+                                    {selectedRequest.solicitante_funcao && (
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Gerente Responsável</Label>
+                                            <p className="text-sm text-gray-800 mt-1">{selectedRequest.solicitante_funcao}</p>
+                                        </div>
+                                    )}
+                                    {selectedRequest.tipo_solicitacao && (
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Tipo de Solicitação</Label>
+                                            <p className="text-sm text-gray-800 mt-1">
+                                                {selectedRequest.tipo_solicitacao === 'aumento_quadro' ? 'Aumento de Quadro' : 
+                                                 selectedRequest.tipo_solicitacao === 'substituicao' ? 'Substituição' :
+                                                 selectedRequest.tipo_solicitacao === 'substituição' ? 'Substituição' :
+                                                 selectedRequest.tipo_solicitacao || 'Não informado'}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {selectedRequest.nome_substituido && (
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Nome da Pessoa que Saiu</Label>
+                                            <p className="text-sm text-gray-800 mt-1">{selectedRequest.nome_substituido}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                {selectedRequest.observacoes_internas && (
+                                    <div className="mt-4">
+                                        <Label className="text-sm font-medium text-gray-600">Observações Internas</Label>
+                                        <p className="text-sm text-gray-800 mt-1">{selectedRequest.observacoes_internas}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {selectedRequest.requirements && selectedRequest.requirements.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium">Requisitos</Label>
+                                    <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+                                        {selectedRequest.requirements.map((req: string, index: number) => (
+                                            <li key={index}>{req}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {selectedRequest.benefits && selectedRequest.benefits.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium">Benefícios</Label>
+                                    <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+                                        {selectedRequest.benefits.map((benefit: string, index: number) => (
+                                            <li key={index}>{benefit}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            <div>
+                                <Label htmlFor="notes">Observações (opcional para aprovação, obrigatório para rejeição)</Label>
+                                <Textarea
+                                    id="notes"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    placeholder="Adicione observações sobre a decisão..."
+                                    rows={3}
+                                    className="mt-1"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsDetailsOpen(false)}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                        handleReject(selectedRequest.id);
+                                        setIsDetailsOpen(false);
+                                    }}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                    )}
+                                    Rejeitar
+                                </Button>
+                                <Button
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => {
+                                        handleApprove(selectedRequest.id);
+                                        setIsDetailsOpen(false);
+                                    }}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                    )}
+                                    Aprovar
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 } 

@@ -157,6 +157,19 @@ export const useJobRequests = () => {
             const isAdmin = rhProfile?.role === 'admin' || rhProfile?.is_admin === true;
             const isRecruiter = rhProfile?.role === 'recruiter';
             
+            // 🔍 DEBUG: Log do perfil do gerente
+            if (rhProfile?.role === 'manager') {
+                console.log('🔍 [useJobRequests] Perfil do Gerente:', {
+                    role: rhProfile.role,
+                    assigned_states: rhProfile.assigned_states,
+                    assigned_cities: rhProfile.assigned_cities,
+                    assigned_departments: rhProfile.assigned_departments,
+                    temEstados: rhProfile.assigned_states && rhProfile.assigned_states.length > 0,
+                    temCidades: rhProfile.assigned_cities && rhProfile.assigned_cities.length > 0,
+                    temDepartamentos: rhProfile.assigned_departments && rhProfile.assigned_departments.length > 0
+                });
+            }
+            
             if (!isAdmin && !isRecruiter) {
                 // Filtro por ESTADO (apenas para gerentes)
                 if (rhProfile?.role === 'manager' && rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
@@ -164,10 +177,14 @@ export const useJobRequests = () => {
                     query = query.in('state', rhProfile.assigned_states);
                 }
 
-                // Filtro por CIDADE (apenas para gerentes)
+                // 🔥 CORREÇÃO: Filtro por CIDADE apenas se o gerente tem cidades específicas
+                // Se o gerente tem estados mas NÃO tem cidades específicas, pode ver todas as cidades do estado
                 if (rhProfile?.role === 'manager' && rhProfile?.assigned_cities && rhProfile.assigned_cities.length > 0) {
-                    console.log('🔍 [useJobRequests] Gerente - Filtrando por cidades:', rhProfile.assigned_cities);
+                    console.log('🔍 [useJobRequests] Gerente - Filtrando por cidades específicas:', rhProfile.assigned_cities);
                     query = query.in('city', rhProfile.assigned_cities);
+                } else if (rhProfile?.role === 'manager' && rhProfile?.assigned_states && rhProfile.assigned_states.length > 0) {
+                    // Gerente tem estados mas não tem cidades específicas = pode ver todas as cidades dos estados atribuídos
+                    console.log('🔍 [useJobRequests] Gerente - Tem estados mas sem cidades específicas, vendo todas as cidades dos estados');
                 }
             } else {
                 console.log('🔍 [useJobRequests] Admin/Recrutador detectado - SEM filtros aplicados', { isAdmin, isRecruiter });
@@ -200,12 +217,34 @@ export const useJobRequests = () => {
                     if (!hasDepartment) {
                         console.log('⚠️ [useJobRequests] Departamento fora do escopo do gerente - ocultando', {
                             requestDepartment: request.department,
-                            assignedDepartmentsNormalized
+                            requestDepartmentNormalized: requestDepartment,
+                            assignedDepartmentsNormalized,
+                            requestState: request.state,
+                            requestCity: request.city
                         });
                     }
                     return hasDepartment;
                 });
             }
+
+            // 🔍 DEBUG: Log detalhado para diagnóstico
+            console.log('🔍 [useJobRequests] Resultado final após filtros:', {
+                total: result.length,
+                requests: result.map(r => ({
+                    id: r.id,
+                    title: r.title,
+                    state: r.state,
+                    city: r.city,
+                    department: r.department,
+                    status: r.status
+                })),
+                gerente: {
+                    role: rhProfile?.role,
+                    assigned_states: rhProfile?.assigned_states,
+                    assigned_cities: rhProfile?.assigned_cities,
+                    assigned_departments: rhProfile?.assigned_departments
+                }
+            });
 
             return result;
         },

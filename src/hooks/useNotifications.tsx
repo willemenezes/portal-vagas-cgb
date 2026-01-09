@@ -123,7 +123,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin" style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               📝 Editar Dados Jurídicos
             </a>
           </div>
@@ -158,7 +158,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://vagas.grupocgb.com.br/admin/selection" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               📊 Ver Processo Seletivo
             </a>
           </div>
@@ -193,7 +193,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://vagas.grupocgb.com.br/admin/candidates" style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               👥 Ver Candidatos
             </a>
           </div>
@@ -231,7 +231,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://vagas.grupocgb.com.br/admin/jobs" style="background: #ffc107; color: #212529; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #ffc107; color: #212529; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               📝 Gerenciar Vaga
             </a>
           </div>
@@ -269,7 +269,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://vagas.grupocgb.com.br/admin/jobs" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               🔄 Reativar Vaga
             </a>
           </div>
@@ -295,200 +295,9 @@ function processTemplate(template: string, data: any): string {
   return processed;
 }
 
-// Função para enviar email usando Gmail SMTP via Web API
-async function sendEmailDirect(to: string, subject: string, html: string) {
-  try {
-    console.log(`📧 Enviando email via Gmail SMTP para: ${to}`);
-    console.log(`📧 Assunto: ${subject}`);
-
-    // Método 1: Usar Web3Forms (serviço gratuito confiável)
-    const web3formsResponse = await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        access_key: '8f2c5d1e-9b4a-4c3d-8e7f-1a2b3c4d5e6f',
-        subject: `Portal CGB Vagas: ${subject}`,
-        email: 'ti.belem@cgbengenharia.com.br',
-        name: 'Portal CGB Vagas',
-        message: `
-          DESTINATÁRIO: ${to}
-          ASSUNTO: ${subject}
-          
-          CONTEÚDO DO EMAIL:
-          ${html.replace(/<[^>]*>/g, '')}
-          
-          ---
-          Este email foi enviado pelo Portal CGB Vagas.
-          Email original destinado para: ${to}
-        `,
-        redirect: 'false',
-        _template: 'table'
-      })
-    });
-
-    if (web3formsResponse.ok) {
-      const result = await web3formsResponse.json();
-      if (result.success) {
-        console.log(`✅ Email enviado via Web3Forms para ${to}`);
-
-        // Agora enviar uma cópia para o destinatário real
-        try {
-          const copyResponse = await fetch('https://api.web3forms.com/submit', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              access_key: '8f2c5d1e-9b4a-4c3d-8e7f-1a2b3c4d5e6f',
-              subject: `Portal CGB Vagas: ${subject}`,
-              email: to,
-              name: 'Portal CGB Vagas',
-              message: html.replace(/<[^>]*>/g, ''),
-              from_name: 'Portal CGB Vagas',
-              redirect: 'false'
-            })
-          });
-
-          if (copyResponse.ok) {
-            console.log(`✅ Cópia enviada diretamente para ${to}`);
-          }
-        } catch (copyError) {
-          console.log('Cópia direta falhou, mas notificação foi enviada');
-        }
-
-        return { success: true, method: 'web3forms' };
-      }
-    }
-
-    throw new Error('Web3Forms falhou');
-
-  } catch (error) {
-    console.error('Erro Web3Forms:', error);
-
-    // Fallback 1: Usar Netlify Forms
-    try {
-      console.log('🔄 Tentando fallback via Netlify...');
-      const netlifyResponse = await fetch('/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          'form-name': 'contact',
-          'email': to,
-          'subject': `Portal CGB Vagas: ${subject}`,
-          'message': `
-            NOTIFICAÇÃO DO PORTAL CGB VAGAS
-            
-            Para: ${to}
-            Assunto: ${subject}
-            
-            ${html.replace(/<[^>]*>/g, '')}
-            
-            ---
-            Enviado automaticamente pelo sistema.
-          `
-        }).toString()
-      });
-
-      if (netlifyResponse.ok) {
-        console.log(`✅ Email enviado via Netlify para ${to}`);
-        return { success: true, method: 'netlify' };
-      }
-    } catch (netlifyError) {
-      console.error('Netlify também falhou:', netlifyError);
-    }
-
-    // Fallback 2: Usar Formsubmit
-    try {
-      console.log('🔄 Tentando fallback via Formsubmit...');
-      const formsubmitResponse = await fetch('https://formsubmit.co/ti.belem@cgbengenharia.com.br', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          _subject: `Portal CGB Vagas: ${subject}`,
-          _template: 'table',
-          _captcha: 'false',
-          destinatario: to,
-          assunto: subject,
-          conteudo: html.replace(/<[^>]*>/g, ''),
-          sistema: 'Portal CGB Vagas',
-          timestamp: new Date().toLocaleString('pt-BR')
-        })
-      });
-
-      if (formsubmitResponse.ok) {
-        console.log(`✅ Email enviado via Formsubmit para ${to}`);
-        return { success: true, method: 'formsubmit' };
-      }
-    } catch (formsubmitError) {
-      console.error('Formsubmit também falhou:', formsubmitError);
-    }
-
-    // Fallback 3: Criar link mailto como último recurso
-    try {
-      console.log('🔄 Último fallback: mailto...');
-      const textContent = html.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n');
-      const mailtoLink = `mailto:${to}?subject=${encodeURIComponent(`Portal CGB Vagas: ${subject}`)}&body=${encodeURIComponent(textContent)}&cc=ti.belem@cgbengenharia.com.br`;
-
-      // 🔥 DESABILITADO: Não mostrar pop-up de confirmação - apenas logar o erro
-      console.log(`📧 Não foi possível enviar email para ${to}`);
-      console.log(`📧 Assunto: ${subject}`);
-      console.log(`📧 O email será enviado automaticamente quando o serviço estiver disponível`);
-
-      // Não mostrar window.confirm para não interromper o fluxo do usuário
-      /*
-      if (typeof window !== 'undefined' && window.confirm) {
-        const shouldOpen = window.confirm(
-          `Não foi possível enviar email automaticamente para ${to}.\n\n` +
-          `Deseja abrir seu cliente de email para enviar manualmente?\n\n` +
-          `Assunto: ${subject}`
-        );
-
-        if (shouldOpen) {
-          const link = document.createElement('a');
-          link.href = mailtoLink;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          console.log(`📧 Link mailto aberto para ${to}`);
-          return { success: true, method: 'mailto', manual: true };
-        }
-      }
-      */
-
-      console.log(`📧 Link mailto preparado para ${to} (não aberto)`);
-      return { success: true, method: 'mailto-prepared', manual: false };
-
-    } catch (mailtoError) {
-      console.error('Mailto também falhou:', mailtoError);
-    }
-
-    // Log detalhado do erro mas não quebrar o fluxo
-    console.warn(`⚠️ TODOS os métodos de email falharam para ${to}`);
-    console.warn('⚠️ Detalhes:', {
-      destinatario: to,
-      assunto: subject.substring(0, 50),
-      timestamp: new Date().toISOString()
-    });
-
-    // Retornar sucesso para não quebrar o fluxo principal
-    return {
-      success: true,
-      warning: 'Email não enviado - todos os métodos falharam',
-      attempted_methods: ['web3forms', 'netlify', 'formsubmit', 'mailto']
-    };
-  }
-}
+// 🔥 REMOVIDO: Função sendEmailDirect não é mais necessária
+// Agora usamos a Edge Function send-notification que usa SMTP direto
+// Isso evita emails do FormSubmit/Web3Forms
 
 export const useNotifications = () => {
   const { toast } = useToast();
@@ -517,55 +326,56 @@ export const useNotifications = () => {
 
       console.log(`📧 Enviando notificação ${type} para ${validRecipients.length} destinatário(s)`);
 
-      const template = EMAIL_TEMPLATES[type as keyof typeof EMAIL_TEMPLATES];
-      if (!template) {
-        console.error(`Template não encontrado: ${type}`);
-        return;
-      }
+      // 🔥 CORREÇÃO: Usar Edge Function send-notification em vez de sendEmailDirect
+      // A Edge Function usa SMTP direto e não precisa de FormSubmit/Web3Forms
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const results = [];
-
-      // Enviar email para cada destinatário
-      for (const recipient of validRecipients) {
-        try {
-          // Preparar dados do template incluindo dados do destinatário
-          const templateData = {
-            ...data,
-            recipientName: recipient.name,
-            recipientEmail: recipient.email,
-          };
-
-          const subject = processTemplate(template.subject, templateData);
-          const html = processTemplate(template.html, templateData);
-
-          // Enviar email diretamente
-          const result = await sendEmailDirect(recipient.email, subject, html);
-
-          if (result.success) {
-            console.log(`✅ Email enviado para ${recipient.email}`);
-            results.push({ recipient: recipient.email, status: 'success' });
-          } else {
-            console.error(`❌ Erro ao enviar email para ${recipient.email}`);
-            results.push({ recipient: recipient.email, status: 'error' });
-          }
-
-        } catch (error) {
-          console.error(`Erro ao processar email para ${recipient.email}:`, error);
-          results.push({ recipient: recipient.email, status: 'error', error: error });
+        if (!supabaseUrl || !supabaseAnonKey) {
+          throw new Error('Configuração Supabase incompleta');
         }
-      }
 
-      if (!silent) {
-        const successCount = results.filter(r => r.status === 'success').length;
-        console.log(`✅ Notificação ${type} processada: ${successCount}/${validRecipients.length} emails enviados`);
-      }
+        const response = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            type,
+            recipients: validRecipients,
+            data
+          })
+        });
 
-      return {
-        success: true,
-        results,
-        totalSent: results.filter(r => r.status === 'success').length,
-        totalFailed: results.filter(r => r.status === 'error').length
-      };
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ Erro ao enviar notificação via Edge Function:`, errorText);
+          throw new Error(errorText);
+        }
+
+        const result = await response.json();
+        
+        if (!silent) {
+          console.log(`✅ Notificação ${type} processada: ${result.totalSent}/${validRecipients.length} emails enviados`);
+        }
+
+        return result;
+
+      } catch (error: any) {
+        console.error('❌ Erro ao enviar notificação via Edge Function:', error);
+        
+        // Não mostrar toast de erro para não atrapalhar a UX principal
+        // O usuário não precisa saber que o email falhou, o processo principal deve continuar
+        
+        return {
+          success: false,
+          results: validRecipients.map(r => ({ recipient: r.email, status: 'error', error: error.message })),
+          totalSent: 0,
+          totalFailed: validRecipients.length
+        };
+      }
     },
     onError: (error: any) => {
       console.error('Erro na notificação:', error);

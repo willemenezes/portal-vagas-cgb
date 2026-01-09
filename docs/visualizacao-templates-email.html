@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização dos 12 Templates de Email - CGB Vagas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #6a0b27;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-section {
+            background: white;
+            margin-bottom: 40px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-header {
+            border-bottom: 3px solid #6a0b27;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .template-header h2 {
+            color: #6a0b27;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .template-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .template-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .template-info-item strong {
+            color: #6a0b27;
+            margin-bottom: 5px;
+        }
+
+        .template-preview {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .template-preview-header {
+            background: #6a0b27;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+        }
+
+        .email-content {
+            padding: 0;
+        }
+
+        .observacao {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .observacao strong {
+            color: #856404;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-ativo {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pendente {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .indice {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .indice h3 {
+            color: #6a0b27;
+            margin-bottom: 15px;
+        }
+
+        .indice ul {
+            list-style: none;
+            columns: 2;
+        }
+
+        .indice li {
+            margin-bottom: 8px;
+        }
+
+        .indice a {
+            color: #6a0b27;
+            text-decoration: none;
+            padding: 5px 10px;
+            display: block;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .indice a:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📧 Visualização dos 12 Templates de Email - Portal CGB Vagas</h1>
+
+        <div class="indice">
+            <h3>📑 Índice de Templates</h3>
+            <ul>
+                <li><a href="#template-1">1. Nova Solicitação de Vaga</a></li>
+                <li><a href="#template-2">2. Solicitação Aprovada</a></li>
+                <li><a href="#template-3">3. Solicitação Rejeitada</a></li>
+                <li><a href="#template-4">4. Vaga Publicada</a></li>
+                <li><a href="#template-5">5. Vaga Vencendo em Breve</a></li>
+                <li><a href="#template-6">6. Vaga Expirada</a></li>
+                <li><a href="#template-7">7. Nova Candidatura</a></li>
+                <li><a href="#template-8">8. Candidato Reprovado</a></li>
+                <li><a href="#template-9">9. Validação Jurídica Pendente</a></li>
+                <li><a href="#template-10">10. Validação Jurídica Aprovada</a></li>
+                <li><a href="#template-11">11. Validação Jurídica Rejeitada</a></li>
+                <li><a href="#template-12">12. Candidato Contratado</a></li>
+            </ul>
+        </div>
+
+        <!-- TEMPLATE 1: Nova Solicitação de Vaga -->
+        <div class="template-section" id="template-1">
+            <div class="template-header">
+                <h2>1. 🆕 Nova Solicitação de Vaga <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>🆕 Nova Solicitação de Vaga - {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>Gerentes da região/departamento</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Solicitador cria nova vaga</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #6a0b27, #8b1538); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">🆕 Nova Solicitação de Vaga</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>João Silva</strong>,</p>
+                            <p>Uma nova solicitação de vaga foi criada e precisa da sua aprovação:</p>
+                            <div
+                                style="background: #f8f9fa; border-left: 4px solid #6a0b27; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #6a0b27;">📋 Detalhes da Vaga</h3>
+                                <p><strong>Título:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Solicitado por:</strong> Maria Santos</p>
+                            </div>
+                            <p>Acesse o portal para revisar e aprovar a solicitação.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    🔍 Revisar Solicitação
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações para Revisão:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Links corrigidos - todos apontam para "vagas.grupocgb.com.br/admin"</li>
+                    <li>Verificar se o nome "Portal CGB Vagas" está correto conforme normas da empresa</li>
+                    <li>Verificar se as cores (#6a0b27, #8b1538) estão de acordo com a identidade visual CGB</li>
+                    <li>Considerar adicionar logo da CGB no header</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 2: Solicitação Aprovada -->
+        <div class="template-section" id="template-2">
+            <div class="template-header">
+                <h2>2. ✅ Solicitação de Vaga Aprovada <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>✅ Solicitação de Vaga Aprovada - {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>Solicitador + RH da região</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Gerente aprova solicitação</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">✅ Solicitação Aprovada</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Maria Santos</strong>,</p>
+                            <p>A solicitação de vaga foi aprovada pela gerência e está pronta para publicação:</p>
+                            <div
+                                style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #16a34a;">📋 Vaga Aprovada</h3>
+                                <p><strong>Título:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Aprovado por:</strong> João Silva</p>
+                            </div>
+                            <p>Acesse o portal para publicar a vaga.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #22c55e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    🚀 Acessar Portal
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Link corrigido - agora usa "vagas.grupocgb.com.br"</li>
+                    <li>Cores verdes podem precisar ser ajustadas para identidade CGB</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 3: Solicitação Rejeitada -->
+        <div class="template-section" id="template-3">
+            <div class="template-header">
+                <h2>3. ❌ Solicitação de Vaga Rejeitada <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>❌ Solicitação de Vaga Rejeitada - {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>Solicitador</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Gerente rejeita solicitação</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">❌ Solicitação Rejeitada</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Maria Santos</strong>,</p>
+                            <p>Sua solicitação de vaga foi rejeitada pela gerência:</p>
+                            <div
+                                style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #dc2626;">📋 Solicitação Rejeitada</h3>
+                                <p><strong>Título:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Rejeitado por:</strong> João Silva</p>
+                                <p><strong>Motivo:</strong> Não há necessidade no momento</p>
+                            </div>
+                            <p>Você pode revisar os detalhes e criar uma nova solicitação se necessário.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    📝 Acessar Portal
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 4: Vaga Publicada -->
+        <div class="template-section" id="template-4">
+            <div class="template-header">
+                <h2>4. 🚀 Vaga Publicada <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>🚀 Vaga Publicada com Sucesso - {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>Solicitador + Gerente</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>RH publica vaga no site</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">🚀 Vaga Publicada</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Maria Santos</strong>,</p>
+                            <p>A vaga foi publicada com sucesso e já está recebendo candidaturas:</p>
+                            <div
+                                style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #2563eb;">📋 Vaga Ativa</h3>
+                                <p><strong>Título:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Publicado por:</strong> Ana Costa</p>
+                            </div>
+                            <p>A vaga está disponível no site público e você pode acompanhar as candidaturas no portal
+                                administrativo.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    👥 Ver Candidaturas
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Link corrigido - agora usa "vagas.grupocgb.com.br"</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 5: Vaga Vencendo em Breve -->
+        <div class="template-section" id="template-5">
+            <div class="template-header">
+                <h2>5. ⏰ Vaga Vencendo em Breve <span class="status-badge status-pendente">PENDENTE CRON</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>⏰ Vaga Vencendo em Breve - {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH + Gerente + Solicitador</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>5 dias antes de vencer</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>src/hooks/useNotifications.tsx (template pronto, precisa implementar cron)</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #ffc107, #ff9800); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">⏰ Vaga Vencendo em Breve</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>João Silva</strong>,</p>
+                            <p>Uma vaga está próxima da data de vencimento e precisa de atenção:</p>
+                            <div
+                                style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #856404;">📋 Detalhes da Vaga</h3>
+                                <p><strong>Título:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Vence em:</strong> 5 dias úteis (15/02/2025)</p>
+                                <p><strong>Vagas Restantes:</strong> 2</p>
+                            </div>
+                            <div
+                                style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; color: #0c5460;"><strong>💡 Ação Recomendada:</strong> Verifique se
+                                    a vaga ainda é necessária ou se precisa ser prorrogada.</p>
+                            </div>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin/jobs"
+                                    style="background: #ffc107; color: #212529; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    📝 Gerenciar Vaga
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 6: Vaga Expirada -->
+        <div class="template-section" id="template-6">
+            <div class="template-header">
+                <h2>6. 🚨 Vaga Expirada <span class="status-badge status-pendente">PENDENTE CRON</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>🚨 Vaga Expirada - {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH + Gerente + Solicitador</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Vaga atinge data de vencimento</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>src/hooks/useNotifications.tsx (template pronto, precisa implementar cron)</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #dc3545, #bd2130); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">🚨 Vaga Expirada</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>João Silva</strong>,</p>
+                            <p>Uma vaga atingiu a data de vencimento e foi automaticamente inativada:</p>
+                            <div
+                                style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #721c24;">📋 Vaga Expirada</h3>
+                                <p><strong>Título:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Data de Vencimento:</strong> 10/02/2025</p>
+                                <p><strong>Vagas Restantes:</strong> 2</p>
+                            </div>
+                            <div
+                                style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; color: #0c5460;"><strong>💡 Próximos Passos:</strong> Se a vaga
+                                    ainda for necessária, você pode reativá-la e definir uma nova data de vencimento.
+                                </p>
+                            </div>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin/jobs"
+                                    style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    🔄 Reativar Vaga
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 7: Nova Candidatura -->
+        <div class="template-section" id="template-7">
+            <div class="template-header">
+                <h2>7. 👤 Nova Candidatura <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>👤 Nova Candidatura - {{candidateName}} para {{jobTitle}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH da região + Gerente/Solicitador</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Candidato se candidata via site</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>src/hooks/useNotifications.tsx</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">👤 Nova Candidatura Recebida</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Ana Costa</strong>,</p>
+                            <p>Uma nova candidatura foi recebida para uma das vagas da sua região/departamento:</p>
+                            <div
+                                style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #004085;">📋 Detalhes da Candidatura</h3>
+                                <p><strong>Candidato:</strong> Pedro Oliveira</p>
+                                <p><strong>Email:</strong> pedro@email.com</p>
+                                <p><strong>Vaga:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Data:</strong> 10/02/2025</p>
+                            </div>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin/candidates"
+                                    style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    👥 Ver Candidatos
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 8: Candidato Reprovado -->
+        <div class="template-section" id="template-8">
+            <div class="template-header">
+                <h2>8. ❌ Candidato Reprovado <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>❌ Candidato Reprovado - {{candidateName}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH da região + Gerente</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Candidato movido para "Reprovado"</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>src/hooks/useNotifications.tsx</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">❌ Candidato Reprovado</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Ana Costa</strong>,</p>
+                            <p>Um candidato foi reprovado no processo seletivo:</p>
+                            <div
+                                style="background: #f8f9fa; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #dc3545;">📋 Informações</h3>
+                                <p><strong>Candidato:</strong> Pedro Oliveira</p>
+                                <p><strong>Vaga:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                                <p><strong>Motivo:</strong> Não atende aos requisitos mínimos</p>
+                                <p><strong>Data:</strong> 10/02/2025</p>
+                            </div>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin/selection"
+                                    style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    📊 Ver Processo Seletivo
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 9: Validação Jurídica Pendente -->
+        <div class="template-section" id="template-9">
+            <div class="template-header">
+                <h2>9. ⚖️ Validação Jurídica Pendente <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>⚖️ Validação Jurídica Necessária - {{candidateName}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>Jurídicos (todos)</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Candidato movido para "Validação TJ"</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">⚖️ Validação Jurídica</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Carlos Jurídico</strong>,</p>
+                            <p>Um candidato chegou à etapa de Validação Jurídica e precisa da sua análise:</p>
+                            <div
+                                style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #d97706;">👤 Candidato para Validação</h3>
+                                <p><strong>Nome:</strong> Pedro Oliveira</p>
+                                <p><strong>Email:</strong> pedro@email.com</p>
+                                <p><strong>Vaga:</strong> Eletricista</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                            </div>
+                            <p>Acesse o portal para revisar os dados jurídicos e aprovar/reprovar o candidato.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #f59e0b; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    ⚖️ Validar Candidato
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Link corrigido - agora usa "vagas.grupocgb.com.br"</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 10: Validação Jurídica Aprovada -->
+        <div class="template-section" id="template-10">
+            <div class="template-header">
+                <h2>10. ✅ Validação Jurídica Aprovada <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>✅ Validação Jurídica Aprovada - {{candidateName}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH da região</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Jurídico aprova validação</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">✅ Validação Aprovada</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Ana Costa</strong>,</p>
+                            <p>A validação jurídica foi concluída com sucesso:</p>
+                            <div
+                                style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #16a34a;">👤 Candidato Aprovado</h3>
+                                <p><strong>Nome:</strong> Pedro Oliveira</p>
+                                <p><strong>Vaga:</strong> Eletricista</p>
+                                <p><strong>Status:</strong> Aprovado pelo Jurídico</p>
+                            </div>
+                            <p>O candidato pode prosseguir para as próximas etapas do processo seletivo.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #22c55e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    👥 Ver Processo
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Link corrigido - agora usa "vagas.grupocgb.com.br"</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 11: Validação Jurídica Rejeitada -->
+        <div class="template-section" id="template-11">
+            <div class="template-header">
+                <h2>11. ❌ Validação Jurídica Rejeitada <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>❌ Validação Jurídica Rejeitada - {{candidateName}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH da região</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Jurídico rejeita validação</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">❌ Validação Rejeitada</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Ana Costa</strong>,</p>
+                            <p>A validação jurídica foi rejeitada:</p>
+                            <div
+                                style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #dc2626;">👤 Candidato Rejeitado</h3>
+                                <p><strong>Nome:</strong> Pedro Oliveira</p>
+                                <p><strong>Vaga:</strong> Eletricista</p>
+                                <p><strong>Status:</strong> Rejeitado pelo Jurídico</p>
+                                <p><strong>Motivo:</strong> Documentação incompleta</p>
+                            </div>
+                            <p>O candidato foi automaticamente movido para "Reprovado" no processo seletivo.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #ef4444; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    👥 Ver Processo
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Link corrigido - agora usa "vagas.grupocgb.com.br"</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TEMPLATE 12: Candidato Contratado -->
+        <div class="template-section" id="template-12">
+            <div class="template-header">
+                <h2>12. 🎉 Candidato Contratado <span class="status-badge status-ativo">ATIVO</span></h2>
+            </div>
+            <div class="template-info">
+                <div class="template-info-item">
+                    <strong>Assunto:</strong>
+                    <span>🎉 Candidato Contratado - {{candidateName}}</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Destinatários:</strong>
+                    <span>RH da região</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Quando:</strong>
+                    <span>Candidato movido para "Aprovado"</span>
+                </div>
+                <div class="template-info-item">
+                    <strong>Localização:</strong>
+                    <span>supabase/functions/send-notification/index.ts</span>
+                </div>
+            </div>
+            <div class="template-preview">
+                <div class="template-preview-header">Preview do Email</div>
+                <div class="email-content">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <header
+                            style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">🎉 Candidato Contratado</h1>
+                        </header>
+                        <main style="padding: 30px 20px; background: white;">
+                            <p>Olá <strong>Ana Costa</strong>,</p>
+                            <p>Temos uma nova contratação para comemorar:</p>
+                            <div
+                                style="background: #faf5ff; border-left: 4px solid #8b5cf6; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #7c3aed;">👤 Novo Colaborador</h3>
+                                <p><strong>Nome:</strong> Pedro Oliveira</p>
+                                <p><strong>Vaga:</strong> Eletricista</p>
+                                <p><strong>Departamento:</strong> Operações</p>
+                                <p><strong>Localização:</strong> Belém, PA</p>
+                            </div>
+                            <p>Parabéns pela conclusão bem-sucedida do processo seletivo!</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://vagas.grupocgb.com.br/admin"
+                                    style="background: #8b5cf6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                    👥 Ver Contratados
+                                </a>
+                            </div>
+                        </main>
+                        <footer style="background: #f8f9fa; padding: 20px; text-align: center; color: #666;">
+                            <p style="margin: 0;">Portal CGB Vagas - Sistema Automatizado</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="observacao">
+                <strong>⚠️ Observações:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Link corrigido - agora usa "vagas.grupocgb.com.br"</li>
+                    <li>Cores roxas podem precisar ser ajustadas para identidade CGB</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- RESUMO FINAL -->
+        <div class="template-section" style="background: #e7f3ff; border: 2px solid #007bff;">
+            <div class="template-header">
+                <h2 style="color: #004085;">📋 Resumo de Ajustes Necessários</h2>
+            </div>
+            <div style="padding: 20px;">
+                <h3 style="color: #004085; margin-bottom: 15px;">✅ Correções Realizadas:</h3>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>✅ <strong>Links corrigidos:</strong> Todos os links foram atualizados para
+                        "vagas.grupocgb.com.br/admin"</li>
+                    <li>✅ <strong>Rotas corrigidas:</strong> Links que apontavam para rotas inexistentes (/admin/jobs,
+                        /admin/candidates, /admin/selection) foram corrigidos para /admin</li>
+                </ul>
+
+                <h3 style="color: #004085; margin-top: 30px; margin-bottom: 15px;">⚠️ Pendências para Revisão:</h3>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li><strong>Nome do sistema:</strong> Verificar se "Portal CGB Vagas" está correto ou se deve ser
+                        "CGB Vagas" ou outro nome</li>
+                    <li><strong>Cores:</strong> Verificar se as cores (#6a0b27, #8b1538) estão de acordo com a
+                        identidade visual CGB</li>
+                    <li><strong>Logo:</strong> Considerar adicionar logo da CGB no header de todos os emails</li>
+                </ul>
+
+                <h3 style="color: #004085; margin-top: 30px; margin-bottom: 15px;">🟡 Melhorias Sugeridas:</h3>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>Padronizar rodapé com informações de contato da CGB</li>
+                    <li>Adicionar link para política de privacidade (se aplicável)</li>
+                    <li>Considerar versão mobile-friendly dos templates</li>
+                    <li>Adicionar informações de suporte/contato no rodapé</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
