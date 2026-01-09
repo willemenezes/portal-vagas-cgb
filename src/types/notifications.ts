@@ -36,12 +36,15 @@ export type NotificationType =
   | 'job_request_approved'      // Gerente → RH + Coordenador
   | 'job_request_rejected'      // Gerente → Coordenador
   | 'job_published'             // RH → Coordenador + Gerente
+  | 'job_expiring_soon'         // Sistema → RH + Gerente + Solicitador (5 dias antes)
+  | 'job_expired'               // Sistema → RH + Gerente + Solicitador
   
   // Fluxo de candidatos
   | 'candidate_legal_validation' // Candidato → Jurídico
   | 'legal_validation_approved' // Jurídico → RH
   | 'legal_validation_rejected' // Jurídico → RH
   | 'candidate_status_change'   // Mudanças importantes no processo
+  | 'new_application'           // Candidato se candidata → RH + Solicitador
   
   // Notificações gerais
   | 'candidate_hired'           // Candidato contratado

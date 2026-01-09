@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Users, Search, FileText, MapPin, Briefcase } from 'lucide-react';
 import { type SelectionStatus } from '@/lib/constants';
 import { useNotifications } from './useNotifications';
-import { getUsersByRole, getRHByCandidate } from '@/utils/notifications';
+import { getUsersByRole, getRHByCandidate, getManagersByRegion } from '@/utils/notifications';
 
 // Hook para buscar cidades e estados únicos (para filtros - não paginado)
 export const useCandidatesFiltersData = () => {
@@ -353,19 +353,23 @@ export const useResumeByEmail = (email: string) => {
 
 export const useCreateCandidate = () => {
   const queryClient = useQueryClient();
+  const { sendNotification } = useNotifications();
 
   return useMutation({
     mutationFn: async (candidate: NewCandidate) => {
       const { data, error } = await supabase
         .from('candidates')
-        .insert([candidate])
-        .select()
+        .insert([candidate] as any)
+        .select(`
+          *,
+          job:jobs(title, department, city, state)
+        `)
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     },
-    onSuccess: async () => {
+    onSuccess: async (newCandidate: any) => {
       // BUG FIX: Invalidar TODAS as queries relacionadas
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['candidates'] }),
@@ -375,6 +379,48 @@ export const useCreateCandidate = () => {
         queryClient.invalidateQueries({ queryKey: ['candidatesCountByJob'] }),
         queryClient.invalidateQueries({ queryKey: ['candidatesCounts'] }),
       ]);
+
+      // 📧 Enviar notificação de nova candidatura (apenas para candidaturas diretas, não para movimentações manuais)
+      // Verificar se é uma candidatura nova (status 'pending' ou não é 'Convidado')
+      if (newCandidate.status === 'pending' || newCandidate.status === 'Cadastrado') {
+        try {
+          const job = newCandidate.job;
+          if (job) {
+            // Buscar RH da região
+            const rhUsers = await getRHByCandidate(newCandidate.id);
+            
+            // Buscar gerentes da região/departamento (podem ser solicitadores também)
+            const managers = await getManagersByRegion(
+              newCandidate.state || job.state,
+              newCandidate.city || job.city,
+              job.department
+            );
+            
+            const allRecipients = [...rhUsers, ...managers];
+            
+            if (allRecipients.length > 0) {
+              await sendNotification({
+                type: 'new_application',
+                recipients: allRecipients,
+                data: {
+                  candidateName: newCandidate.name,
+                  candidateEmail: newCandidate.email,
+                  candidateId: newCandidate.id,
+                  jobTitle: job.title,
+                  department: job.department,
+                  city: newCandidate.city || job.city,
+                  state: newCandidate.state || job.state,
+                  actionDate: new Date().toLocaleString('pt-BR')
+                },
+                silent: true
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Erro ao enviar notificação de nova candidatura:', notificationError);
+          // Não falhar o processo se o email falhar
+        }
+      }
     },
   });
 };

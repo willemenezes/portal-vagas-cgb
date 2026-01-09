@@ -15,6 +15,8 @@ import CandidateDetailModal from './CandidateDetailModal';
 import { useCreateCandidateNote } from '@/hooks/useCandidateNotes';
 import { useAuth } from '@/hooks/useAuth';
 import { useRHProfile } from '@/hooks/useRH';
+import { useNotifications } from '@/hooks/useNotifications';
+import { getRHByCandidate, getManagersByRegion } from '@/utils/notifications';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -103,6 +105,7 @@ const SelectionProcess = () => {
     const createNote = useCreateCandidateNote();
     const { user } = useAuth();
     const { data: rhProfile, isLoading: isRhProfileLoading } = useRHProfile(user?.id);
+    const { sendNotification } = useNotifications();
     const { toast } = useToast();
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
@@ -721,6 +724,47 @@ const SelectionProcess = () => {
         try {
             await updateStatus.mutateAsync({ id: candidateId, status: 'Reprovado' });
             if (user) await createNote.mutateAsync({ candidate_id: candidateId, author_id: user.id, note: `Motivo da reprovação: ${fullRejectionNote}`, activity_type: 'Reprovação' });
+            
+            // 📧 Enviar notificação de reprovação para RH e Gerente
+            try {
+                const job = allJobs.find(j => j.id === candidateToReject.job_id);
+                if (job) {
+                    // Buscar RH da região
+                    const rhUsers = await getRHByCandidate(candidateId);
+                    
+                    // Buscar gerentes da região/departamento
+                    const managers = await getManagersByRegion(
+                        candidateToReject.state || job.state,
+                        candidateToReject.city || job.city,
+                        job.department
+                    );
+                    
+                    const allRecipients = [...rhUsers, ...managers];
+                    
+                    if (allRecipients.length > 0) {
+                        await sendNotification({
+                            type: 'candidate_rejected',
+                            recipients: allRecipients,
+                            data: {
+                                candidateName: candidateToReject.name,
+                                candidateEmail: candidateToReject.email,
+                                candidateId: candidateToReject.id,
+                                jobTitle: job.title,
+                                department: job.department,
+                                city: candidateToReject.city || job.city,
+                                state: candidateToReject.state || job.state,
+                                notes: fullRejectionNote,
+                                actionDate: new Date().toLocaleString('pt-BR')
+                            },
+                            silent: true
+                        });
+                    }
+                }
+            } catch (notificationError) {
+                console.error('Erro ao enviar notificação de reprovação:', notificationError);
+                // Não falhar o processo se o email falhar
+            }
+            
             toast({ title: "Candidato reprovado", description: "O status e a nota foram salvos com sucesso." });
         } catch (error: any) {
             toast({ title: "Erro", description: `Não foi possível completar a ação: ${error.message}`, variant: "destructive" });
