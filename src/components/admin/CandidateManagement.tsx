@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useCandidates, useDeleteCandidate, Candidate } from '@/hooks/useCandidates';
+import { useCandidates, useDeleteCandidate, Candidate, useCandidatesFiltersData, useCandidatesCounts } from '@/hooks/useCandidates';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useRHProfile } from '@/hooks/useRH';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +16,6 @@ import { ResumeButton } from './ResumeButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SELECTION_STATUSES, STATUS_COLORS, SelectionStatus } from '@/lib/constants';
-import { useCandidatesCounts } from '@/hooks/useCandidates';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
