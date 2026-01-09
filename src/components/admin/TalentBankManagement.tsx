@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { INVITED_STATUS, INVITED_STATUS_COLOR } from '@/lib/constants';
+import { supabase } from '@/integrations/supabase/client';
 
 const TalentBankManagement = () => {
     // Paginação para currículos
@@ -240,6 +241,16 @@ const TalentBankManagement = () => {
         try {
             const selectedJob = availableJobs.find(j => j.id === selectedJobId);
 
+            // 🔍 CORREÇÃO: Buscar dados jurídicos do currículo ANTES de criar o candidato
+            console.log('🔍 [TalentBank] Buscando dados jurídicos do currículo:', resumeToInvite.id);
+            const { data: existingLegalData } = await supabase
+                .from('candidate_legal_data')
+                .select('*')
+                .eq('candidate_id', resumeToInvite.id)
+                .single();
+
+            console.log('📋 [TalentBank] Dados jurídicos encontrados:', !!existingLegalData);
+
             // Criar candidatura na tabela candidates
             const candidateData = {
                 name: resumeToInvite.name || '',
@@ -267,7 +278,51 @@ const TalentBankManagement = () => {
                 lgpdConsent: true // Assumir consentimento já dado no banco de talentos
             };
 
-            await createCandidate.mutateAsync(candidateData);
+            const newCandidate = await createCandidate.mutateAsync(candidateData);
+            console.log('✅ [TalentBank] Candidato criado:', newCandidate.id);
+
+            // 🔥 CORREÇÃO: Se existem dados jurídicos do currículo, COPIAR para o novo candidato
+            if (existingLegalData) {
+                console.log('📝 [TalentBank] Copiando dados jurídicos para o novo candidato...');
+                try {
+                    // Criar uma cópia dos dados jurídicos para o novo candidate_id
+                    const legalDataCopy = {
+                        candidate_id: newCandidate.id, // Novo ID do candidato na vaga
+                        full_name: existingLegalData.full_name,
+                        birth_date: existingLegalData.birth_date,
+                        rg: existingLegalData.rg,
+                        cpf: existingLegalData.cpf,
+                        mother_name: existingLegalData.mother_name,
+                        father_name: existingLegalData.father_name,
+                        birth_city: existingLegalData.birth_city,
+                        birth_state: existingLegalData.birth_state,
+                        cnh: existingLegalData.cnh,
+                        work_history: existingLegalData.work_history,
+                        is_former_employee: existingLegalData.is_former_employee,
+                        former_employee_details: existingLegalData.former_employee_details,
+                        is_pcd: existingLegalData.is_pcd,
+                        pcd_details: existingLegalData.pcd_details,
+                        desired_position: resumeToInvite.position || selectedJob?.title || existingLegalData.desired_position,
+                        responsible_name: existingLegalData.responsible_name,
+                        company_contract: existingLegalData.company_contract,
+                        collected_by: existingLegalData.collected_by,
+                        review_status: 'pending' // Resetar status para pending na nova vaga
+                    };
+
+                    const { error: legalDataError } = await supabase
+                        .from('candidate_legal_data')
+                        .insert(legalDataCopy);
+
+                    if (legalDataError) {
+                        console.error('❌ [TalentBank] Erro ao copiar dados jurídicos:', legalDataError);
+                    } else {
+                        console.log('✅ [TalentBank] Dados jurídicos copiados com sucesso!');
+                    }
+                } catch (legalError) {
+                    console.error('❌ [TalentBank] Erro ao processar dados jurídicos:', legalError);
+                    // Não falhar o processo se houver erro ao copiar dados jurídicos
+                }
+            }
 
             toast({
                 title: "Convite enviado com sucesso!",
