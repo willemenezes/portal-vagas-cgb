@@ -848,6 +848,18 @@ export default function JobRequestApproval() {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedRequest(request);
+                                                            setNotes("");
+                                                            setIsDetailsOpen(true);
+                                                        }}
+                                                    >
+                                                        <Eye className="w-3 h-3 mr-1" />
+                                                        Ver Detalhes
+                                                    </Button>
                                                     {request.status === 'aprovado' && !request.job_created && (rhProfile?.role === 'admin' || rhProfile?.is_admin || rhProfile?.role === 'recruiter') && (
                                                         <Button
                                                             size="sm"
@@ -972,6 +984,18 @@ export default function JobRequestApproval() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex items-center justify-end gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    setSelectedRequest(request);
+                                                                    setNotes("");
+                                                                    setIsDetailsOpen(true);
+                                                                }}
+                                                            >
+                                                                <Eye className="w-3 h-3 mr-1" />
+                                                                Ver Detalhes
+                                                            </Button>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
