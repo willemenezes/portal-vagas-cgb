@@ -95,12 +95,27 @@ serve(async (req) => {
         const client = new SmtpClient();
 
         // Conectar ao servidor SMTP
-        await client.connectTLS({
-            hostname: SMTP_HOST,
-            port: parseInt(SMTP_PORT, 10),
-            username: SMTP_USER,
-            password: SMTP_PASSWORD,
-        });
+        // Porta 587 geralmente usa STARTTLS, porta 25 pode ser sem criptografia
+        const port = parseInt(SMTP_PORT, 10);
+        const useTLS = port === 587 || port === 465;
+        
+        if (useTLS) {
+            // Porta 587 (STARTTLS) ou 465 (SSL/TLS)
+            await client.connectTLS({
+                hostname: SMTP_HOST,
+                port: port,
+                username: SMTP_USER,
+                password: SMTP_PASSWORD,
+            });
+        } else {
+            // Porta 25 ou outras sem criptografia
+            await client.connect({
+                hostname: SMTP_HOST,
+                port: port,
+                username: SMTP_USER,
+                password: SMTP_PASSWORD,
+            });
+        }
 
         console.log("✅ Conectado ao servidor SMTP");
 
