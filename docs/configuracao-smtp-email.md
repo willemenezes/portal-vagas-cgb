@@ -1,5 +1,7 @@
 # 📧 Guia de Configuração SMTP - Sistema de Emails CGB VAGAS
 
+**Domínio Atual:** `https://vagas.grupocgb.com.br`
+
 ## 🎯 **Objetivo**
 Configurar o serviço de email para que o sistema envie notificações automáticas para os perfis envolvidos em cada etapa do processo de recrutamento.
 
@@ -221,7 +223,7 @@ if (true) return { success: true }; // Desabilita temporariamente
 ## 📝 **CONFIGURAÇÃO RECOMENDADA PARA PRODUÇÃO**
 
 ```
-Email Dedicado: naoresponda@cgbvagas.com.br
+Email Dedicado: naoresponda@grupocgb.com.br
 Servidor SMTP: SendGrid ou Amazon SES
 Limite Diário: Mínimo 500 emails/dia
 Autenticação: DKIM + SPF configurados no domínio
