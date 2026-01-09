@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useResumes, Resume, useDeleteResume, useResumesCount } from '@/hooks/useResumes';
+import { useResumes, Resume, useDeleteResume, useResumesCount, useResumesFiltersData } from '@/hooks/useResumes';
 import { useAllJobs } from '@/hooks/useJobs';
 import { useCreateCandidate, useCandidates } from '@/hooks/useCandidates';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -121,14 +121,31 @@ const TalentBankManagement = () => {
         ).length;
     }, [resumes, invitedEmails]);
 
+    // 🔥 CORREÇÃO: Buscar dados de filtros de TODOS os currículos, não apenas da página atual
+    const { data: filtersData } = useResumesFiltersData();
+    
     const { uniquePositions, uniqueStates, uniqueCities } = useMemo(() => {
+        if (filtersData) {
+            // Usar dados do hook otimizado que busca TODOS os currículos
+            const citiesForState = filters.state === 'all' 
+                ? filtersData.uniqueCities 
+                : Array.from(filtersData.citiesByState[filters.state] || []).sort();
+            
+            return {
+                uniquePositions: filtersData.uniquePositions,
+                uniqueStates: filtersData.uniqueStates,
+                uniqueCities: citiesForState,
+            };
+        }
+        
+        // Fallback: usar apenas da página atual se filtersData ainda não carregou
         const validResumes = resumes.filter(r => r && typeof r === 'object');
         return {
             uniquePositions: [...new Set(validResumes.map(r => r.position).filter(Boolean))] as string[],
             uniqueStates: [...new Set(validResumes.map(r => r.state).filter(Boolean))] as string[],
             uniqueCities: [...new Set(validResumes.filter(r => filters.state === 'all' || r.state === filters.state).map(r => r.city).filter(Boolean))] as string[],
         };
-    }, [resumes, filters.state]);
+    }, [resumes, filters.state, filtersData]);
 
     // Função helper para normalizar CNH para comparação
     const normalizeCNH = (cnh: string | null | undefined): 'sim' | 'não' => {

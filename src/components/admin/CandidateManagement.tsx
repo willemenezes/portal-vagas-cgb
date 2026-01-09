@@ -287,10 +287,17 @@ const CandidateManagement = () => {
     return uiSummary;
   }, [filteredCandidates, currentPage, totalCount, rhProfile]);
 
+  // 🔥 CORREÇÃO: Buscar dados de filtros de TODOS os candidatos, não apenas da página atual
+  const { data: filtersData } = useCandidatesFiltersData();
+
   const uniqueStates = useMemo(() => {
+    if (filtersData) {
+      return filtersData.uniqueStates;
+    }
+    // Fallback: usar apenas da página atual se filtersData ainda não carregou
     if (!Array.isArray(candidates)) return [];
     return Array.from(new Set(candidates.map(c => c.state || c.job?.state).filter(Boolean))) as string[];
-  }, [candidates]);
+  }, [candidates, filtersData]);
 
   const handleConfirmDelete = () => {
     if (!candidateToDelete) return;

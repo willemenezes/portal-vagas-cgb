@@ -1,6 +1,55 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Hook para buscar cidades, estados e posições únicas (para filtros - não paginado)
+export const useResumesFiltersData = () => {
+    return useQuery({
+        queryKey: ['resumesFiltersData'],
+        queryFn: async () => {
+            console.log('🔍 [useResumesFiltersData] Buscando dados para filtros...');
+            
+            // Buscar TODOS os currículos apenas com os campos necessários para filtros
+            const { data, error } = await supabase
+                .from('resumes')
+                .select('city, state, position')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ [useResumesFiltersData] Erro ao buscar dados:', error);
+                throw error;
+            }
+
+            // Extrair valores únicos
+            const validResumes = (data || []).filter(r => r && typeof r === 'object');
+            const uniquePositions = [...new Set(validResumes.map(r => r.position).filter(Boolean))] as string[];
+            const uniqueStates = [...new Set(validResumes.map(r => r.state).filter(Boolean))] as string[];
+            const uniqueCities = [...new Set(validResumes.map(r => r.city).filter(Boolean))] as string[];
+
+            console.log('✅ [useResumesFiltersData] Dados carregados:', {
+                positions: uniquePositions.length,
+                states: uniqueStates.length,
+                cities: uniqueCities.length
+            });
+
+            return {
+                uniquePositions: uniquePositions.sort(),
+                uniqueStates: uniqueStates.sort(),
+                uniqueCities: uniqueCities.sort(),
+                // Também retornar mapa de cidades por estado
+                citiesByState: validResumes.reduce((acc, r) => {
+                    if (r.state && r.city) {
+                        if (!acc[r.state]) acc[r.state] = new Set();
+                        acc[r.state].add(r.city);
+                    }
+                    return acc;
+                }, {} as Record<string, Set<string>>)
+            };
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutos
+        retry: 2
+    });
+};
+
 export interface Resume {
   id: string;
   name?: string | null;

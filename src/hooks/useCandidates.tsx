@@ -5,6 +5,52 @@ import { type SelectionStatus } from '@/lib/constants';
 import { useNotifications } from './useNotifications';
 import { getUsersByRole, getRHByCandidate } from '@/utils/notifications';
 
+// Hook para buscar cidades e estados únicos (para filtros - não paginado)
+export const useCandidatesFiltersData = () => {
+    return useQuery({
+        queryKey: ['candidatesFiltersData'],
+        queryFn: async () => {
+            console.log('🔍 [useCandidatesFiltersData] Buscando dados para filtros...');
+            
+            // Buscar TODOS os candidatos apenas com os campos necessários para filtros
+            const { data, error } = await supabase
+                .from('candidates')
+                .select('city, state')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ [useCandidatesFiltersData] Erro ao buscar dados:', error);
+                throw error;
+            }
+
+            // Extrair valores únicos
+            const validCandidates = (data || []).filter(c => c && typeof c === 'object');
+            const uniqueStates = [...new Set(validCandidates.map(c => c.state).filter(Boolean))] as string[];
+            const uniqueCities = [...new Set(validCandidates.map(c => c.city).filter(Boolean))] as string[];
+
+            console.log('✅ [useCandidatesFiltersData] Dados carregados:', {
+                states: uniqueStates.length,
+                cities: uniqueCities.length
+            });
+
+            return {
+                uniqueStates: uniqueStates.sort(),
+                uniqueCities: uniqueCities.sort(),
+                // Também retornar mapa de cidades por estado
+                citiesByState: validCandidates.reduce((acc, c) => {
+                    if (c.state && c.city) {
+                        if (!acc[c.state]) acc[c.state] = new Set();
+                        acc[c.state].add(c.city);
+                    }
+                    return acc;
+                }, {} as Record<string, Set<string>>)
+            };
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutos
+        retry: 2
+    });
+};
+
 export interface Candidate {
   id: string;
   name: string;
