@@ -1,12 +1,29 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
-// Configurações CORS específicas para o domínio
-const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://vagas.grupocgb.com.br',
+// Configurações CORS - aceitar múltiplas origens
+const getCorsHeaders = (origin: string | null) => {
+  const allowedOrigins = [
+    'https://vagas.grupocgb.com.br',
+    'http://localhost:8080',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
+    /^http:\/\/127\.0\.0\.1:\d+$/,
+  ];
+
+  const isAllowed = origin && allowedOrigins.some(allowed => {
+    if (typeof allowed === 'string') return origin === allowed;
+    if (allowed instanceof RegExp) return allowed.test(origin);
+    return false;
+  });
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://vagas.grupocgb.com.br',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
+  };
 };
 
 // Validar variáveis de ambiente
@@ -24,6 +41,9 @@ console.log("📧 Configurações SMTP:", {
 
 serve(async (req) => {
     console.log(`📨 Requisição recebida: ${req.method} ${req.url}`);
+    
+    const origin = req.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
 
     // Tratar requisição pre-flight do CORS
     if (req.method === 'OPTIONS') {
@@ -93,31 +113,54 @@ serve(async (req) => {
         console.log(`📧 Assunto: ${subject}`);
 
         const client = new SmtpClient();
-
-        // Conectar ao servidor SMTP
-        // Porta 587 geralmente usa STARTTLS, porta 25 pode ser sem criptografia
         const port = parseInt(SMTP_PORT, 10);
         const useTLS = port === 587 || port === 465;
         
-        if (useTLS) {
-            // Porta 587 (STARTTLS) ou 465 (SSL/TLS)
-            await client.connectTLS({
-                hostname: SMTP_HOST,
-                port: port,
-                username: SMTP_USER,
-                password: SMTP_PASSWORD,
-            });
-        } else {
-            // Porta 25 ou outras sem criptografia
-            await client.connect({
-                hostname: SMTP_HOST,
-                port: port,
-                username: SMTP_USER,
-                password: SMTP_PASSWORD,
-            });
+        // 🔥 Adicionar retry logic com timeout
+        let retries = 3;
+        let connected = false;
+        let lastError;
+        
+        while (retries > 0 && !connected) {
+            try {
+                console.log(`🔄 Tentativa de conexão SMTP (${4 - retries}/3)...`);
+                
+                const connectTimeout = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout de conexão SMTP (30s)')), 30000)
+                );
+                
+                const connectPromise = useTLS
+                    ? client.connectTLS({
+                        hostname: SMTP_HOST,
+                        port: port,
+                        username: SMTP_USER,
+                        password: SMTP_PASSWORD,
+                      })
+                    : client.connect({
+                        hostname: SMTP_HOST,
+                        port: port,
+                        username: SMTP_USER,
+                        password: SMTP_PASSWORD,
+                      });
+                
+                await Promise.race([connectPromise, connectTimeout]);
+                connected = true;
+                console.log("✅ Conectado ao servidor SMTP");
+            } catch (error: any) {
+                lastError = error;
+                retries--;
+                console.error(`❌ Erro na tentativa de conexão: ${error.message}`);
+                
+                if (retries > 0) {
+                    console.log(`⏳ Aguardando 2s antes de tentar novamente...`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
         }
-
-        console.log("✅ Conectado ao servidor SMTP");
+        
+        if (!connected) {
+            throw new Error(`Falha ao conectar ao SMTP após 3 tentativas: ${lastError?.message}`);
+        }
 
         // Preparar opções de envio
         const sendOptions: any = {

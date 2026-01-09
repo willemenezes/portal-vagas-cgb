@@ -1,11 +1,33 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Configurações de CORS diretamente no código
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://vagas.grupocgb.com.br',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
+// 🔥 CORREÇÃO: Aceitar também IPs locais e desenvolvimento
+const getCorsHeaders = (origin: string | null) => {
+  const allowedOrigins = [
+    'https://vagas.grupocgb.com.br',
+    'http://localhost:8080',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // IPs da rede interna
+    /^http:\/\/127\.0\.0\.1:\d+$/, // localhost alternativo
+  ];
+
+  const isAllowed = origin && allowedOrigins.some(allowed => {
+    if (typeof allowed === 'string') {
+      return origin === allowed;
+    }
+    if (allowed instanceof RegExp) {
+      return allowed.test(origin);
+    }
+    return false;
+  });
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://vagas.grupocgb.com.br',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+  };
 };
 
 // Templates de email para cada tipo de notificação
@@ -314,6 +336,10 @@ function processTemplate(template: string, data: any): string {
 
 serve(async (req) => {
   console.log(`📨 Notification request: ${req.method} ${req.url}`);
+  
+  // 🔥 Obter origin da requisição para CORS dinâmico
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   // Tratar CORS
   if (req.method === 'OPTIONS') {
