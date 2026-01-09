@@ -2,9 +2,10 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Configurações de CORS diretamente no código
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://vagas.grupocgb.com.br',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 // Templates de email para cada tipo de notificação
@@ -33,7 +34,7 @@ const EMAIL_TEMPLATES = {
           <p>Acesse o portal para revisar e aprovar a solicitação.</p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               🔍 Revisar Solicitação
             </a>
           </div>
@@ -105,7 +106,7 @@ const EMAIL_TEMPLATES = {
           <p>Você pode revisar os detalhes e criar uma nova solicitação se necessário.</p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               📝 Acessar Portal
             </a>
           </div>
@@ -375,7 +376,7 @@ serve(async (req) => {
             subject,
             html,
             fromName: 'Portal CGB Vagas',
-            fromEmail: 'naoresponda@cgbvagas.com.br'
+            fromEmail: 'naoresponda@grupocgb.com.br'
           })
         });
 

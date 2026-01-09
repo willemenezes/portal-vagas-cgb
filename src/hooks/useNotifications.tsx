@@ -27,7 +27,7 @@ const EMAIL_TEMPLATES = {
           <p>Acesse o portal para revisar e aprovar a solicitação.</p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               🔍 Revisar Solicitação
             </a>
           </div>
@@ -59,7 +59,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               🔍 Ver Vaga Publicada
             </a>
           </div>
@@ -158,7 +158,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin/selection" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin/selection" style="background: #6a0b27; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               📊 Ver Processo Seletivo
             </a>
           </div>
@@ -193,7 +193,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin/candidates" style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin/candidates" style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               👥 Ver Candidatos
             </a>
           </div>
@@ -231,7 +231,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin/jobs" style="background: #ffc107; color: #212529; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin/jobs" style="background: #ffc107; color: #212529; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               📝 Gerenciar Vaga
             </a>
           </div>
@@ -269,7 +269,7 @@ const EMAIL_TEMPLATES = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://cgbvagas.com.br/admin/jobs" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            <a href="https://vagas.grupocgb.com.br/admin/jobs" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
               🔄 Reativar Vaga
             </a>
           </div>

@@ -7,48 +7,48 @@ import { getUsersByRole, getRHByCandidate, getManagersByRegion } from '@/utils/n
 
 // Hook para buscar cidades e estados únicos (para filtros - não paginado)
 export const useCandidatesFiltersData = () => {
-    return useQuery({
-        queryKey: ['candidatesFiltersData'],
-        queryFn: async () => {
-            console.log('🔍 [useCandidatesFiltersData] Buscando dados para filtros...');
-            
-            // Buscar TODOS os candidatos apenas com os campos necessários para filtros
-            const { data, error } = await supabase
-                .from('candidates')
-                .select('city, state')
-                .order('created_at', { ascending: false });
+  return useQuery({
+    queryKey: ['candidatesFiltersData'],
+    queryFn: async () => {
+      console.log('🔍 [useCandidatesFiltersData] Buscando dados para filtros...');
 
-            if (error) {
-                console.error('❌ [useCandidatesFiltersData] Erro ao buscar dados:', error);
-                throw error;
-            }
+      // Buscar TODOS os candidatos apenas com os campos necessários para filtros
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('city, state')
+        .order('created_at', { ascending: false });
 
-            // Extrair valores únicos
-            const validCandidates = (data || []).filter(c => c && typeof c === 'object');
-            const uniqueStates = [...new Set(validCandidates.map(c => c.state).filter(Boolean))] as string[];
-            const uniqueCities = [...new Set(validCandidates.map(c => c.city).filter(Boolean))] as string[];
+      if (error) {
+        console.error('❌ [useCandidatesFiltersData] Erro ao buscar dados:', error);
+        throw error;
+      }
 
-            console.log('✅ [useCandidatesFiltersData] Dados carregados:', {
-                states: uniqueStates.length,
-                cities: uniqueCities.length
-            });
+      // Extrair valores únicos
+      const validCandidates = (data || []).filter(c => c && typeof c === 'object');
+      const uniqueStates = [...new Set(validCandidates.map(c => c.state).filter(Boolean))] as string[];
+      const uniqueCities = [...new Set(validCandidates.map(c => c.city).filter(Boolean))] as string[];
 
-            return {
-                uniqueStates: uniqueStates.sort(),
-                uniqueCities: uniqueCities.sort(),
-                // Também retornar mapa de cidades por estado
-                citiesByState: validCandidates.reduce((acc, c) => {
-                    if (c.state && c.city) {
-                        if (!acc[c.state]) acc[c.state] = new Set();
-                        acc[c.state].add(c.city);
-                    }
-                    return acc;
-                }, {} as Record<string, Set<string>>)
-            };
-        },
-        staleTime: 5 * 60 * 1000, // 5 minutos
-        retry: 2
-    });
+      console.log('✅ [useCandidatesFiltersData] Dados carregados:', {
+        states: uniqueStates.length,
+        cities: uniqueCities.length
+      });
+
+      return {
+        uniqueStates: uniqueStates.sort(),
+        uniqueCities: uniqueCities.sort(),
+        // Também retornar mapa de cidades por estado
+        citiesByState: validCandidates.reduce((acc, c) => {
+          if (c.state && c.city) {
+            if (!acc[c.state]) acc[c.state] = new Set();
+            acc[c.state].add(c.city);
+          }
+          return acc;
+        }, {} as Record<string, Set<string>>)
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 2
+  });
 };
 
 export interface Candidate {
@@ -388,16 +388,16 @@ export const useCreateCandidate = () => {
           if (job) {
             // Buscar RH da região
             const rhUsers = await getRHByCandidate(newCandidate.id);
-            
+
             // Buscar gerentes da região/departamento (podem ser solicitadores também)
             const managers = await getManagersByRegion(
               newCandidate.state || job.state,
               newCandidate.city || job.city,
               job.department
             );
-            
+
             const allRecipients = [...rhUsers, ...managers];
-            
+
             if (allRecipients.length > 0) {
               await sendNotification({
                 type: 'new_application',
