@@ -47,7 +47,8 @@ serve(async (req) => {
     if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASSWORD) {
         console.error("❌ Variáveis de ambiente SMTP não configuradas");
         return new Response(JSON.stringify({
-            error: 'Configuração SMTP incompleta. Verifique as variáveis de ambiente.'
+            error: 'Configuração SMTP incompleta. Verifique as variáveis de ambiente.',
+            hint: 'Configure SMTP_HOST, SMTP_PORT, SMTP_USER e SMTP_PASSWORD no Supabase Dashboard'
         }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -55,20 +56,45 @@ serve(async (req) => {
     }
 
     try {
-        const { to, subject, html, fromName, fromEmail } = await req.json();
+        const body = await req.json();
+        const { to, subject, html, fromName, fromEmail, cc, bcc } = body;
 
+        // Validação de parâmetros obrigatórios
         if (!to || !subject || !html) {
             console.log("❌ Parâmetros obrigatórios ausentes");
             return new Response(JSON.stringify({
-                error: 'Parâmetros obrigatórios ausentes. Necessário: to, subject, html'
+                error: 'Parâmetros obrigatórios ausentes.',
+                required: ['to', 'subject', 'html'],
+                received: {
+                    to: !!to,
+                    subject: !!subject,
+                    html: !!html
+                }
             }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
 
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(to)) {
+            console.log(`❌ Email inválido: ${to}`);
+            return new Response(JSON.stringify({
+                error: 'Formato de email inválido',
+                email: to
+            }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        console.log(`📧 Tentando enviar email para: ${to}`);
+        console.log(`📧 Assunto: ${subject}`);
+
         const client = new SmtpClient();
 
+        // Conectar ao servidor SMTP
         await client.connectTLS({
             hostname: SMTP_HOST,
             port: parseInt(SMTP_PORT, 10),
@@ -76,32 +102,66 @@ serve(async (req) => {
             password: SMTP_PASSWORD,
         });
 
-        await client.send({
-            from: `"${fromName || 'CGB Energia'}" <${fromEmail || 'naoresponda@cgbenergia.com.br'}>`,
+        console.log("✅ Conectado ao servidor SMTP");
+
+        // Preparar opções de envio
+        const sendOptions: any = {
+            from: `"${fromName || 'CGB Energia RH'}" <${fromEmail || 'naoresponda@cgbenergia.com.br'}>`,
             to,
             subject,
-            content: "Esta é uma mensagem em texto plano.", // Fallback
+            content: html.replace(/<[^>]*>/g, ''), // Versão texto plano extraída do HTML
             html,
-        });
+        };
 
+        // Adicionar CC e BCC se fornecidos
+        if (cc) sendOptions.cc = cc;
+        if (bcc) sendOptions.bcc = bcc;
+
+        // Enviar email
+        await client.send(sendOptions);
+
+        // Fechar conexão
         await client.close();
 
-        console.log("📧 Email enviado com sucesso!");
-        return new Response(JSON.stringify({ message: 'E-mail enviado com sucesso!' }), {
+        console.log(`✅ Email enviado com sucesso para: ${to}`);
+        
+        return new Response(JSON.stringify({ 
+            success: true,
+            message: 'E-mail enviado com sucesso!',
+            to,
+            subject
+        }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('❌ Erro ao enviar e-mail:', error);
         console.error('Stack trace:', error.stack);
 
+        // Mensagens de erro mais amigáveis
+        let errorMessage = 'Erro ao enviar email';
+        let errorDetails = error.message;
+
+        if (error.message?.includes('535')) {
+            errorMessage = 'Falha na autenticação SMTP';
+            errorDetails = 'Verifique se o usuário e senha estão corretos. Para Gmail, use senha de app.';
+        } else if (error.message?.includes('timeout') || error.message?.includes('ECONNREFUSED')) {
+            errorMessage = 'Não foi possível conectar ao servidor SMTP';
+            errorDetails = 'Verifique SMTP_HOST e SMTP_PORT. Verifique também firewall/rede.';
+        } else if (error.message?.includes('550') || error.message?.includes('553')) {
+            errorMessage = 'Email rejeitado pelo servidor';
+            errorDetails = 'Verifique se o endereço de email está correto e se o domínio está autorizado.';
+        }
+
         return new Response(JSON.stringify({
-            error: `Erro interno: ${error.message}`,
-            details: error.stack
+            success: false,
+            error: errorMessage,
+            details: errorDetails,
+            stack: Deno.env.get('DENO_ENV') === 'development' ? error.stack : undefined
         }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     }
-}); 
+});
