@@ -393,28 +393,49 @@ export const useJobRequests = () => {
             // Enviar notificações baseadas no status
             try {
                 if (data.status === 'aprovado') {
-                    // Notificar RH da região + coordenador que criou
+                    // 📧 Notificar RH, coordenador E o gerente que aprovou
+                    console.log('📧 Enviando notificações de aprovação...');
                     const rhUsers = await getRHByRegion(data.state, data.city);
                     const coordinator = await getUserById(data.requested_by);
-                    const recipients = coordinator ? [...rhUsers, coordinator] : rhUsers;
+                    
+                    // 🔥 ADICIONAR: Buscar dados do gerente que aprovou para também enviar confirmação
+                    let approver = null;
+                    if (user?.id) {
+                        approver = await getUserById(user.id);
+                        console.log('👤 Gerente aprovador:', approver);
+                    }
+                    
+                    // Montar lista de destinatários: RH + Coordenador + Gerente
+                    let recipients = [...rhUsers];
+                    if (coordinator) recipients.push(coordinator);
+                    if (approver) recipients.push(approver);
+
+                    console.log('👥 Destinatários da aprovação:', recipients.length);
 
                     if (recipients.length > 0) {
-                        await sendNotification({
-                            type: 'job_request_approved',
-                            recipients,
-                            data: {
-                                jobTitle: data.title,
-                                department: data.department,
-                                city: data.city,
-                                state: data.state,
-                                requestId: data.id,
-                                senderName: data.approved_by,
-                                senderRole: 'Gerente',
-                                notes: data.notes,
-                                actionDate: new Date().toLocaleString('pt-BR')
-                            },
-                            silent: true
-                        });
+                        try {
+                            const result = await sendNotification({
+                                type: 'job_request_approved',
+                                recipients,
+                                data: {
+                                    jobTitle: data.title,
+                                    department: data.department,
+                                    city: data.city,
+                                    state: data.state,
+                                    requestId: data.id,
+                                    senderName: data.approved_by || approver?.name || 'Gerente',
+                                    senderRole: 'Gerente',
+                                    notes: data.notes,
+                                    actionDate: new Date().toLocaleString('pt-BR')
+                                },
+                                silent: false // 🔥 Mudar para false para ver erros no console
+                            });
+                            console.log('✅ Resultado do envio de aprovação:', result);
+                        } catch (emailError) {
+                            console.error('❌ Erro ao enviar notificação de aprovação:', emailError);
+                        }
+                    } else {
+                        console.warn('⚠️ Nenhum destinatário encontrado para notificação de aprovação');
                     }
                 } else if (data.status === 'rejeitado') {
                     // Notificar apenas o coordenador que criou
