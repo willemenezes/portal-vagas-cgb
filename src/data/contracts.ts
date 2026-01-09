@@ -1,5 +1,6 @@
 // Lista centralizada de contratos da empresa (CT)
 export const contracts = [
+  "144 - Porto de Moz",
   "150 - Norte",
   "151 - Nordeste",
   "152 - Oeste",
@@ -8,7 +9,9 @@ export const contracts = [
   "153 - Sudeste",
   "159 - Amapá",
   "163 - Amapá",
-  "168 - Amapá"
+  "168 - Amapá",
+  "171 - Centro-Oeste",
+  "174 - Amapá",
 ];
 
 // Função helper para obter o número do contrato (antes do hífen)

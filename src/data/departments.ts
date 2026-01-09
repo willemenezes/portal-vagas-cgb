@@ -14,4 +14,7 @@ export const departments = [
   "TI",
   "Qualidade",
   "Saneamento",
+  "Recall",
+  "Novos Negócios",
+  "Inspeção de Energia",
 ];
