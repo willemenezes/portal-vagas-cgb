@@ -235,6 +235,61 @@ const Index = () => {
                 <span className="text-cgb-primary font-medium"> Sua carreira começa aqui.</span>
               </p>
 
+              {/* Quick Search Bar */}
+              <div className="max-w-2xl mx-auto">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-cgb-primary/20 via-cgb-accent/20 to-cgb-primary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative flex items-center bg-white rounded-2xl shadow-medium hover:shadow-strong transition-all duration-300 border-2 border-transparent hover:border-cgb-accent/30">
+                    <div className="flex-1 flex items-center px-6 py-4">
+                      <Search className="w-6 h-6 text-cgb-primary mr-3 flex-shrink-0" />
+                      <input
+                        type="text"
+                        placeholder="Buscar vaga por cargo, ex: Eletricista, Motorista..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setFilters({ ...filters, search: e.target.value });
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            document.getElementById('all-jobs')?.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                        className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 text-lg focus:outline-none"
+                      />
+                      {searchTerm && (
+                        <button
+                          onClick={() => {
+                            setSearchTerm("");
+                            setFilters({ ...filters, search: "" });
+                          }}
+                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                          aria-label="Limpar busca"
+                        >
+                          <X className="w-5 h-5 text-gray-400" />
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => document.getElementById('all-jobs')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="m-2 bg-cgb-primary hover:bg-cgb-primary-dark text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105"
+                    >
+                      Buscar
+                    </Button>
+                  </div>
+                </div>
+                {searchTerm && filteredJobs.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-3 text-center">
+                    {filteredJobs.length} {filteredJobs.length === 1 ? 'vaga encontrada' : 'vagas encontradas'}
+                  </p>
+                )}
+                {searchTerm && filteredJobs.length === 0 && (
+                  <p className="text-sm text-orange-600 mt-3 text-center">
+                    Nenhuma vaga encontrada. Tente outro termo de busca.
+                  </p>
+                )}
+              </div>
+
               {/* Stats */}
               <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
                 <div className="text-center">
