@@ -6,6 +6,7 @@ export const departments = [
   "Cobrança",
   "Atendimento",
   "Departamento Pessoal",
+  "Departamento Jurídico",
   "Financeiro",
   "Sesmt",
   "Frota",
