@@ -40,8 +40,10 @@ const getInitials = (name: string) => {
 };
 
 // Mapeamento de status para rótulo exibido no Kanban
-const getStatusDisplayLabel = (status: string) =>
-    status === 'Reprovado' ? 'Reprovados na Triagem' : status;
+const getStatusDisplayLabel = (status: string) => {
+    if (status === 'Análise de Currículo') return 'Reprovados na Triagem';
+    return status;
+};
 
 // Helper mais robusto para calcular os dias na etapa atual
 // Agora usa status_entered_at para calcular apenas o tempo na etapa atual
