@@ -9,9 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, XCircle, FileText
+  Edit, Plus, Eye, Trash2, Users, Loader2, Archive, ChevronsUpDown, MessageSquare, Briefcase, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, XCircle, FileText, PauseCircle, PlayCircle
 } from "lucide-react";
-import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, Job } from "@/hooks/useJobs";
+import { useAllJobs, useCreateJob, useUpdateJob, useDeleteJob, useToggleApplications, Job } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
 import { useRHProfile, RHUser } from "@/hooks/useRH";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +46,7 @@ const JobManagement = () => {
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
+  const toggleApplications = useToggleApplications();
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const { toast } = useToast();
 
@@ -826,6 +827,11 @@ const JobManagement = () => {
                             )}
                           </div>
                           <JobFlowStatusBadge flowStatus={job.flow_status} />
+                          {job.accepting_applications === false && (
+                            <Badge className="bg-orange-100 text-orange-700 border-orange-300 text-xs">
+                              ⏸ Candidaturas pausadas
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -835,6 +841,36 @@ const JobManagement = () => {
                           </TooltipTrigger>
                           <TooltipContent><p>Ver Candidatos</p></TooltipContent>
                         </Tooltip>
+                        {job.title !== 'Banco de Talentos' && job.flow_status === 'ativa' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={toggleApplications.isPending}
+                                onClick={() => {
+                                  const next = job.accepting_applications === false ? true : false;
+                                  toggleApplications.mutate({ jobId: job.id, accepting: next }, {
+                                    onSuccess: () => toast({
+                                      title: next ? 'Candidaturas retomadas' : 'Candidaturas pausadas',
+                                      description: next
+                                        ? 'A vaga voltará a receber novas inscrições.'
+                                        : 'A vaga continua ativa internamente, mas não receberá novas inscrições.',
+                                    }),
+                                    onError: (err) => toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' }),
+                                  });
+                                }}
+                              >
+                                {job.accepting_applications === false
+                                  ? <PlayCircle className="w-4 h-4 text-green-600" />
+                                  : <PauseCircle className="w-4 h-4 text-orange-500" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{job.accepting_applications === false ? 'Retomar candidaturas' : 'Pausar candidaturas'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                         {job.title !== 'Banco de Talentos' && (
                           <Tooltip>
                             <TooltipTrigger asChild>

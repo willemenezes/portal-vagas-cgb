@@ -46,6 +46,8 @@ export interface Job {
   deleted_by?: string | null; // ID do usuário que excluiu
   deleted_by_name?: string; // Nome do usuário que excluiu (para exibição)
   deleted_by_email?: string; // Email do usuário que excluiu (para exibição)
+  // Controle de candidaturas
+  accepting_applications?: boolean; // true = aberta, false = candidaturas pausadas (vaga continua ativa)
 }
 
 export const useJobs = () => {
@@ -620,6 +622,30 @@ export const usePermanentlyDeleteOldJobs = () => {
       queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobsToPermanentlyDelete'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+    },
+  });
+};
+
+export const useToggleApplications = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ jobId, accepting }: { jobId: string; accepting: boolean }) => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .update({ accepting_applications: accepting })
+        .eq('id', jobId)
+        .is('deleted_at', null)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs-robust'] });
     },
   });
 };

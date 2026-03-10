@@ -366,6 +366,41 @@ const JobApplication = () => {
     );
   }
 
+  // Candidaturas pausadas — vaga continua visível mas não aceita inscrições
+  if (job && job.accepting_applications === false) {
+    return (
+      <div className="min-h-screen bg-cgb-cream">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <Button variant="outline" onClick={() => navigate('/')} className="mb-6">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar às vagas
+          </Button>
+          <Card className="max-w-xl mx-auto text-center">
+            <CardHeader>
+              <CardTitle className="text-cgb-blue text-xl">{job.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 py-8">
+              <div className="flex justify-center">
+                <span className="text-5xl">⏸️</span>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Candidaturas temporariamente pausadas
+              </h2>
+              <p className="text-cgb-gray-dark text-sm leading-relaxed">
+                No momento não estamos recebendo novas candidaturas para esta vaga.
+                Acompanhe nosso portal e tente novamente em breve.
+              </p>
+              <Button onClick={() => navigate('/')} className="mt-4 bg-cgb-wine text-white">
+                Ver outras vagas
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="min-h-screen bg-cgb-cream">

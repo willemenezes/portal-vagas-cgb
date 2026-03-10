@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, Users, Briefcase } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Briefcase, PauseCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -130,15 +130,28 @@ const JobDetail = () => {
                 <CardTitle className="text-cgb-blue">Candidatar-se</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-cgb-gray-dark">
-                  Interessado nesta vaga? Clique no botão abaixo para se candidatar.
-                </p>
-                <button
-                  style={{ width: "100%", background: "#6a0b27", color: "#fff", padding: "16px", borderRadius: "8px", border: "none", fontWeight: "bold", fontSize: "18px", marginTop: "12px", cursor: "pointer" }}
-                  onClick={() => navigate(`/candidatar/${job.id}`)}
-                >
-                  Candidatar-se
-                </button>
+                {job.accepting_applications === false ? (
+                  <div className="rounded-lg bg-orange-50 border border-orange-200 p-4 flex flex-col items-center gap-2 text-center">
+                    <PauseCircle className="w-8 h-8 text-orange-400" />
+                    <p className="font-semibold text-orange-700 text-sm">Candidaturas pausadas</p>
+                    <p className="text-xs text-orange-600 leading-relaxed">
+                      No momento não estamos recebendo novas candidaturas para esta vaga.
+                      Volte em breve!
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-cgb-gray-dark">
+                      Interessado nesta vaga? Clique no botão abaixo para se candidatar.
+                    </p>
+                    <button
+                      style={{ width: "100%", background: "#6a0b27", color: "#fff", padding: "16px", borderRadius: "8px", border: "none", fontWeight: "bold", fontSize: "18px", marginTop: "12px", cursor: "pointer" }}
+                      onClick={() => navigate(`/candidatar/${job.id}`)}
+                    >
+                      Candidatar-se
+                    </button>
+                  </>
+                )}
                 <div className="text-center">
                   <span className="text-xs text-cgb-gray">
                     Vaga publicada em {new Date(job.created_at).toLocaleDateString('pt-BR')}

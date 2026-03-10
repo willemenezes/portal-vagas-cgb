@@ -39,6 +39,10 @@ const getInitials = (name: string) => {
     return `${firstInitial}${lastInitial}`.toUpperCase();
 };
 
+// Mapeamento de status para rótulo exibido no Kanban
+const getStatusDisplayLabel = (status: string) =>
+    status === 'Reprovado' ? 'Reprovados na Triagem' : status;
+
 // Helper mais robusto para calcular os dias na etapa atual
 // Agora usa status_entered_at para calcular apenas o tempo na etapa atual
 const getDaysInStage = (dateString: string | null): number => {
@@ -1021,7 +1025,7 @@ const SelectionProcess = () => {
                                                 className={`bg-gray-100 p-4 rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-gray-200' : ''}`}
                                             >
                                                 <h3 className="font-semibold text-md text-gray-700 mb-4 flex justify-between items-center px-2">
-                                                    <span className="truncate">{status}</span>
+                                                    <span className="truncate">{getStatusDisplayLabel(status)}</span>
                                                     <span className="text-sm font-bold bg-gray-200 text-gray-600 px-3 py-1 rounded-full ml-2">
                                                         {candidates.length}
                                                     </span>
@@ -1066,7 +1070,7 @@ const SelectionProcess = () => {
                                                 className={`w-80 flex-shrink-0 bg-gray-100 p-3 rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-gray-200' : ''}`}
                                             >
                                                 <h3 className="font-semibold text-md text-gray-700 mb-4 flex justify-between items-center px-2">
-                                                    <span>{status}</span>
+                                                    <span>{getStatusDisplayLabel(status)}</span>
                                                     <span className="text-sm font-bold bg-gray-200 text-gray-600 px-3 py-1 rounded-full">
                                                         {candidates.length}
                                                     </span>
